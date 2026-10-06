@@ -16,4 +16,4 @@ Estados posibles: Propuesto, Aceptado, Rechazado, Reemplazado por ADR-NNNN.
 |---|---|---|
 | [0001](0001-registrar-decisiones.md) | Registrar las decisiones de arquitectura | Aceptado |
 | [0002](0002-entorno-de-desarrollo.md) | Entorno de desarrollo con Docker Compose | Aceptado |
-| [0003](0003-framework-de-dominio.md) | Framework de dominio: contextos con Ecto o Ash | Propuesto |
+| [0003](0003-framework-de-dominio.md) | Framework de dominio: contextos con Ecto o Ash | Propuesto (recomienda Ecto) |
