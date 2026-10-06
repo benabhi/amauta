@@ -63,8 +63,8 @@ msgstr "Repetí la nueva contraseña"
 msgid "Confirming..."
 msgstr "Confirmando…"
 
-#: lib/amauta_web/live/user_live/login.ex:36
-#: lib/amauta_web/live/user_live/login.ex:61
+#: lib/amauta_web/live/user_live/login.ex:37
+#: lib/amauta_web/live/user_live/login.ex:62
 #: lib/amauta_web/live/user_live/settings.ex:21
 #: lib/amauta_web/live/user_live/settings.ex:31
 #, elixir-autogen, elixir-format
@@ -86,12 +86,12 @@ msgstr "Cambiaste tu email."
 msgid "Hello, %{name}"
 msgstr "Hola, %{name}"
 
-#: lib/amauta_web/live/user_live/login.ex:111
+#: lib/amauta_web/live/user_live/login.ex:115
 #, elixir-autogen, elixir-format
 msgid "If your email is in our system, you will receive instructions for logging in shortly."
 msgstr "Si tu email está registrado, en unos minutos vas a recibir las instrucciones para entrar."
 
-#: lib/amauta_web/controllers/user_session_controller.ex:47
+#: lib/amauta_web/controllers/user_session_controller.ex:62
 #, elixir-autogen, elixir-format
 msgid "Invalid email or password"
 msgstr "El email o la contraseña no son correctos"
@@ -101,27 +101,28 @@ msgstr "El email o la contraseña no son correctos"
 msgid "Keep me logged in on this device"
 msgstr "Mantener la sesión iniciada en este dispositivo"
 
+#: lib/amauta_web/controllers/dev_login_controller.ex:76
 #: lib/amauta_web/live/user_live/confirmation.ex:56
 #, elixir-autogen, elixir-format
 msgid "Log in"
 msgstr "Entrar"
 
-#: lib/amauta_web/live/user_live/login.ex:75
+#: lib/amauta_web/live/user_live/login.ex:76
 #, elixir-autogen, elixir-format
 msgid "Log in and stay logged in"
 msgstr "Entrar y mantener la sesión iniciada"
 
-#: lib/amauta_web/live/user_live/login.ex:77
+#: lib/amauta_web/live/user_live/login.ex:78
 #, elixir-autogen, elixir-format
 msgid "Log in only this time"
 msgstr "Entrar solo esta vez"
 
-#: lib/amauta_web/live/user_live/login.ex:19
+#: lib/amauta_web/live/user_live/login.ex:20
 #, elixir-autogen, elixir-format
 msgid "Log in to continue."
 msgstr "Entrá para continuar."
 
-#: lib/amauta_web/live/user_live/login.ex:42
+#: lib/amauta_web/live/user_live/login.ex:43
 #, elixir-autogen, elixir-format
 msgid "Log in with email"
 msgstr "Entrar con un enlace por email"
@@ -137,7 +138,7 @@ msgstr "Entrar solo esta vez"
 msgid "Log out"
 msgstr "Salir"
 
-#: lib/amauta_web/controllers/user_session_controller.ex:68
+#: lib/amauta_web/controllers/user_session_controller.ex:118
 #, elixir-autogen, elixir-format
 msgid "Logged out successfully."
 msgstr "Cerraste la sesión."
@@ -164,13 +165,13 @@ msgstr "Cambiá el email y la contraseña de tu cuenta"
 msgid "New password"
 msgstr "Nueva contraseña"
 
-#: lib/amauta_web/live/user_live/login.ex:69
+#: lib/amauta_web/live/user_live/login.ex:70
 #: lib/amauta_web/live/user_live/settings.ex:41
 #, elixir-autogen, elixir-format
 msgid "Password"
 msgstr "Contraseña"
 
-#: lib/amauta_web/controllers/user_session_controller.ex:63
+#: lib/amauta_web/controllers/user_session_controller.ex:113
 #, elixir-autogen, elixir-format
 msgid "Password updated successfully!"
 msgstr "Cambiaste tu contraseña."
@@ -195,7 +196,7 @@ msgstr "Ajustes"
 msgid "Something went wrong!"
 msgstr "¡Algo salió mal!"
 
-#: lib/amauta_web/controllers/user_session_controller.ex:30
+#: lib/amauta_web/controllers/user_session_controller.ex:35
 #, elixir-autogen, elixir-format
 msgid "The link is invalid or it has expired."
 msgstr "El enlace no es válido o ya venció."
@@ -205,7 +206,7 @@ msgstr "El enlace no es válido o ya venció."
 msgid "Tip: If you prefer passwords, you can enable them in the user settings."
 msgstr "Si preferís usar una contraseña, podés crearla en los ajustes de tu cuenta."
 
-#: lib/amauta_web/controllers/user_session_controller.ex:9
+#: lib/amauta_web/controllers/user_session_controller.ex:17
 #, elixir-autogen, elixir-format
 msgid "User confirmed successfully."
 msgstr "Confirmaste tu cuenta."
@@ -220,7 +221,7 @@ msgstr "No encontramos la conexión a internet"
 msgid "Welcome %{name}"
 msgstr "Hola, %{name}"
 
-#: lib/amauta_web/controllers/user_session_controller.ex:13
+#: lib/amauta_web/controllers/user_session_controller.ex:21
 #, elixir-autogen, elixir-format
 msgid "Welcome back!"
 msgstr "¡Qué bueno verte de nuevo!"
@@ -236,7 +237,7 @@ msgstr "Entrá para ver esta página."
 msgid "You must re-authenticate to access this page."
 msgstr "Volvé a entrar para ver esta página."
 
-#: lib/amauta_web/live/user_live/login.ex:17
+#: lib/amauta_web/live/user_live/login.ex:18
 #, elixir-autogen, elixir-format
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr "Para hacer cambios sensibles en tu cuenta, volvé a entrar."
@@ -246,7 +247,7 @@ msgstr "Para hacer cambios sensibles en tu cuenta, volvé a entrar."
 msgid "close"
 msgstr "cerrar"
 
-#: lib/amauta_web/live/user_live/login.ex:46
+#: lib/amauta_web/live/user_live/login.ex:47
 #, elixir-autogen, elixir-format
 msgid "or"
 msgstr "o"
@@ -297,3 +298,20 @@ msgstr "Todavía no tenés %{terms}"
 msgctxt "masculine"
 msgid "You have no %{terms} yet"
 msgstr "Todavía no tenés %{terms}"
+
+#: lib/amauta_web/controllers/dev_login_controller.ex:56
+#, elixir-autogen, elixir-format
+msgid "Development only."
+msgstr "Solo en desarrollo."
+
+#: lib/amauta_web/controllers/dev_login_controller.ex:54
+#, elixir-autogen, elixir-format
+msgid "Log in as…"
+msgstr "Entrar como…"
+
+#: lib/amauta_web/controllers/user_session_controller.ex:96
+#, elixir-autogen, elixir-format
+msgid "Too many failed attempts. Try again in %{count} minute or use a link sent to your email."
+msgid_plural "Too many failed attempts. Try again in %{count} minutes or use a link sent to your email."
+msgstr[0] "Demasiados intentos fallidos. Probá de nuevo en %{count} minuto o entrá con un enlace por email."
+msgstr[1] "Demasiados intentos fallidos. Probá de nuevo en %{count} minutos o entrá con un enlace por email."

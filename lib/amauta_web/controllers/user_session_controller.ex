@@ -1,8 +1,16 @@
 defmodule AmautaWeb.UserSessionController do
-  @moduledoc "Inicio y cierre de sesión, y cambio de contraseña (base: phx.gen.auth)."
+  @moduledoc """
+  Inicio y cierre de sesión, y cambio de contraseña (base: phx.gen.auth).
+
+  La autenticación pasa por los proveedores de identidad
+  (`Amauta.Accounts.authenticate/3`, RF-AUT-008) y la contraseña, además,
+  por el límite de intentos (`LoginThrottle`, RF-AUT-006). Al entrar desde
+  un dispositivo nuevo se le avisa a la persona por email.
+  """
   use AmautaWeb, :controller
 
   alias Amauta.Accounts
+  alias Amauta.Accounts.{LoginThrottle, SecurityEmailWorker}
   alias AmautaWeb.{Paths, UserAuth}
 
   def create(conn, %{"_action" => "confirmed"} = params) do
@@ -14,18 +22,15 @@ defmodule AmautaWeb.UserSessionController do
   end
 
   # Enlace mágico.
-  defp create(conn, %{"user" => %{"token" => token} = user_params}, info) do
+  defp create(conn, %{"user" => %{"token" => _} = user_params}, info) do
     institution = conn.assigns.current_institution
 
-    case Accounts.login_user_by_magic_link(institution, token) do
-      {:ok, {user, tokens_to_disconnect}} ->
-        UserAuth.disconnect_sessions(tokens_to_disconnect)
+    case Accounts.authenticate(institution, :magic_link, user_params) do
+      {:ok, user, %{disconnect: tokens}} ->
+        UserAuth.disconnect_sessions(tokens)
+        log_in(conn, user, user_params, info)
 
-        conn
-        |> put_flash(:info, info)
-        |> UserAuth.log_in_user(user, user_params)
-
-      _ ->
+      {:error, :invalid_credentials} ->
         conn
         |> put_flash(:error, gettext("The link is invalid or it has expired."))
         |> redirect(to: Paths.log_in(institution))
@@ -33,21 +38,66 @@ defmodule AmautaWeb.UserSessionController do
   end
 
   # Email y contraseña.
-  defp create(conn, %{"user" => user_params}, info) do
+  defp create(conn, %{"user" => %{"email" => email} = user_params}, info) do
     institution = conn.assigns.current_institution
-    %{"email" => email, "password" => password} = user_params
 
-    if user = Accounts.get_user_by_email_and_password(institution, email, password) do
-      conn
-      |> put_flash(:info, info)
-      |> UserAuth.log_in_user(user, user_params)
+    with :ok <- LoginThrottle.check(institution.id, conn.remote_ip, email),
+         {:ok, user, _meta} <- Accounts.authenticate(institution, :password, user_params) do
+      LoginThrottle.record_success(institution.id, email)
+      log_in(conn, user, user_params, info)
     else
-      # No se revela si el email está registrado.
-      conn
-      |> put_flash(:error, gettext("Invalid email or password"))
-      |> put_flash(:email, String.slice(email, 0, 160))
-      |> redirect(to: Paths.log_in(institution))
+      {:error, {:locked, seconds}} ->
+        conn
+        |> put_flash(:error, locked_message(seconds))
+        |> put_flash(:email, String.slice(email, 0, 160))
+        |> redirect(to: Paths.log_in(institution))
+
+      {:error, :invalid_credentials} ->
+        if LoginThrottle.record_failure(institution.id, conn.remote_ip, email) == :locked do
+          notify_locked_account(institution, email)
+        end
+
+        # La misma respuesta exista o no la cuenta (RNF-SEG-019).
+        conn
+        |> put_flash(:error, gettext("Invalid email or password"))
+        |> put_flash(:email, String.slice(email, 0, 160))
+        |> redirect(to: Paths.log_in(institution))
     end
+  end
+
+  defp log_in(conn, user, user_params, info) do
+    institution = conn.assigns.current_institution
+    user_agent = conn |> get_req_header("user-agent") |> List.first()
+
+    if Accounts.register_device(institution, user, user_agent) == :new do
+      SecurityEmailWorker.new_for(institution, %{
+        "user_id" => user.id,
+        "kind" => "new_device",
+        "user_agent" => user_agent
+      })
+      |> Oban.insert!()
+    end
+
+    conn
+    |> put_flash(:info, info)
+    |> UserAuth.log_in_user(user, user_params)
+  end
+
+  defp notify_locked_account(institution, email) do
+    if user = Accounts.get_user_by_email(institution, email) do
+      SecurityEmailWorker.new_for(institution, %{"user_id" => user.id, "kind" => "account_locked"})
+      |> Oban.insert!()
+    end
+  end
+
+  defp locked_message(seconds) do
+    minutes = max(div(seconds + 59, 60), 1)
+
+    ngettext(
+      "Too many failed attempts. Try again in %{count} minute or use a link sent to your email.",
+      "Too many failed attempts. Try again in %{count} minutes or use a link sent to your email.",
+      minutes
+    )
   end
 
   def update_password(conn, %{"user" => user_params} = params) do

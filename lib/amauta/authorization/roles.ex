@@ -15,6 +15,7 @@ defmodule Amauta.Authorization.Roles do
   y no dependen del rol.
   """
   alias Amauta.Authorization.Permissions
+  require Gettext.Macros
 
   @course_base ~w(course.view course.people.view)
 
@@ -41,12 +42,12 @@ defmodule Amauta.Authorization.Roles do
   )
 
   @roles [
-    {"institution_admin", "Administración institucional",
+    {"institution_admin", "Institution administration",
      Permissions.keys_with_prefix("institution.") ++
        Permissions.keys_with_prefix("pathway.") ++
        (Permissions.keys_with_prefix("course.") --
           ~w(course.submissions.create_own course.attempts.create_own course.grades.view_own))},
-    {"academic_management", "Gestión académica", ~w(
+    {"academic_management", "Academic management", ~w(
        institution.users.view institution.users.manage institution.imports.manage
        institution.periods.manage institution.taxonomy.manage institution.reports.view
        pathway.view pathway.update pathway.enrollments.manage pathway.progress.view_all
@@ -54,16 +55,16 @@ defmodule Amauta.Authorization.Roles do
        course.sections.manage course.gradebook.view_all course.messages.send_teachers
        course.messages.send_peers course.messages.send_selection
      ) ++ @course_base},
-    {"pathway_coordinator", "Coordinación de trayecto",
+    {"pathway_coordinator", "Pathway coordination",
      ~w(institution.users.view institution.courses.create) ++
        Permissions.keys_with_prefix("pathway.") ++
        @course_base ++
        @teaching ++
        (@course_lead_extra -- ~w(course.gradebook.override_final)) ++
        ~w(course.people.enroll)},
-    {"course_lead", "Docente responsable", @course_base ++ @teaching ++ @course_lead_extra},
-    {"teacher", "Docente", @course_base ++ @teaching},
-    {"assistant", "Ayudante",
+    {"course_lead", "Lead teacher", @course_base ++ @teaching ++ @course_lead_extra},
+    {"teacher", "Teacher", @course_base ++ @teaching},
+    {"assistant", "Assistant",
      @course_base ++
        ~w(
          course.content.view_hidden course.feed.post course.feed.reply
@@ -71,9 +72,8 @@ defmodule Amauta.Authorization.Roles do
          course.attendance.take course.attendance.manage
          course.messages.send_teachers course.messages.send_peers course.messages.send_selection
        )},
-    {"student", "Estudiante", @course_base ++ @learning},
-    {"observer", "Observador",
-     @course_base ++ ~w(course.gradebook.view_all course.analytics.view)}
+    {"student", "Student", @course_base ++ @learning},
+    {"observer", "Observer", @course_base ++ ~w(course.gradebook.view_all course.analytics.view)}
   ]
 
   for {key, _name, permissions} <- @roles, permission <- permissions do
@@ -92,9 +92,36 @@ defmodule Amauta.Authorization.Roles do
   @spec exists?(String.t()) :: boolean()
   def exists?(key), do: Map.has_key?(@permissions, key)
 
-  @doc "Nombre del rol para mostrar."
+  @doc "Nombre del rol para mostrar, traducido al idioma actual."
   @spec name(String.t()) :: String.t()
-  def name(key), do: Map.fetch!(@names, key)
+  def name(key), do: Gettext.dgettext(AmautaWeb.Gettext, "roles", Map.fetch!(@names, key))
+
+  # Para que `mix gettext.extract` incluya los nombres en `roles.pot`.
+  @doc false
+  def __gettext_names__ do
+    [
+      Gettext.Macros.dgettext_noop_with_backend(
+        AmautaWeb.Gettext,
+        "roles",
+        "Institution administration"
+      ),
+      Gettext.Macros.dgettext_noop_with_backend(
+        AmautaWeb.Gettext,
+        "roles",
+        "Academic management"
+      ),
+      Gettext.Macros.dgettext_noop_with_backend(
+        AmautaWeb.Gettext,
+        "roles",
+        "Pathway coordination"
+      ),
+      Gettext.Macros.dgettext_noop_with_backend(AmautaWeb.Gettext, "roles", "Lead teacher"),
+      Gettext.Macros.dgettext_noop_with_backend(AmautaWeb.Gettext, "roles", "Teacher"),
+      Gettext.Macros.dgettext_noop_with_backend(AmautaWeb.Gettext, "roles", "Assistant"),
+      Gettext.Macros.dgettext_noop_with_backend(AmautaWeb.Gettext, "roles", "Student"),
+      Gettext.Macros.dgettext_noop_with_backend(AmautaWeb.Gettext, "roles", "Observer")
+    ]
+  end
 
   @doc "Permisos del rol."
   @spec permissions(String.t()) :: MapSet.t(String.t())

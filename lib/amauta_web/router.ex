@@ -77,5 +77,11 @@ defmodule AmautaWeb.Router do
 
     post "/log-in", UserSessionController, :create
     delete "/log-out", UserSessionController, :delete
+
+    # Inicio de sesión rápido por rol, solo en desarrollo (RNF-DEV-009).
+    if Application.compile_env(:amauta, :dev_login, false) do
+      get "/dev/login", DevLoginController, :index
+      post "/dev/login/:user_id", DevLoginController, :create
+    end
   end
 end

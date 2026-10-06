@@ -11,7 +11,7 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/amauta/accounts/user_notifier.ex:56
+#: lib/amauta/accounts/user_notifier.ex:104
 #, elixir-autogen, elixir-format
 msgid "Confirmation instructions"
 msgstr ""
@@ -21,17 +21,17 @@ msgstr ""
 msgid "Hi %{name},\n\nYou can change your email by visiting the URL below:\n\n%{url}\n\nIf you didn't request this change, please ignore this.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:57
+#: lib/amauta/accounts/user_notifier.ex:105
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nYou can confirm your account by visiting the URL below:\n\n%{url}\n\nIf you were not expecting this email, please ignore it.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:80
+#: lib/amauta/accounts/user_notifier.ex:128
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nYou can log into your account by visiting the URL below:\n\n%{url}\n\nIf you didn't request this email, please ignore this.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:79
+#: lib/amauta/accounts/user_notifier.ex:127
 #, elixir-autogen, elixir-format
 msgid "Log in instructions"
 msgstr ""
@@ -39,4 +39,24 @@ msgstr ""
 #: lib/amauta/accounts/user_notifier.ex:30
 #, elixir-autogen, elixir-format
 msgid "Update email instructions"
+msgstr ""
+
+#: lib/amauta/accounts/user_notifier.ex:55
+#, elixir-autogen, elixir-format
+msgid "Hi %{name},\n\nSomeone just signed in to your account from a new device:\n\n%{device}\n\nIf it was you, you can ignore this message. If it wasn't, change your\npassword right away.\n"
+msgstr ""
+
+#: lib/amauta/accounts/user_notifier.ex:80
+#, elixir-autogen, elixir-format
+msgid "Hi %{name},\n\nWe blocked sign-ins to your account for a few minutes because there\nwere too many failed attempts.\n\nIf it wasn't you, someone may be trying to guess your password.\nYou can always sign in with a link sent to this email.\n"
+msgstr ""
+
+#: lib/amauta/accounts/user_notifier.ex:54
+#, elixir-autogen, elixir-format
+msgid "New sign-in to your account"
+msgstr ""
+
+#: lib/amauta/accounts/user_notifier.ex:79
+#, elixir-autogen, elixir-format
+msgid "Too many failed sign-in attempts"
 msgstr ""
