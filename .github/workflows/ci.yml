@@ -56,4 +56,6 @@ jobs:
       - run: mix deps.unlock --check-unused
       - run: mix compile --warnings-as-errors
       - run: mix format --check-formatted
+      - run: mix gettext.extract --check-up-to-date
+      - run: mix amauta.gettext.check
       - run: mix test --warnings-as-errors

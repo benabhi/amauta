@@ -1,0 +1,250 @@
+#  "msgid"s in this file come from POT (.pot) files.
+# #
+# # Do not add, change, or remove "msgid"s manually here as
+# # they're tied to the ones in the corresponding POT file
+# # (with the same domain).
+# #
+# # Use "mix gettext.extract --merge" or "mix gettext.merge"
+# # to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/amauta_web/live/user_live/settings.ex:130
+#, elixir-autogen, elixir-format
+msgid "A link to confirm your email change has been sent to the new address."
+msgstr "Te mandamos un enlace a la nueva dirección para confirmar el cambio de email."
+
+#: lib/amauta_web/live/user_live/settings.ex:16
+#, elixir-autogen, elixir-format
+msgid "Account Settings"
+msgstr "Ajustes de la cuenta"
+
+#: lib/amauta_web/components/core_components.ex:375
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr "Acciones"
+
+#: lib/amauta_web/components/layouts.ex:102
+#: lib/amauta_web/components/layouts.ex:117
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr "Intentando reconectar"
+
+#: lib/amauta_web/live/user_live/settings.ex:31
+#, elixir-autogen, elixir-format
+msgid "Change Email"
+msgstr "Cambiar el email"
+
+#: lib/amauta_web/live/user_live/settings.ex:30
+#, elixir-autogen, elixir-format
+msgid "Changing..."
+msgstr "Cambiando…"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:39
+#, elixir-autogen, elixir-format
+msgid "Confirm and log in only this time"
+msgstr "Confirmar y entrar solo esta vez"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:33
+#, elixir-autogen, elixir-format
+msgid "Confirm and stay logged in"
+msgstr "Confirmar y mantener la sesión iniciada"
+
+#: lib/amauta_web/live/user_live/settings.ex:64
+#, elixir-autogen, elixir-format
+msgid "Confirm new password"
+msgstr "Repetí la nueva contraseña"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:30
+#: lib/amauta_web/live/user_live/confirmation.ex:36
+#, elixir-autogen, elixir-format
+msgid "Confirming..."
+msgstr "Confirmando…"
+
+#: lib/amauta_web/live/user_live/login.ex:37
+#: lib/amauta_web/live/user_live/login.ex:62
+#: lib/amauta_web/live/user_live/settings.ex:25
+#, elixir-autogen, elixir-format
+msgid "Email"
+msgstr "Email"
+
+#: lib/amauta_web/live/user_live/settings.ex:86
+#, elixir-autogen, elixir-format
+msgid "Email change link is invalid or it has expired."
+msgstr "El enlace para cambiar el email no es válido o ya venció."
+
+#: lib/amauta_web/live/user_live/settings.ex:83
+#, elixir-autogen, elixir-format
+msgid "Email changed successfully."
+msgstr "Cambiaste tu email."
+
+#: lib/amauta_web/live/home_live.ex:15
+#, elixir-autogen, elixir-format
+msgid "Hello, %{name}"
+msgstr "Hola, %{name}"
+
+#: lib/amauta_web/live/user_live/login.ex:111
+#, elixir-autogen, elixir-format
+msgid "If your email is in our system, you will receive instructions for logging in shortly."
+msgstr "Si tu email está registrado, en unos minutos vas a recibir las instrucciones para entrar."
+
+#: lib/amauta_web/controllers/user_session_controller.ex:47
+#, elixir-autogen, elixir-format
+msgid "Invalid email or password"
+msgstr "El email o la contraseña no son correctos"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:64
+#, elixir-autogen, elixir-format
+msgid "Keep me logged in on this device"
+msgstr "Mantener la sesión iniciada en este dispositivo"
+
+#: lib/amauta_web/components/layouts/root.html.heex:57
+#: lib/amauta_web/live/user_live/confirmation.ex:55
+#, elixir-autogen, elixir-format
+msgid "Log in"
+msgstr "Entrar"
+
+#: lib/amauta_web/live/user_live/login.ex:75
+#, elixir-autogen, elixir-format
+msgid "Log in and stay logged in"
+msgstr "Entrar y mantener la sesión iniciada"
+
+#: lib/amauta_web/live/user_live/login.ex:78
+#, elixir-autogen, elixir-format
+msgid "Log in only this time"
+msgstr "Entrar solo esta vez"
+
+#: lib/amauta_web/live/user_live/login.ex:20
+#, elixir-autogen, elixir-format
+msgid "Log in to continue."
+msgstr "Entrá para continuar."
+
+#: lib/amauta_web/live/user_live/login.ex:44
+#, elixir-autogen, elixir-format
+msgid "Log in with email"
+msgstr "Entrar con un enlace por email"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:70
+#, elixir-autogen, elixir-format
+msgid "Log me in only this time"
+msgstr "Entrar solo esta vez"
+
+#: lib/amauta_web/components/layouts/root.html.heex:52
+#, elixir-autogen, elixir-format
+msgid "Log out"
+msgstr "Salir"
+
+#: lib/amauta_web/controllers/user_session_controller.ex:68
+#, elixir-autogen, elixir-format
+msgid "Logged out successfully."
+msgstr "Cerraste la sesión."
+
+#: lib/amauta_web/live/user_live/confirmation.ex:54
+#: lib/amauta_web/live/user_live/confirmation.ex:61
+#: lib/amauta_web/live/user_live/confirmation.ex:67
+#, elixir-autogen, elixir-format
+msgid "Logging in..."
+msgstr "Entrando…"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:95
+#, elixir-autogen, elixir-format
+msgid "Magic link is invalid or it has expired."
+msgstr "El enlace no es válido o ya venció."
+
+#: lib/amauta_web/live/user_live/settings.ex:17
+#, elixir-autogen, elixir-format
+msgid "Manage your account email address and password settings"
+msgstr "Cambiá el email y la contraseña de tu cuenta"
+
+#: lib/amauta_web/live/user_live/settings.ex:56
+#, elixir-autogen, elixir-format
+msgid "New password"
+msgstr "Nueva contraseña"
+
+#: lib/amauta_web/live/user_live/login.ex:70
+#, elixir-autogen, elixir-format
+msgid "Password"
+msgstr "Contraseña"
+
+#: lib/amauta_web/controllers/user_session_controller.ex:63
+#, elixir-autogen, elixir-format
+msgid "Password updated successfully!"
+msgstr "Cambiaste tu contraseña."
+
+#: lib/amauta_web/live/user_live/settings.ex:69
+#, elixir-autogen, elixir-format
+msgid "Save Password"
+msgstr "Guardar la contraseña"
+
+#: lib/amauta_web/live/user_live/settings.ex:68
+#, elixir-autogen, elixir-format
+msgid "Saving..."
+msgstr "Guardando…"
+
+#: lib/amauta_web/components/layouts/root.html.heex:48
+#, elixir-autogen, elixir-format
+msgid "Settings"
+msgstr "Ajustes"
+
+#: lib/amauta_web/components/layouts.ex:109
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr "¡Algo salió mal!"
+
+#: lib/amauta_web/controllers/user_session_controller.ex:30
+#, elixir-autogen, elixir-format
+msgid "The link is invalid or it has expired."
+msgstr "El enlace no es válido o ya venció."
+
+#: lib/amauta_web/live/user_live/confirmation.ex:76
+#, elixir-autogen, elixir-format
+msgid "Tip: If you prefer passwords, you can enable them in the user settings."
+msgstr "Si preferís usar una contraseña, podés crearla en los ajustes de tu cuenta."
+
+#: lib/amauta_web/controllers/user_session_controller.ex:9
+#, elixir-autogen, elixir-format
+msgid "User confirmed successfully."
+msgstr "Confirmaste tu cuenta."
+
+#: lib/amauta_web/components/layouts.ex:94
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr "No encontramos la conexión a internet"
+
+#: lib/amauta_web/live/user_live/confirmation.ex:14
+#, elixir-autogen, elixir-format
+msgid "Welcome %{name}"
+msgstr "Hola, %{name}"
+
+#: lib/amauta_web/controllers/user_session_controller.ex:13
+#, elixir-autogen, elixir-format
+msgid "Welcome back!"
+msgstr "¡Qué bueno verte de nuevo!"
+
+#: lib/amauta_web/user_auth.ex:181
+#: lib/amauta_web/user_auth.ex:226
+#, elixir-autogen, elixir-format
+msgid "You must log in to access this page."
+msgstr "Entrá para ver esta página."
+
+#: lib/amauta_web/user_auth.ex:197
+#, elixir-autogen, elixir-format
+msgid "You must re-authenticate to access this page."
+msgstr "Volvé a entrar para ver esta página."
+
+#: lib/amauta_web/live/user_live/login.ex:18
+#, elixir-autogen, elixir-format
+msgid "You need to reauthenticate to perform sensitive actions on your account."
+msgstr "Para hacer cambios sensibles en tu cuenta, volvé a entrar."
+
+#: lib/amauta_web/components/core_components.ex:81
+#, elixir-autogen, elixir-format
+msgid "close"
+msgstr "cerrar"
+
+#: lib/amauta_web/live/user_live/login.ex:48
+#, elixir-autogen, elixir-format
+msgid "or"
+msgstr "o"

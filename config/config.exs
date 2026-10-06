@@ -40,10 +40,17 @@ config :phoenix_live_view,
   # the attribute set on all root tags. Used for Phoenix.LiveView.ColocatedCSS.
   root_tag_attribute: "phx-r"
 
+# Formatos locales (ver Amauta.Cldr).
+config :ex_cldr, default_backend: Amauta.Cldr
+
 # Zonas horarias con la base IANA incluida en el paquete. Sin actualización
 # automática: Amauta no depende de la red en tiempo de ejecución (P4).
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :tzdata, :autoupdate, :disabled
+
+# Remitente de los emails de la plataforma. El remitente por institución
+# (RF-INS-012) llega con su configuración.
+config :amauta, :mail_from, {"Amauta", "no-responder@amauta.localhost"}
 
 # Configure the mailer
 #

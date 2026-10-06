@@ -167,14 +167,19 @@ defmodule Amauta.Accounts do
       when is_function(url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
     Repo.insert!(user_token, Tenancy.opts(tenant))
-    UserNotifier.deliver_update_email_instructions(user, url_fun.(encoded_token))
+
+    UserNotifier.deliver_update_email_instructions(
+      user,
+      url_fun.(encoded_token),
+      locale(tenant, user)
+    )
   end
 
   @doc "Envía el enlace mágico para iniciar sesión."
   def deliver_login_instructions(tenant, %User{} = user, url_fun) when is_function(url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "login")
     Repo.insert!(user_token, Tenancy.opts(tenant))
-    UserNotifier.deliver_login_instructions(user, url_fun.(encoded_token))
+    UserNotifier.deliver_login_instructions(user, url_fun.(encoded_token), locale(tenant, user))
   end
 
   @doc "Borra un token de sesión."
@@ -186,6 +191,11 @@ defmodule Amauta.Accounts do
 
     :ok
   end
+
+  defp locale(%Amauta.Platform.Institution{} = institution, user),
+    do: Amauta.Locale.resolve(user, institution)
+
+  defp locale(%{institution: institution}, user), do: locale(institution, user)
 
   defp update_user_and_delete_all_tokens(changeset, tenant) do
     opts = Tenancy.opts(tenant)

@@ -16,6 +16,7 @@ defmodule AmautaWeb.Router do
   pipeline :institution do
     plug AmautaWeb.Plugs.Tenant
     plug :fetch_current_scope_for_user
+    plug AmautaWeb.Locale
   end
 
   pipeline :api do
@@ -52,7 +53,7 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{AmautaWeb.UserAuth, :require_authenticated}] do
+      on_mount: [{AmautaWeb.UserAuth, :require_authenticated}, AmautaWeb.Locale] do
       live "/", HomeLive, :index
       live "/settings", UserLive.Settings, :edit
       live "/settings/confirm-email/:token", UserLive.Settings, :confirm_email
@@ -65,7 +66,7 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution]
 
     live_session :current_user,
-      on_mount: [{AmautaWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [{AmautaWeb.UserAuth, :mount_current_scope}, AmautaWeb.Locale] do
       live "/log-in", UserLive.Login, :new
       live "/log-in/:token", UserLive.Confirmation, :new
     end

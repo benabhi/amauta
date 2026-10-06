@@ -69,6 +69,8 @@ defmodule Amauta.MixProject do
       {:swoosh, "~> 1.16"},
       {:gen_smtp, "~> 1.2"},
       {:tzdata, "~> 1.1"},
+      {:ex_cldr_dates_times, "~> 2.25"},
+      {:ex_cldr_lists, "~> 2.12"},
       {:req, "~> 0.5"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
@@ -98,7 +100,14 @@ defmodule Amauta.MixProject do
         "esbuild amauta --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "gettext.extract --merge",
+        "amauta.gettext.check",
+        "test"
+      ]
     ]
   end
 end

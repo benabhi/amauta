@@ -1,15 +1,19 @@
 defmodule Amauta.Accounts.UserNotifier do
+  @moduledoc """
+  Emails de la cuenta (base: phx.gen.auth). Se escriben en el idioma de
+  quien los recibe (RF-I18N-006), con el dominio de Gettext `emails`.
+  """
+  use Gettext, backend: AmautaWeb.Gettext
   import Swoosh.Email
 
-  alias Amauta.Mailer
   alias Amauta.Accounts.User
+  alias Amauta.Mailer
 
-  # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
       new()
       |> to(recipient)
-      |> from({"Amauta", "contact@example.com"})
+      |> from(Application.fetch_env!(:amauta, :mail_from))
       |> subject(subject)
       |> text_body(body)
 
@@ -18,67 +22,76 @@ defmodule Amauta.Accounts.UserNotifier do
     end
   end
 
-  @doc """
-  Deliver instructions to update a user email.
-  """
-  def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
+  @doc "Instrucciones para confirmar un cambio de email."
+  def deliver_update_email_instructions(user, url, locale) do
+    Gettext.with_locale(AmautaWeb.Gettext, locale, fn ->
+      deliver(
+        user.email,
+        dgettext("emails", "Update email instructions"),
+        dgettext(
+          "emails",
+          """
+          Hi %{name},
 
-    ==============================
+          You can change your email by visiting the URL below:
 
-    Hi #{user.email},
+          %{url}
 
-    You can change your email by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
+          If you didn't request this change, please ignore this.
+          """,
+          name: user.first_name,
+          url: url
+        )
+      )
+    end)
   end
 
   @doc """
-  Deliver instructions to log in with a magic link.
+  Enlace mágico: confirma la cuenta si todavía no lo estaba, o inicia sesión.
   """
-  def deliver_login_instructions(user, url) do
-    case user do
-      %User{confirmed_at: nil} -> deliver_confirmation_instructions(user, url)
-      _ -> deliver_magic_link_instructions(user, url)
-    end
+  def deliver_login_instructions(%User{confirmed_at: nil} = user, url, locale) do
+    Gettext.with_locale(AmautaWeb.Gettext, locale, fn ->
+      deliver(
+        user.email,
+        dgettext("emails", "Confirmation instructions"),
+        dgettext(
+          "emails",
+          """
+          Hi %{name},
+
+          You can confirm your account by visiting the URL below:
+
+          %{url}
+
+          If you were not expecting this email, please ignore it.
+          """,
+          name: user.first_name,
+          url: url
+        )
+      )
+    end)
   end
 
-  defp deliver_magic_link_instructions(user, url) do
-    deliver(user.email, "Log in instructions", """
+  def deliver_login_instructions(user, url, locale) do
+    Gettext.with_locale(AmautaWeb.Gettext, locale, fn ->
+      deliver(
+        user.email,
+        dgettext("emails", "Log in instructions"),
+        dgettext(
+          "emails",
+          """
+          Hi %{name},
 
-    ==============================
+          You can log into your account by visiting the URL below:
 
-    Hi #{user.email},
+          %{url}
 
-    You can log into your account by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this email, please ignore this.
-
-    ==============================
-    """)
-  end
-
-  defp deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can confirm your account by visiting the URL below:
-
-    #{url}
-
-    If you didn't create an account with us, please ignore this.
-
-    ==============================
-    """)
+          If you didn't request this email, please ignore this.
+          """,
+          name: user.first_name,
+          url: url
+        )
+      )
+    end)
   end
 end
