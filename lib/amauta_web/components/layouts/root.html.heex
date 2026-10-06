@@ -38,6 +38,26 @@
     </script>
   </head>
   <body>
+    <ul
+      :if={assigns[:current_scope]}
+      class="menu menu-horizontal w-full relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end"
+    >
+      <%= if @current_scope.user do %>
+        <li>{Amauta.Accounts.User.display_name(@current_scope.user)}</li>
+        <li>
+          <.link href={AmautaWeb.Paths.settings(@current_scope)}>{gettext("Settings")}</.link>
+        </li>
+        <li>
+          <.link href={AmautaWeb.Paths.log_out(@current_scope)} method="delete">
+            {gettext("Log out")}
+          </.link>
+        </li>
+      <% else %>
+        <li>
+          <.link href={AmautaWeb.Paths.log_in(@current_scope)}>{gettext("Log in")}</.link>
+        </li>
+      <% end %>
+    </ul>
     {@inner_content}
   </body>
 </html>

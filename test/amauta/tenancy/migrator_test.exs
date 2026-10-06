@@ -8,6 +8,9 @@ defmodule Amauta.Tenancy.MigratorTest do
   # otros.
   use ExUnit.Case, async: false
 
+  # Los fallos de migración que se provocan a propósito se registran como error.
+  @moduletag :capture_log
+
   import Amauta.DataCase, only: [errors_on: 1]
   import Ecto.Query
 
