@@ -9,7 +9,10 @@ defmodule AmautaWeb.UserAuthTenancyTest do
   alias Amauta.Accounts.User
   alias AmautaWeb.{Paths, UserAuth}
 
+  # Siempre primero `inst_test_a` y después `inst_test_b`: los tests en
+  # paralelo insertan las mismas filas y un orden distinto produce deadlocks.
   setup do
+    institution()
     %{other: institution_fixture("inst_test_b")}
   end
 

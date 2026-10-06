@@ -8,7 +8,13 @@ defmodule Amauta.Fixtures do
   @doc "Schemas ya migrados por `test_helper.exs`."
   def tenant_schemas, do: @tenant_schemas
 
-  @doc "Registra una institución sobre uno de los schemas de prueba."
+  @doc """
+  Registra una institución sobre uno de los schemas de prueba.
+
+  Los tests en paralelo insertan las mismas filas (índices únicos): si un
+  test usa las dos instituciones, tiene que crear siempre primero
+  `inst_test_a` y después `inst_test_b`, o puede haber deadlocks.
+  """
   def institution_fixture(schema_name \\ "inst_test_a", attrs \\ %{}) do
     slug = String.replace(schema_name, "_", "-")
 
