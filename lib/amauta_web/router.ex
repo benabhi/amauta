@@ -14,6 +14,18 @@ defmodule AmautaWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :tenant do
+    plug AmautaWeb.Plugs.Tenant
+  end
+
+  # La institución sale del token, no de la URL. Las rutas y la
+  # especificación OpenAPI las genera AshJsonApi desde los recursos.
+  scope "/api/v1" do
+    pipe_through [:api, AmautaWeb.Plugs.ApiAuth]
+
+    forward "/", AmautaWeb.AshJsonApiRouter
+  end
+
   scope "/", AmautaWeb do
     pipe_through :browser
 
@@ -39,6 +51,20 @@ defmodule AmautaWeb.Router do
 
       live_dashboard "/dashboard", metrics: AmautaWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
+  # Rutas de cada institución en modo ruta (ERS 8.4). Van al final porque
+  # el primer segmento es un comodín.
+  scope "/:institution", AmautaWeb do
+    pipe_through [:browser, :tenant]
+
+    if Application.compile_env(:amauta, :dev_login, false) do
+      get "/dev/login/:user_id", DevLoginController, :create
+    end
+
+    live_session :tenant, on_mount: AmautaWeb.ScopeHook do
+      live "/c/:course/feed", FeedLive
     end
   end
 end
