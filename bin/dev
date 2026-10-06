@@ -5,6 +5,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# En Linux, el contenedor usa el UID y GID del host (RNF-DEV-010).
+if [ "$(uname -s)" = "Linux" ]; then
+  export UID
+  GID="$(id -g)"
+  export GID
+fi
+
 # Ejecuta en el contenedor de la app: usa el que está corriendo o uno efímero.
 in_app() {
   if [ -n "$(docker compose ps --status running --quiet app 2>/dev/null)" ]; then

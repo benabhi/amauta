@@ -15,7 +15,14 @@ defmodule AmautaWeb.HomeLive do
         {gettext("Hello, %{name}", name: @current_scope.user.first_name)}
         <:subtitle>{@current_scope.institution.name}</:subtitle>
       </.header>
-      <p id="current-user">{User.display_name(@current_scope.user)}</p>
+      <p id="current-user" class="sr-only">{User.display_name(@current_scope.user)}</p>
+
+      <.empty_state
+        icon="book-open"
+        title={gettext_term(@current_scope, :course, "You have no %{terms} yet")}
+      >
+        {gettext("When you join a class, you will find it here.")}
+      </.empty_state>
     </Layouts.app>
     """
   end

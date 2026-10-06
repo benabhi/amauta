@@ -5,7 +5,7 @@ defmodule Amauta.Platform.Institution do
   @type t :: %__MODULE__{}
 
   @statuses ~w(active suspended)
-  @reserved_slugs ~w(admin api assets dev fonts health images live login logout phoenix)
+  @reserved_slugs ~w(admin api assets dev fonts health images live login logout phoenix storybook)
 
   @schema_prefix "global"
   schema "institutions" do

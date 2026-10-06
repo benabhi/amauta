@@ -37,6 +37,7 @@ defmodule AmautaWeb.Router do
     # you can use Plug.BasicAuth to set up some basic authentication
     # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
+    require AmautaWeb.StorybookRoutes
 
     scope "/dev" do
       pipe_through :browser
@@ -44,6 +45,9 @@ defmodule AmautaWeb.Router do
       live_dashboard "/dashboard", metrics: AmautaWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+
+    # Catálogo vivo de componentes (ERS 6.5.7).
+    AmautaWeb.StorybookRoutes.routes()
   end
 
   # Rutas de cada institución. Van al final porque el primer segmento es un
