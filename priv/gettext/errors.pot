@@ -107,3 +107,23 @@ msgstr ""
 
 msgid "must be equal to %{number}"
 msgstr ""
+
+#: lib/amauta_web/error_messages.ex:13
+#, elixir-autogen, elixir-format
+msgid "already assigned"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:12
+#, elixir-autogen, elixir-format
+msgid "did not change"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:14
+#, elixir-autogen, elixir-format
+msgid "does not match password"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:15
+#, elixir-autogen, elixir-format
+msgid "must have the @ sign and no spaces"
+msgstr ""

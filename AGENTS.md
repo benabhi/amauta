@@ -1,4 +1,21 @@
-This is a web application written using the Phoenix web framework.
+# Amauta
+
+Plataforma educativa (LMS) multi-institución en Elixir, Phoenix 1.8 y LiveView. Requisitos en `docs/ERS.md`, alcance en `docs/MVP.md` y decisiones en `docs/adr/`. **Estas convenciones tienen prioridad sobre las guías genéricas de Phoenix que siguen.**
+
+## Convenciones de Amauta (ERS 9)
+
+- **Idioma:** identificadores, rutas, columnas, claves JSON y mensajes de log, en inglés. Comentarios, `@moduledoc`, `@doc` y documentación, en español.
+- **Textos de interfaz:** siempre con Gettext (`msgid` en inglés). La traducción al español rioplatense, con voseo, es obligatoria: `mix amauta.gettext.check` falla si falta. Tono y forma en `docs/guia-de-redaccion.md`. Los términos de la institución (curso, comisión…) salen de `term/3` o `gettext_term/4`, nunca fijos.
+- **Commits:** Conventional Commits con ámbito en inglés y descripción en español, en minúscula y en presente (`feat(feed): agrega …`). Sin trailers `Co-Authored-By` ni menciones a herramientas de asistencia. Gitflow: ramas `feature/<n>-<descripcion>` desde `develop`.
+- **Multi-institución:** toda tabla de institución se consulta con prefijo (`Amauta.Tenancy.opts/1`): el Repo rechaza las consultas sin él. Las funciones de dominio reciben primero la institución o un `Amauta.Scope`. Las migraciones de institución van en `priv/repo/tenant_migrations` y corren con `mix amauta.migrate`.
+- **Dominio:** toda modificación pasa por una acción (`use Amauta.Action`, `Amauta.Actions.run/3`): valida, autoriza, audita y encola efectos en la misma transacción. Las LiveViews y los controladores no modifican datos con el Repo.
+- **Permisos:** con `Amauta.Authorization.can?/3` o `authorize/3`, siempre en el servidor. Los permisos existen solo si están en `Amauta.Authorization.Permissions` (Anexo B).
+- **URLs de institución:** solo con `AmautaWeb.Paths`. Nunca se arman a mano.
+- **Interfaz:** solo componentes de `AmautaWeb.CoreComponents` y tokens de `assets/css/app.css` (sin daisyUI ni heroicons; íconos Phosphor con `<.icon name="...">`, de la lista `assets/icons.exs`). Si falta un componente, se agrega a la biblioteca con su historia en `storybook/`. Propiedades lógicas de CSS (`ps`, `pe`, `ms`, `me`, `start`, `end`).
+- **Trabajos:** `use Amauta.Worker` (cada trabajo lleva la institución); efectos de acciones con `effects/3`.
+- **Archivos:** con `Amauta.Storage` y URLs prefirmadas; nunca se sirven desde la aplicación.
+- **Entorno:** todo corre en Docker (`bin/dev` o `bin\dev.ps1`). Antes de un commit, `bin/dev ci` corre exactamente lo mismo que la integración continua.
+
 
 ## Project guidelines
 
@@ -13,7 +30,7 @@ This is a web application written using the Phoenix web framework.
   - You failed to follow the Authenticated Routes guidelines, or you failed to pass `current_scope` to `<Layouts.app>`
   - **Always** fix the `current_scope` error by moving your routes to the proper `live_session` and ensure you pass `current_scope` as needed
 - Phoenix v1.8 moved the `<.flash_group>` component to the `Layouts` module. You are **forbidden** from calling `<.flash_group>` outside of the `layouts.ex` module
-- Out of the box, `core_components.ex` imports an `<.icon name="hero-x-mark" class="w-5 h-5"/>` component for hero icons. **Always** use the `<.icon>` component for icons, **never** use `Heroicons` modules or similar
+- `core_components.ex` provides `<.icon name="x" class="size-5"/>` for Phosphor icons from the sprite (names in `assets/icons.exs`). **Always** use the `<.icon>` component for icons
 - **Always** use the imported `<.input>` component for form inputs from `core_components.ex` when available. `<.input>` is imported and using it will save steps and prevent errors
 - If you override the default input classes (`<.input class="myclass px-2 py-1 rounded-lg">)`) class with your own values, no default classes are inherited, so your
 custom classes must fully style the input
@@ -43,6 +60,12 @@ custom classes must fully style the input
 - Ensure **clean typography, spacing, and layout balance** for a refined, premium look
 - Focus on **delightful details** like hover effects, loading states, and smooth page transitions
 
+
+<!-- phoenix-gen-auth-start -->
+## Authentication
+
+Authentication is per institution (ADR-0005). Routes live under `/:institution`, the session key and remember-me cookie include the institution id, and `@current_scope` is an `Amauta.Scope` with `institution` and `user` (`user` may be `nil`). Use `live_session :require_authenticated_user` or `:current_user` in `router.ex`, always pass `current_scope` to `<Layouts.app>`, and build paths with `AmautaWeb.Paths`.
+<!-- phoenix-gen-auth-end -->
 
 <!-- usage-rules-start -->
 
