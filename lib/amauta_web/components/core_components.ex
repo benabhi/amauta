@@ -282,6 +282,56 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Tarjeta navegable, para grillas de trayectos y cursos: toda la tarjeta es
+  el enlace. Se eleva apenas al pasar el puntero o con el foco.
+
+      <.tile navigate={~p"/unsur/pathways/sistemas"} icon="path" title="Lic. en Sistemas">
+        <:subtitle>LSI</:subtitle>
+        <:badge><.badge>Publicado</.badge></:badge>
+      </.tile>
+  """
+  attr :navigate, :string, required: true
+  attr :title, :string, required: true
+  attr :icon, :string, required: true
+
+  attr :family, :string,
+    default: "airampo",
+    values: ~w(anil airampo chilca qolle cochinilla nogal)
+
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :subtitle
+  slot :badge
+
+  def tile(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class={[
+        "flex h-full flex-col gap-2 rounded-card border border-line bg-surface p-5 shadow-sm",
+        "transition-transform duration-fast ease-standard",
+        "hover:-translate-y-0.5 focus-visible:-translate-y-0.5",
+        "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+        @class
+      ]}
+      {@rest}
+    >
+      <div class="flex items-start justify-between gap-3">
+        <span class={[
+          "flex size-10 shrink-0 items-center justify-center rounded-control",
+          family_classes(@family)
+        ]}>
+          <.icon name={@icon} class="size-5" />
+        </span>
+        {render_slot(@badge)}
+      </div>
+      <p class="font-display text-lg font-semibold leading-snug">{@title}</p>
+      <p :if={@subtitle != []} class="text-sm text-ink-muted">{render_slot(@subtitle)}</p>
+    </.link>
+    """
+  end
+
+  @doc """
   Estado vacío, con un ícono duotone y una acción opcional (ERS 6.5.4).
   """
   attr :icon, :string, default: "folder-open"
@@ -315,7 +365,7 @@ defmodule AmautaWeb.CoreComponents do
         </h1>
         <p :if={@subtitle != []} class="mt-1 text-ink-muted">{render_slot(@subtitle)}</p>
       </div>
-      <div :if={@actions != []} class="flex shrink-0 gap-2">{render_slot(@actions)}</div>
+      <div :if={@actions != []} class="flex flex-wrap gap-2">{render_slot(@actions)}</div>
     </header>
     """
   end

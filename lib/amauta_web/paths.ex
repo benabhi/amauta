@@ -26,6 +26,14 @@ defmodule AmautaWeb.Paths do
   def edit_person(tenant, user), do: ~p"/#{slug(tenant)}/people/#{user.id}/edit"
   def import_people(tenant), do: ~p"/#{slug(tenant)}/people/import"
   def export_people(tenant, params), do: ~p"/#{slug(tenant)}/people/export?#{params}"
+  def periods(tenant), do: ~p"/#{slug(tenant)}/periods"
+  def new_period(tenant), do: ~p"/#{slug(tenant)}/periods/new"
+  def edit_period(tenant, period), do: ~p"/#{slug(tenant)}/periods/#{period.id}/edit"
+  def pathways(tenant), do: ~p"/#{slug(tenant)}/pathways"
+  def pathways(tenant, params), do: ~p"/#{slug(tenant)}/pathways?#{params}"
+  def new_pathway(tenant), do: ~p"/#{slug(tenant)}/pathways/new"
+  def pathway(tenant, pathway), do: ~p"/#{slug(tenant)}/pathways/#{pathway.slug}"
+  def edit_pathway(tenant, pathway), do: ~p"/#{slug(tenant)}/pathways/#{pathway.slug}/edit"
 
   @doc """
   Inicio de sesión rápido de desarrollo (RNF-DEV-009). Sin rutas

@@ -23,6 +23,10 @@ defmodule AmautaWeb.Format do
     |> Cldr.Date.to_string!(format: format)
   end
 
+  @doc "Día de calendario (`Date`, sin zona horaria), como las fechas de un período."
+  @spec day(Date.t(), atom()) :: String.t()
+  def day(%Date{} = date, format \\ :medium), do: Cldr.Date.to_string!(date, format: format)
+
   @doc "Número con los separadores del idioma."
   @spec number(number()) :: String.t()
   def number(number), do: Cldr.Number.to_string!(number)

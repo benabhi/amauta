@@ -29,6 +29,8 @@ msgstr "no tiene un formato válido"
 msgid "has an invalid entry"
 msgstr "tiene un valor no válido"
 
+#: lib/amauta_web/error_messages.ex:19
+#, elixir-autogen
 msgid "is reserved"
 msgstr "está reservado"
 
@@ -125,3 +127,23 @@ msgstr "tiene que tener una @ y ningún espacio"
 #, elixir-autogen, elixir-format
 msgid "is duplicated in the file"
 msgstr "está repetido en el archivo"
+
+#: lib/amauta_web/error_messages.ex:17
+#, elixir-autogen, elixir-format
+msgid "already exists"
+msgstr "ya existe"
+
+#: lib/amauta_web/error_messages.ex:18
+#, elixir-autogen, elixir-format
+msgid "already in use"
+msgstr "ya está en uso"
+
+#: lib/amauta_web/error_messages.ex:20
+#, elixir-autogen, elixir-format
+msgid "must be after the start"
+msgstr "tiene que ser posterior al inicio"
+
+#: lib/amauta_web/error_messages.ex:21
+#, elixir-autogen, elixir-format
+msgid "only lowercase letters, digits and hyphens"
+msgstr "solo minúsculas, dígitos y guiones"

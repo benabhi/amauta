@@ -12,8 +12,9 @@
     plus pencil-simple trash magnifying-glass list bell calendar
     book-open graduation-cap chats-circle paper-plane-tilt clipboard-text
     folder file upload-simple download-simple link
+    path archive arrow-counter-clockwise arrow-up arrow-down star
   ),
   duotone: ~w(
-    graduation-cap book-open chats-circle folder-open calendar-check confetti users
+    graduation-cap book-open chats-circle folder-open calendar-check confetti users path
   )
 }

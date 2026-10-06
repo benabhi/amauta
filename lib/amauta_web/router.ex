@@ -100,6 +100,13 @@ defmodule AmautaWeb.Router do
       live "/people/new", PeopleLive, :new
       live "/people/import", PeopleImportLive
       live "/people/:id/edit", PeopleLive, :edit
+      live "/periods", PeriodsLive, :index
+      live "/periods/new", PeriodsLive, :new
+      live "/periods/:id/edit", PeriodsLive, :edit
+      live "/pathways", PathwaysLive, :index
+      live "/pathways/new", PathwaysLive, :new
+      live "/pathways/:slug", PathwayLive, :show
+      live "/pathways/:slug/edit", PathwayLive, :edit
     end
 
     get "/people/export", PeopleExportController, :export
