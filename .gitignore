@@ -1,0 +1,10 @@
+/_build/
+/deps/
+/cover/
+/tmp/
+/priv/static/assets/
+node_modules/
+*.ez
+erl_crash.dump
+.env
+.elixir_ls/
