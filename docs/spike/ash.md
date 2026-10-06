@@ -25,7 +25,7 @@ Verificado a mano: lo publicado por la API aparece en vivo en el LiveView abiert
 | Líneas (sin generados) | Dominio 821 · Web 243 · Tests 331 · Configuración 96. Además, 1.169 líneas generadas (migraciones y snapshots). |
 | Tiempo | Más que con Ecto: 3 rondas de corrección hasta los 27 tests en verde (ver problemas abajo). |
 | Paridad de la API | Casi automática: declarar la ruta en el dominio alcanza para tener endpoint, serialización y OpenAPI. No hay schemas OpenAPI escritos a mano. |
-| Rendimiento | Ver la comparación en el ADR-0003. |
+| Rendimiento | `bench/feed_bench.exs`, dos corridas en el entorno de desarrollo (Docker Desktop, 12 núcleos). Listar 50: p50 ≈ 2,0 ms en serie y ≈ 3.300 op/s con 20 procesos. Publicar: p50 ≈ 4,2 ms en serie (p95 ≈ 30 ms) y ≈ 280 op/s con 20 procesos (p50 ≈ 60 ms). Una publicación hace 6 consultas (Ecto: 5): la diferencia con Ecto es costo del pipeline de Ash, no de la base. Una primera corrida dio p50 de 28 ms en serie: la varianza es alta. |
 | Facilidad para testear | Media: `manage_tenant` no es idempotente y obliga a insertar las instituciones de prueba por fuera de Ash. |
 
 ## Problemas encontrados (en orden)
