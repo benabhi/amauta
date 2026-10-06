@@ -18,6 +18,11 @@ services:
         GID: ${GID:-1000}
     image: amauta-dev
     hostname: app
+    # En Linux, bin/dev exporta UID y GID del host para no dejar archivos de
+    # root en el bind mount (RNF-DEV-010). En Windows y macOS el montaje no
+    # tiene dueños reales y se corre como root: si no, Mix no puede fijar la
+    # fecha de los archivos que recompila por dependencia.
+    user: "${UID:-0}:${GID:-0}"
     ports:
       - "4000:4000"
     environment:

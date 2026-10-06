@@ -1,0 +1,20 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "masculine"
+msgid "New %{term}"
+msgstr "Nuevo %{term}"
+
+msgctxt "feminine"
+msgid "New %{term}"
+msgstr "Nueva %{term}"
+
+msgctxt "masculine"
+msgid "All the %{terms}"
+msgstr "Todos los %{terms}"
+
+msgctxt "feminine"
+msgid "All the %{terms}"
+msgstr "Todas las %{terms}"
