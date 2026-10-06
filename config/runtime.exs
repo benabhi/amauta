@@ -35,7 +35,8 @@ if config_env() == :dev do
         ~r"priv/gettext/.*\.po$"E,
         # Router, Controllers, LiveViews and LiveComponents
         ~r"lib/amauta_web/router\.ex$"E,
-        ~r"lib/amauta_web/(controllers|live|components)/.*\.(ex|heex)$"E
+        ~r"lib/amauta_web/(controllers|live|components)/.*\.(ex|heex)$"E,
+        ~r"storybook/.*\.exs$"E
       ]
     ]
 end

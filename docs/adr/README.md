@@ -22,3 +22,5 @@ Estados posibles: Propuesto, Aceptado, Rechazado, Reemplazado por ADR-NNNN.
 | [0006](0006-acciones-y-permisos.md) | Capa de acciones y permisos | Aceptado |
 | [0007](0007-idioma-y-terminologia.md) | Idioma, formatos y terminología | Aceptado |
 | [0008](0008-trabajos-almacenamiento-y-auditoria.md) | Trabajos, almacenamiento y auditoría encadenada | Aceptado |
+| [0009](0009-sistema-de-diseno.md) | Sistema de diseño base | Aceptado |
+| [0010](0010-seguridad-del-acceso.md) | Seguridad del acceso | Aceptado |
