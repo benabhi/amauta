@@ -92,3 +92,6 @@ config :amauta, Amauta.Mailer,
 config :phoenix_live_reload,
   backend: :fs_poll,
   backend_opts: [interval: 500]
+
+# Inicio de sesión rápido con personas de prueba (RNF-DEV-009).
+config :amauta, dev_login: true

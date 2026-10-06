@@ -39,3 +39,6 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+# Inicio de sesión rápido con personas de prueba (RNF-DEV-009).
+config :amauta, dev_login: true
