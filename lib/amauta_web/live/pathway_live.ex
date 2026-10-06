@@ -47,6 +47,8 @@ defmodule AmautaWeb.PathwayLive do
     assign(socket,
       pathway: pathway,
       stages: Pathways.list_stages(scope, pathway),
+      courses: Amauta.Courses.by_stage(scope, pathway),
+      can_add_course: open and can.("institution.courses.create"),
       coordinators: Pathways.coordinators(scope, pathway),
       can_update: open and can.("pathway.update"),
       can_structure: open and can.("pathway.structure.update"),
@@ -324,6 +326,9 @@ defmodule AmautaWeb.PathwayLive do
             <:col :let={stage} label={gettext("Name")}>
               <span class="font-semibold">{stage.name}</span>
             </:col>
+            <:col :let={stage} label={term_title(@current_scope, :course, 2)}>
+              <.course_links courses={Map.get(@courses, stage.id, [])} current_scope={@current_scope} />
+            </:col>
             <:action :let={stage} :if={@can_structure}>
               <.icon_button
                 icon="arrow-up"
@@ -361,6 +366,22 @@ defmodule AmautaWeb.PathwayLive do
               />
             </:action>
           </.table>
+
+          <div :if={@courses[nil]} id="courses-without-stage" class="mt-4">
+            <p class="mb-1 text-sm font-semibold text-ink-muted">{gettext("Without a stage")}</p>
+            <.course_links courses={@courses[nil]} current_scope={@current_scope} />
+          </div>
+
+          <.button
+            :if={@can_add_course}
+            variant="secondary"
+            size="sm"
+            icon="plus"
+            navigate={Paths.new_course(@current_scope, %{pathway_id: @pathway.id})}
+            class="mt-4"
+          >
+            {gettext_term(@current_scope, :course, "New %{term}")}
+          </.button>
 
           <.form
             :if={@can_structure}
@@ -463,6 +484,28 @@ defmodule AmautaWeb.PathwayLive do
         </.card>
       </div>
     </Layouts.app>
+    """
+  end
+
+  attr :courses, :list, required: true
+  attr :current_scope, :map, required: true
+
+  # Cursos de una etapa: enlaces, con los optativos marcados.
+  defp course_links(assigns) do
+    ~H"""
+    <ul class="flex flex-wrap gap-x-3 gap-y-1">
+      <li :for={course <- @courses} class="inline-flex items-center gap-1">
+        <.link
+          navigate={Paths.course(@current_scope, course)}
+          class="underline-offset-2 hover:underline"
+        >
+          {course.name}
+        </.link>
+        <.badge :if={!course.required} family="qolle">
+          {gettext_term(@current_scope, :course, "Optional")}
+        </.badge>
+      </li>
+    </ul>
     """
   end
 
