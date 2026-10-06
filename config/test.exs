@@ -1,5 +1,20 @@
 import Config
 
+# Los trabajos no se ejecutan solos en los tests: se verifican con Oban.Testing.
+config :amauta, Oban, testing: :manual
+
+# Almacenamiento en disco para los tests.
+config :amauta, Amauta.Storage,
+  adapter: Amauta.Storage.Local,
+  root: Path.expand("../tmp/storage", __DIR__),
+  bucket: "amauta-test"
+
+# El límite de intentos se prueba aparte (Amauta.Accounts.LoginThrottleTest).
+config :amauta, Amauta.Accounts.LoginThrottle, enabled: false
+
+# Only in tests, remove the complexity from the password hashing algorithm
+config :argon2_elixir, t_cost: 1, m_cost: 8
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -11,6 +26,9 @@ config :amauta, Amauta.Repo,
   hostname: System.get_env("DATABASE_HOST", "localhost"),
   database: "amauta_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
+  # Sin lock de migración: los tests migran schemas con una única conexión
+  # compartida (Amauta.TenantMigrationsHelper).
+  migration_lock: false,
   pool_size: System.schedulers_online() * 2
 
 # We don't run a server during test. If one is required,
@@ -39,3 +57,6 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+# Inicio de sesión rápido con las personas de ejemplo (RNF-DEV-009).
+config :amauta, dev_login: true

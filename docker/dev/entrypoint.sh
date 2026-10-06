@@ -13,7 +13,7 @@ prepare() {
     sleep 1
   done
   mix ecto.create
-  mix ecto.migrate
+  mix amauta.migrate
 }
 
 if [ "${1:-server}" = "server" ]; then

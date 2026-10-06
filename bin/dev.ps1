@@ -33,6 +33,7 @@ Uso: bin\dev.ps1 <comando> [argumentos]
   format      Formatea el código
   lint        Verifica formato y advertencias de compilación
   precommit   Lo que corre antes de cada commit
+  ci          Los mismos pasos que la integración continua, en MIX_ENV=test
   destroy     Detiene el entorno y BORRA sus volúmenes (base, archivos, deps)
 '@
 }
@@ -56,6 +57,7 @@ switch ($Command) {
   'format'    { Invoke-InApp @('mix', 'format') }
   'lint'      { Invoke-InApp @('mix', 'do', 'format', '--check-formatted', '+', 'compile', '--warnings-as-errors', '--force') }
   'precommit' { Invoke-InApp @('mix', 'precommit') }
+  'ci'        { docker compose exec -e MIX_ENV=test app bash -c 'mix deps.unlock --check-unused && mix compile --warnings-as-errors && mix format --check-formatted && mix gettext.extract --check-up-to-date && mix amauta.gettext.check && mix test --warnings-as-errors' }
   'destroy'   { docker compose down --volumes }
   { $_ -in 'help', '-h', '--help' } { Show-Usage }
   default {

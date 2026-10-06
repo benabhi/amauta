@@ -36,7 +36,7 @@ WORKDIR /app
 
 RUN mix local.hex --force && mix local.rebar --force
 
-COPY --chown=dev:dev --chmod=755 docker/dev/entrypoint.sh /usr/local/bin/entrypoint.sh
-
-ENTRYPOINT ["tini", "--", "/usr/local/bin/entrypoint.sh"]
+# El punto de entrada se ejecuta desde el código montado: editarlo no
+# requiere reconstruir la imagen.
+ENTRYPOINT ["tini", "--", "bash", "/app/docker/dev/entrypoint.sh"]
 CMD ["server"]

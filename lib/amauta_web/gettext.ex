@@ -21,5 +21,7 @@ defmodule AmautaWeb.Gettext do
 
   See the [Gettext Docs](https://gettext.hexdocs.pm) for detailed usage.
   """
-  use Gettext.Backend, otp_app: :amauta
+  # El español rioplatense es el idioma base y el idioma por defecto
+  # (RF-I18N-001, DEC-011). Los msgid están en inglés: son parte del código.
+  use Gettext.Backend, otp_app: :amauta, default_locale: "es"
 end
