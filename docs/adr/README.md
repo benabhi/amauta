@@ -19,3 +19,8 @@ Estados posibles: Propuesto, Aceptado, Rechazado, Reemplazado por ADR-NNNN.
 | [0003](0003-framework-de-dominio.md) | Framework de dominio: contextos con Ecto o Ash | Aceptado |
 | [0004](0004-multi-institucion.md) | Multi-institución por schemas: implementación | Aceptado |
 | [0005](0005-autenticacion-por-institucion.md) | Autenticación por institución | Aceptado |
+| [0006](0006-acciones-y-permisos.md) | Capa de acciones y permisos | Aceptado |
+| [0007](0007-idioma-y-terminologia.md) | Idioma, formatos y terminología | Aceptado |
+| [0008](0008-trabajos-almacenamiento-y-auditoria.md) | Trabajos, almacenamiento y auditoría encadenada | Aceptado |
+| [0009](0009-sistema-de-diseno.md) | Sistema de diseño base | Aceptado |
+| [0010](0010-seguridad-del-acceso.md) | Seguridad del acceso | Aceptado |

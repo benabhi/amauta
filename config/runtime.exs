@@ -35,9 +35,37 @@ if config_env() == :dev do
         ~r"priv/gettext/.*\.po$"E,
         # Router, Controllers, LiveViews and LiveComponents
         ~r"lib/amauta_web/router\.ex$"E,
-        ~r"lib/amauta_web/(controllers|live|components)/.*\.(ex|heex)$"E
+        ~r"lib/amauta_web/(controllers|live|components)/.*\.(ex|heex)$"E,
+        ~r"storybook/.*\.exs$"E
       ]
     ]
+end
+
+# Almacenamiento S3 (ERS 8.10). La aplicación habla con S3_ENDPOINT; las URLs
+# prefirmadas, que usa el navegador, apuntan a S3_PUBLIC_ENDPOINT.
+if config_env() != :test and System.get_env("S3_ENDPOINT") do
+  endpoint = URI.parse(System.fetch_env!("S3_ENDPOINT"))
+
+  public_endpoint =
+    URI.parse(System.get_env("S3_PUBLIC_ENDPOINT", System.fetch_env!("S3_ENDPOINT")))
+
+  config :ex_aws,
+    access_key_id: System.fetch_env!("S3_ACCESS_KEY_ID"),
+    secret_access_key: System.fetch_env!("S3_SECRET_ACCESS_KEY"),
+    region: System.get_env("S3_REGION", "garage")
+
+  config :ex_aws, :s3,
+    scheme: "#{endpoint.scheme}://",
+    host: endpoint.host,
+    port: endpoint.port,
+    region: System.get_env("S3_REGION", "garage")
+
+  config :amauta, Amauta.Storage,
+    adapter: Amauta.Storage.S3,
+    bucket: System.fetch_env!("S3_BUCKET"),
+    public_scheme: "#{public_endpoint.scheme}://",
+    public_host: public_endpoint.host,
+    public_port: public_endpoint.port
 end
 
 if config_env() == :prod do

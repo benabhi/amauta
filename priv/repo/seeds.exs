@@ -2,7 +2,7 @@
 # Uso: bin/dev seed, o bin/dev reset para empezar de cero.
 #
 # La contraseña de todas las personas de ejemplo es solo para desarrollo.
-alias Amauta.{Accounts, Platform, Tenancy}
+alias Amauta.{Accounts, Authorization, Platform, Tenancy}
 
 password = "amauta-dev-1234"
 
@@ -11,10 +11,12 @@ institutions = [
   {"itec", "Instituto Tecnológico (ejemplo)", "ITec"}
 ]
 
+# Sin cursos todavía (llegan en H1), los roles de curso se asignan en toda
+# la institución.
 people = [
-  {"Ada", "Docente", "docente"},
-  {"Beto", "Estudiante", "estudiante"},
-  {"Carla", "Administración", "admin"}
+  {"Ada", "Docente", "docente", "teacher"},
+  {"Beto", "Estudiante", "estudiante", "student"},
+  {"Carla", "Administración", "admin", "institution_admin"}
 ]
 
 for {slug, name, short_name} <- institutions do
@@ -27,7 +29,7 @@ for {slug, name, short_name} <- institutions do
 
   IO.puts("\n#{name} → #{AmautaWeb.Paths.absolute(AmautaWeb.Paths.log_in(institution))}")
 
-  for {first_name, last_name, handle} <- people do
+  for {first_name, last_name, handle, role} <- people do
     email = "#{handle}@#{slug}.test"
 
     user =
@@ -44,6 +46,15 @@ for {slug, name, short_name} <- institutions do
           user
         end
 
-    IO.puts("  #{user.email} / #{password}")
+    if Authorization.list_assignments(institution, user.id) == [] do
+      {:ok, _} =
+        Authorization.create_assignment(institution, %{
+          user_id: user.id,
+          role: role,
+          scope_type: "institution"
+        })
+    end
+
+    IO.puts("  #{user.email} / #{password} (#{role})")
   end
 end

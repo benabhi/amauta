@@ -1,5 +1,17 @@
 import Config
 
+# Los trabajos no se ejecutan solos en los tests: se verifican con Oban.Testing.
+config :amauta, Oban, testing: :manual
+
+# Almacenamiento en disco para los tests.
+config :amauta, Amauta.Storage,
+  adapter: Amauta.Storage.Local,
+  root: Path.expand("../tmp/storage", __DIR__),
+  bucket: "amauta-test"
+
+# El límite de intentos se prueba aparte (Amauta.Accounts.LoginThrottleTest).
+config :amauta, Amauta.Accounts.LoginThrottle, enabled: false
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :argon2_elixir, t_cost: 1, m_cost: 8
 
@@ -45,3 +57,6 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+# Inicio de sesión rápido con las personas de ejemplo (RNF-DEV-009).
+config :amauta, dev_login: true

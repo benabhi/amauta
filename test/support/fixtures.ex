@@ -19,7 +19,11 @@ defmodule Amauta.Fixtures do
     slug = String.replace(schema_name, "_", "-")
 
     %Institution{}
-    |> Institution.changeset(Enum.into(attrs, %{slug: slug, name: "Institución #{slug}"}))
+    # En inglés: los tests comparan contra los msgid. El español tiene sus
+    # propios tests (AmautaWeb.LocaleTest).
+    |> Institution.changeset(
+      Enum.into(attrs, %{slug: slug, name: "Institución #{slug}", locale: "en"})
+    )
     |> Ecto.Changeset.put_change(:schema_name, schema_name)
     |> Repo.insert!()
   end

@@ -5,7 +5,7 @@ defmodule Amauta.Platform.Institution do
   @type t :: %__MODULE__{}
 
   @statuses ~w(active suspended)
-  @reserved_slugs ~w(admin api assets dev fonts health images live login logout phoenix)
+  @reserved_slugs ~w(admin api assets dev fonts health images live login logout phoenix storybook)
 
   @schema_prefix "global"
   schema "institutions" do
@@ -16,6 +16,8 @@ defmodule Amauta.Platform.Institution do
     field :status, :string, default: "active"
     field :timezone, :string, default: "America/Argentina/Buenos_Aires"
     field :locale, :string, default: "es"
+    field :terminology_preset, :string, default: "generic"
+    field :terminology, :map, default: %{}
     field :schema_version, :integer
     field :migration_error, :string
     field :migrated_at, :utc_datetime_usec
@@ -35,7 +37,15 @@ defmodule Amauta.Platform.Institution do
 
   def changeset(institution, attrs) do
     institution
-    |> cast(attrs, [:slug, :name, :short_name, :timezone, :locale])
+    |> cast(attrs, [
+      :slug,
+      :name,
+      :short_name,
+      :timezone,
+      :locale,
+      :terminology_preset,
+      :terminology
+    ])
     |> update_change(:slug, &String.downcase/1)
     |> validate_required([:slug, :name])
     |> validate_length(:slug, min: 2, max: 63)
@@ -44,6 +54,14 @@ defmodule Amauta.Platform.Institution do
     |> validate_length(:name, max: 200)
     |> validate_length(:short_name, max: 50)
     |> validate_inclusion(:timezone, Tzdata.zone_list())
+    |> validate_inclusion(:locale, Amauta.Locale.supported())
+    |> validate_inclusion(:terminology_preset, Amauta.Terminology.presets())
+    |> validate_change(:terminology, fn :terminology, overrides ->
+      case Amauta.Terminology.validate_overrides(overrides) do
+        :ok -> []
+        {:error, _reason} -> [terminology: "is invalid"]
+      end
+    end)
     |> unique_constraint(:slug)
   end
 
