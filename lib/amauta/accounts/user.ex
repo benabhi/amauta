@@ -13,6 +13,7 @@ defmodule Amauta.Accounts.User do
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
     field :status, :string, default: "active"
+    field :locale, :string
 
     timestamps()
   end

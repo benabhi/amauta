@@ -1,0 +1,52 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
+msgid ""
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:108
+#, elixir-autogen, elixir-format
+msgid "Academic management"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:120
+#, elixir-autogen, elixir-format
+msgid "Assistant"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:103
+#, elixir-autogen, elixir-format
+msgid "Institution administration"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:118
+#, elixir-autogen, elixir-format
+msgid "Lead teacher"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:122
+#, elixir-autogen, elixir-format
+msgid "Observer"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:113
+#, elixir-autogen, elixir-format
+msgid "Pathway coordination"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:121
+#, elixir-autogen, elixir-format
+msgid "Student"
+msgstr ""
+
+#: lib/amauta/authorization/roles.ex:119
+#, elixir-autogen, elixir-format
+msgid "Teacher"
+msgstr ""

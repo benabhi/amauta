@@ -16,6 +16,7 @@ defmodule AmautaWeb.Router do
   pipeline :institution do
     plug AmautaWeb.Plugs.Tenant
     plug :fetch_current_scope_for_user
+    plug AmautaWeb.Locale
   end
 
   pipeline :api do
@@ -36,6 +37,7 @@ defmodule AmautaWeb.Router do
     # you can use Plug.BasicAuth to set up some basic authentication
     # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
+    require AmautaWeb.StorybookRoutes
 
     scope "/dev" do
       pipe_through :browser
@@ -43,6 +45,9 @@ defmodule AmautaWeb.Router do
       live_dashboard "/dashboard", metrics: AmautaWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+
+    # Catálogo vivo de componentes (ERS 6.5.7).
+    AmautaWeb.StorybookRoutes.routes()
   end
 
   # Rutas de cada institución. Van al final porque el primer segmento es un
@@ -52,7 +57,7 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{AmautaWeb.UserAuth, :require_authenticated}] do
+      on_mount: [{AmautaWeb.UserAuth, :require_authenticated}, AmautaWeb.Locale] do
       live "/", HomeLive, :index
       live "/settings", UserLive.Settings, :edit
       live "/settings/confirm-email/:token", UserLive.Settings, :confirm_email
@@ -65,12 +70,18 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution]
 
     live_session :current_user,
-      on_mount: [{AmautaWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [{AmautaWeb.UserAuth, :mount_current_scope}, AmautaWeb.Locale] do
       live "/log-in", UserLive.Login, :new
       live "/log-in/:token", UserLive.Confirmation, :new
     end
 
     post "/log-in", UserSessionController, :create
     delete "/log-out", UserSessionController, :delete
+
+    # Inicio de sesión rápido por rol, solo en desarrollo (RNF-DEV-009).
+    if Application.compile_env(:amauta, :dev_login, false) do
+      get "/dev/login", DevLoginController, :index
+      post "/dev/login/:user_id", DevLoginController, :create
+    end
   end
 end

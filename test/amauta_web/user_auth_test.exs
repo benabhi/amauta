@@ -13,6 +13,9 @@ defmodule AmautaWeb.UserAuthTest do
   @remember_me_cookie_max_age 60 * 60 * 24 * 14
 
   setup %{conn: conn} do
+    # Estos tests llaman a UserAuth sin pasar por AmautaWeb.Locale.
+    Amauta.Locale.put("en")
+
     conn =
       conn
       |> Map.replace!(:secret_key_base, AmautaWeb.Endpoint.config(:secret_key_base))

@@ -21,6 +21,13 @@ defmodule AmautaWeb.Paths do
   def confirm_email(tenant, token), do: ~p"/#{slug(tenant)}/settings/confirm-email/#{token}"
   def update_password(tenant), do: ~p"/#{slug(tenant)}/update-password"
 
+  @doc """
+  Inicio de sesión rápido de desarrollo (RNF-DEV-009). Sin rutas
+  verificadas: la ruta solo existe con `config :amauta, dev_login: true`.
+  """
+  def dev_login(tenant), do: "/#{slug(tenant)}/dev/login"
+  def dev_login(tenant, user), do: "/#{slug(tenant)}/dev/login/#{user.id}"
+
   @doc "URL absoluta, para emails y enlaces que salen de la plataforma."
   def absolute(path) when is_binary(path), do: AmautaWeb.Endpoint.url() <> path
 
