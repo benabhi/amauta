@@ -11,6 +11,9 @@ config :amauta, Amauta.Repo,
   hostname: System.get_env("DATABASE_HOST", "localhost"),
   database: "amauta_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
+  # Sin lock de migración: los tests migran schemas con una única conexión
+  # compartida (Amauta.TenantMigrationsHelper).
+  migration_lock: false,
   pool_size: System.schedulers_online() * 2
 
 # We don't run a server during test. If one is required,

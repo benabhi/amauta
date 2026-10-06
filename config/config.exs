@@ -27,6 +27,11 @@ config :phoenix_live_view,
   # the attribute set on all root tags. Used for Phoenix.LiveView.ColocatedCSS.
   root_tag_attribute: "phx-r"
 
+# Zonas horarias con la base IANA incluida en el paquete. Sin actualización
+# automática: Amauta no depende de la red en tiempo de ejecución (P4).
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+config :tzdata, :autoupdate, :disabled
+
 # Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
