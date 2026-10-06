@@ -19,7 +19,19 @@ defmodule Amauta.Actions do
     Amauta.Accounts.Actions.ImportUsers,
     Amauta.Accounts.Actions.ExportUsers,
     Amauta.Authorization.Actions.AssignRole,
-    Amauta.Authorization.Actions.RevokeRole
+    Amauta.Authorization.Actions.RevokeRole,
+    Amauta.Periods.Actions.CreatePeriod,
+    Amauta.Periods.Actions.UpdatePeriod,
+    Amauta.Periods.Actions.SetCurrentPeriod,
+    Amauta.Pathways.Actions.CreatePathway,
+    Amauta.Pathways.Actions.UpdatePathway,
+    Amauta.Pathways.Actions.PublishPathway,
+    Amauta.Pathways.Actions.ArchivePathway,
+    Amauta.Pathways.Actions.ReopenPathway,
+    Amauta.Pathways.Actions.AddStage,
+    Amauta.Pathways.Actions.RenameStage,
+    Amauta.Pathways.Actions.MoveStage,
+    Amauta.Pathways.Actions.DeleteStage
   ]
 
   @doc "Todas las acciones."

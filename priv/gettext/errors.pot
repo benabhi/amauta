@@ -32,6 +32,8 @@ msgid "has an invalid entry"
 msgstr ""
 
 ## From Ecto.Changeset.validate_exclusion/3
+#: lib/amauta_web/error_messages.ex:19
+#, elixir-autogen
 msgid "is reserved"
 msgstr ""
 
@@ -131,4 +133,24 @@ msgstr ""
 #: lib/amauta_web/error_messages.ex:16
 #, elixir-autogen, elixir-format
 msgid "is duplicated in the file"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:17
+#, elixir-autogen, elixir-format
+msgid "already exists"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:18
+#, elixir-autogen, elixir-format
+msgid "already in use"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:20
+#, elixir-autogen, elixir-format
+msgid "must be after the start"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:21
+#, elixir-autogen, elixir-format
+msgid "only lowercase letters, digits and hyphens"
 msgstr ""

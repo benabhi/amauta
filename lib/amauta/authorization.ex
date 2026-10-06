@@ -111,9 +111,10 @@ defmodule Amauta.Authorization do
   end
 
   @doc """
-  Objetivo de un ámbito por tipo e ID. En H0 los trayectos, cursos y
-  comisiones todavía no tienen tabla: se resuelven sin ámbitos contenedores.
-  Cuando existan, esta función carga la entidad y su cadena.
+  Objetivo de un ámbito por tipo e ID. Un trayecto no tiene ámbitos que lo
+  contengan (salvo la institución), así que alcanza con la referencia.
+  Cursos y comisiones todavía no tienen tabla: cuando existan, esta función
+  carga la entidad y su cadena.
   """
   @spec target(String.t(), Ecto.UUID.t() | nil) :: target()
   def target("institution", _id), do: :institution

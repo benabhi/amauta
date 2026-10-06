@@ -145,7 +145,10 @@ defmodule AmautaWeb.Layouts do
   defp nav_items(scope) do
     [
       {:home, gettext("Home"), Paths.home(scope), nil},
-      {:people, gettext("People"), Paths.people(scope), "institution.users.view"}
+      {:pathways, Amauta.Terminology.title(scope, :pathway, 2), Paths.pathways(scope), nil},
+      {:people, gettext("People"), Paths.people(scope), "institution.users.view"},
+      {:periods, Amauta.Terminology.title(scope, :period, 2), Paths.periods(scope),
+       "institution.periods.manage"}
     ]
     |> Enum.filter(fn {_key, _label, _path, permission} ->
       is_nil(permission) or Amauta.Authorization.can?(scope, permission)
