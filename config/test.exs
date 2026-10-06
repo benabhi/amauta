@@ -1,5 +1,14 @@
 import Config
 
+# Los trabajos no se ejecutan solos en los tests: se verifican con Oban.Testing.
+config :amauta, Oban, testing: :manual
+
+# Almacenamiento en disco para los tests.
+config :amauta, Amauta.Storage,
+  adapter: Amauta.Storage.Local,
+  root: Path.expand("../tmp/storage", __DIR__),
+  bucket: "amauta-test"
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :argon2_elixir, t_cost: 1, m_cost: 8
 

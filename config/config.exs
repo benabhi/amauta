@@ -52,6 +52,34 @@ config :tzdata, :autoupdate, :disabled
 # (RF-INS-012) llega con su configuración.
 config :amauta, :mail_from, {"Amauta", "no-responder@amauta.localhost"}
 
+# Trabajos en segundo plano (ERS 8.9). La tabla vive en el schema global y
+# cada trabajo indica su institución en los argumentos.
+config :amauta, Oban,
+  engine: Oban.Engines.Basic,
+  repo: Amauta.Repo,
+  prefix: "global",
+  queues: [
+    deadlines: 20,
+    notifications: 20,
+    mailers: 10,
+    default: 10,
+    webhooks: 10,
+    media: 4,
+    certificates: 4,
+    exports: 2,
+    imports: 2,
+    maintenance: 1
+  ],
+  plugins: [
+    {Oban.Plugins.Pruner, max_age: 7 * 24 * 60 * 60},
+    {Oban.Plugins.Cron, crontab: [{"30 3 * * *", Amauta.Audit.VerifyAllWorker}]}
+  ]
+
+# Almacenamiento compatible con S3 (ERS 8.10). En desarrollo, Garage; las
+# credenciales y el endpoint se leen del entorno en config/runtime.exs.
+config :amauta, Amauta.Storage, adapter: Amauta.Storage.S3
+config :ex_aws, http_client: ExAws.Request.Req, json_codec: Jason
+
 # Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

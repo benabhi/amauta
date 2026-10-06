@@ -13,6 +13,7 @@ defmodule Amauta.Application do
       {DNSCluster, query: Application.get_env(:amauta, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Amauta.PubSub},
       Amauta.Authorization.Cache,
+      {Oban, Application.fetch_env!(:amauta, Oban)},
       # Start to serve requests, typically the last entry
       AmautaWeb.Endpoint
     ]

@@ -31,8 +31,11 @@ defmodule Amauta.Action do
 
     1. `validate/1` sobre el changeset de los parámetros (opcional).
     2. `authorize/2`: `:ok`, `{:error, :forbidden}` o `{:error, :not_found}`.
-    3. `run/2` dentro de una transacción, junto con el registro de auditoría.
-    4. `after_commit/3`, solo si la transacción se confirmó.
+    3. `run/2` dentro de una transacción, junto con el registro de auditoría
+       y los trabajos de `effects/3` (notificaciones, emails, webhooks): si
+       el cambio se confirma, los efectos ocurren; si se revierte, no.
+    4. `after_commit/3`, solo si la transacción se confirmó (por ejemplo,
+       invalidar cachés o avisar por PubSub).
   """
   alias Amauta.Scope
 
@@ -46,6 +49,7 @@ defmodule Amauta.Action do
   @callback authorize(Scope.t(), input()) :: :ok | {:error, :forbidden | :not_found}
   @callback run(Scope.t(), input()) :: {:ok, term()} | {:error, term()}
   @callback audit(Scope.t(), input(), result :: term()) :: {struct() | nil, map()} | :skip
+  @callback effects(Scope.t(), input(), result :: term()) :: [Ecto.Changeset.t()]
   @callback after_commit(Scope.t(), input(), result :: term()) :: :ok
 
   defmacro __using__(opts) do
@@ -77,9 +81,12 @@ defmodule Amauta.Action do
       def audit(_scope, input, result), do: Amauta.Action.default_audit(__MODULE__, input, result)
 
       @impl true
+      def effects(_scope, _input, _result), do: []
+
+      @impl true
       def after_commit(_scope, _input, _result), do: :ok
 
-      defoverridable validate: 1, audit: 3, after_commit: 3
+      defoverridable validate: 1, audit: 3, effects: 3, after_commit: 3
     end
   end
 

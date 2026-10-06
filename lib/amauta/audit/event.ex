@@ -1,7 +1,8 @@
 defmodule Amauta.Audit.Event do
   @moduledoc """
   Evento de auditoría de una institución. Es inmutable: la base rechaza
-  cualquier UPDATE o DELETE (trigger `audit_events_immutable`).
+  cualquier UPDATE o DELETE (trigger `audit_events_immutable`), y la cadena
+  de hashes delata cualquier alteración (ver `Amauta.Audit`).
   """
   use Amauta.Schema
 
@@ -13,6 +14,9 @@ defmodule Amauta.Audit.Event do
     field :subject_type, :string
     field :subject_id, Ecto.UUID
     field :metadata, :map, default: %{}
+    field :sequence, :integer
+    field :prev_hash, :binary
+    field :hash, :binary
 
     timestamps(updated_at: false)
   end
