@@ -1,0 +1,52 @@
+#  "msgid"s in this file come from POT (.pot) files.
+# #
+# # Do not add, change, or remove "msgid"s manually here as
+# # they're tied to the ones in the corresponding POT file
+# # (with the same domain).
+# #
+# # Use "mix gettext.extract --merge" or "mix gettext.merge"
+# # to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/amauta/authorization/roles.ex:108
+#, elixir-autogen, elixir-format
+msgid "Academic management"
+msgstr "Gestión académica"
+
+#: lib/amauta/authorization/roles.ex:120
+#, elixir-autogen, elixir-format
+msgid "Assistant"
+msgstr "Ayudante"
+
+#: lib/amauta/authorization/roles.ex:103
+#, elixir-autogen, elixir-format
+msgid "Institution administration"
+msgstr "Administración institucional"
+
+#: lib/amauta/authorization/roles.ex:118
+#, elixir-autogen, elixir-format
+msgid "Lead teacher"
+msgstr "Docente responsable"
+
+#: lib/amauta/authorization/roles.ex:122
+#, elixir-autogen, elixir-format
+msgid "Observer"
+msgstr "Observador"
+
+#: lib/amauta/authorization/roles.ex:113
+#, elixir-autogen, elixir-format
+msgid "Pathway coordination"
+msgstr "Coordinación de trayecto"
+
+#: lib/amauta/authorization/roles.ex:121
+#, elixir-autogen, elixir-format
+msgid "Student"
+msgstr "Estudiante"
+
+#: lib/amauta/authorization/roles.ex:119
+#, elixir-autogen, elixir-format
+msgid "Teacher"
+msgstr "Docente"
