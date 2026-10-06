@@ -12,7 +12,8 @@ defmodule AmautaWeb.ErrorMessages do
       dgettext_noop("errors", "did not change"),
       dgettext_noop("errors", "already assigned"),
       dgettext_noop("errors", "does not match password"),
-      dgettext_noop("errors", "must have the @ sign and no spaces")
+      dgettext_noop("errors", "must have the @ sign and no spaces"),
+      dgettext_noop("errors", "is duplicated in the file")
     ]
   end
 end

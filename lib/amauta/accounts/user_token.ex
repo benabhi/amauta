@@ -14,6 +14,8 @@ defmodule Amauta.Accounts.UserToken do
   # It is very important to keep the magic link token expiry short,
   # since someone with access to the email may take over the account.
   @magic_link_validity_in_minutes 15
+  # Las invitaciones duran más: la persona puede tardar en leer el email.
+  @invitation_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 14
 
@@ -115,9 +117,14 @@ defmodule Amauta.Accounts.UserToken do
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
 
         query =
-          from token in by_token_and_context_query(hashed_token, "login"),
+          from token in UserToken,
             join: user in assoc(token, :user),
-            where: token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute"),
+            where: token.token == ^hashed_token,
+            where:
+              (token.context == "login" and
+                 token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute")) or
+                (token.context == "invitation" and
+                   token.inserted_at > ago(^@invitation_validity_in_days, "day")),
             where: token.sent_to == user.email,
             select: {user, token}
 

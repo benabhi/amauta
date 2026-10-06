@@ -120,3 +120,8 @@ msgstr "no coincide con la contraseña"
 #, elixir-autogen, elixir-format
 msgid "must have the @ sign and no spaces"
 msgstr "tiene que tener una @ y ningún espacio"
+
+#: lib/amauta_web/error_messages.ex:16
+#, elixir-autogen, elixir-format
+msgid "is duplicated in the file"
+msgstr "está repetido en el archivo"

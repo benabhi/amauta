@@ -127,3 +127,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "must have the @ sign and no spaces"
 msgstr ""
+
+#: lib/amauta_web/error_messages.ex:16
+#, elixir-autogen, elixir-format
+msgid "is duplicated in the file"
+msgstr ""

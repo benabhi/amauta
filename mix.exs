@@ -60,6 +60,7 @@ defmodule Amauta.MixProject do
       {:ex_aws, "~> 2.7"},
       {:ex_aws_s3, "~> 2.5"},
       {:sweet_xml, "~> 0.7"},
+      {:nimble_csv, "~> 1.3"},
       {:ex_cldr_dates_times, "~> 2.25"},
       {:ex_cldr_lists, "~> 2.12"},
       {:req, "~> 0.5"},

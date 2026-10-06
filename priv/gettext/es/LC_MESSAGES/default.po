@@ -26,7 +26,7 @@ msgstr "Ajustes de la cuenta"
 msgid "Actions"
 msgstr "Acciones"
 
-#: lib/amauta_web/components/layouts.ex:186 lib/amauta_web/components/layouts.ex:200
+#: lib/amauta_web/components/layouts.ex:227 lib/amauta_web/components/layouts.ex:241
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Intentando reconectar"
@@ -61,7 +61,7 @@ msgstr "Repetí la nueva contraseña"
 msgid "Confirming..."
 msgstr "Confirmando…"
 
-#: lib/amauta_web/controllers/admin/session_controller.ex:62 lib/amauta_web/live/admin/institution_live.ex:170 lib/amauta_web/live/setup_live.ex:69 lib/amauta_web/live/user_live/login.ex:37 lib/amauta_web/live/user_live/login.ex:62 lib/amauta_web/live/user_live/settings.ex:21 lib/amauta_web/live/user_live/settings.ex:31
+#: lib/amauta_web/controllers/admin/session_controller.ex:62 lib/amauta_web/live/admin/institution_live.ex:170 lib/amauta_web/live/people_import_live.ex:121 lib/amauta_web/live/people_live.ex:175 lib/amauta_web/live/setup_live.ex:69 lib/amauta_web/live/user_live/login.ex:37 lib/amauta_web/live/user_live/login.ex:62 lib/amauta_web/live/user_live/settings.ex:21 lib/amauta_web/live/user_live/settings.ex:31
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "Email"
@@ -126,7 +126,7 @@ msgstr "Entrar con un enlace por email"
 msgid "Log me in only this time"
 msgstr "Entrar solo esta vez"
 
-#: lib/amauta_web/components/layouts.ex:98 lib/amauta_web/components/layouts.ex:99 lib/amauta_web/components/layouts.ex:156 lib/amauta_web/components/layouts.ex:157
+#: lib/amauta_web/components/layouts.ex:104 lib/amauta_web/components/layouts.ex:105 lib/amauta_web/components/layouts.ex:197 lib/amauta_web/components/layouts.ex:198
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Salir"
@@ -171,17 +171,17 @@ msgstr "Cambiaste tu contraseña."
 msgid "Save Password"
 msgstr "Guardar la contraseña"
 
-#: lib/amauta_web/live/admin/institution_live.ex:183 lib/amauta_web/live/user_live/settings.ex:73
+#: lib/amauta_web/live/admin/institution_live.ex:183 lib/amauta_web/live/people_live.ex:186 lib/amauta_web/live/user_live/settings.ex:73
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr "Guardando…"
 
-#: lib/amauta_web/components/layouts.ex:147
+#: lib/amauta_web/components/layouts.ex:188
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Ajustes"
 
-#: lib/amauta_web/components/layouts.ex:192
+#: lib/amauta_web/components/layouts.ex:233
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "¡Algo salió mal!"
@@ -201,7 +201,7 @@ msgstr "Si preferís usar una contraseña, podés crearla en los ajustes de tu c
 msgid "User confirmed successfully."
 msgstr "Confirmaste tu cuenta."
 
-#: lib/amauta_web/components/layouts.ex:178
+#: lib/amauta_web/components/layouts.ex:219
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "No encontramos la conexión a internet"
@@ -246,27 +246,27 @@ msgstr "o"
 msgid "An open source learning platform. Enter through your institution's address."
 msgstr "Una plataforma educativa de código abierto. Entrá desde la dirección de tu institución."
 
-#: lib/amauta_web/components/layouts.ex:215
+#: lib/amauta_web/components/layouts.ex:256
 #, elixir-autogen, elixir-format
 msgid "Color theme"
 msgstr "Tema de color"
 
-#: lib/amauta_web/components/layouts.ex:227
+#: lib/amauta_web/components/layouts.ex:268
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr "Tema oscuro"
 
-#: lib/amauta_web/components/layouts.ex:226
+#: lib/amauta_web/components/layouts.ex:267
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr "Tema claro"
 
-#: lib/amauta_web/components/layouts.ex:32
+#: lib/amauta_web/components/layouts.ex:33
 #, elixir-autogen, elixir-format
 msgid "Skip to content"
 msgstr "Ir al contenido"
 
-#: lib/amauta_web/components/layouts.ex:225
+#: lib/amauta_web/components/layouts.ex:266
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr "Tema del sistema"
@@ -315,7 +315,7 @@ msgstr "%{name} ahora administra la institución y recibió un email para entrar
 msgid "A suspended institution keeps all its data, but nobody can log in."
 msgstr "Una institución suspendida conserva todos sus datos, pero nadie puede entrar."
 
-#: lib/amauta_web/live/admin/institutions_live.ex:133
+#: lib/amauta_web/live/admin/institutions_live.ex:133 lib/amauta_web/live/people_live.ex:333
 #, elixir-autogen, elixir-format
 msgid "Active"
 msgstr "Activa"
@@ -325,7 +325,7 @@ msgstr "Activa"
 msgid "Address"
 msgstr "Dirección"
 
-#: lib/amauta_web/components/layouts.ex:72 lib/amauta_web/components/layouts.ex:74 lib/amauta_web/live/admin/institution_live.ex:138
+#: lib/amauta_web/components/layouts.ex:78 lib/amauta_web/components/layouts.ex:80 lib/amauta_web/live/admin/institution_live.ex:138
 #, elixir-autogen, elixir-format
 msgid "Administration"
 msgstr "Administración"
@@ -345,12 +345,12 @@ msgstr "Asignar e invitar"
 msgid "At least 12 characters."
 msgstr "Al menos 12 caracteres."
 
-#: lib/amauta_web/live/admin/institutions_live.ex:84
+#: lib/amauta_web/live/admin/institutions_live.ex:84 lib/amauta_web/live/people_live.ex:188
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: lib/amauta_web/live/admin/institution_live.ex:46
+#: lib/amauta_web/live/admin/institution_live.ex:46 lib/amauta_web/live/people_live.ex:87
 #, elixir-autogen, elixir-format
 msgid "Changes saved."
 msgstr "Guardaste los cambios."
@@ -400,7 +400,7 @@ msgstr "La base está lista."
 msgid "Details"
 msgstr "Datos"
 
-#: lib/amauta_web/live/admin/institution_live.ex:167
+#: lib/amauta_web/live/admin/institution_live.ex:167 lib/amauta_web/live/people_import_live.ex:119 lib/amauta_web/live/people_live.ex:164
 #, elixir-autogen, elixir-format
 msgid "First name"
 msgstr "Nombre"
@@ -415,12 +415,12 @@ msgstr "Administración de la instancia"
 msgid "Institution created. Now assign its administration."
 msgstr "Creaste la institución. Ahora asigná quién la administra."
 
-#: lib/amauta_web/components/layouts.ex:82 lib/amauta_web/live/admin/institutions_live.ex:61
+#: lib/amauta_web/components/layouts.ex:88 lib/amauta_web/live/admin/institutions_live.ex:61
 #, elixir-autogen, elixir-format
 msgid "Institutions"
 msgstr "Instituciones"
 
-#: lib/amauta_web/live/admin/institution_live.ex:168
+#: lib/amauta_web/live/admin/institution_live.ex:168 lib/amauta_web/live/people_import_live.ex:120 lib/amauta_web/live/people_live.ex:165
 #, elixir-autogen, elixir-format
 msgid "Last name"
 msgstr "Apellido"
@@ -435,7 +435,7 @@ msgstr "Entrá con tu cuenta de administración."
 msgid "Lowercase letters, numbers and hyphens: it goes in the URL."
 msgstr "Minúsculas, números y guiones: va en la dirección web."
 
-#: lib/amauta_web/live/admin/institution_live.ex:178 lib/amauta_web/live/admin/institutions_live.ex:72 lib/amauta_web/live/admin/institutions_live.ex:108
+#: lib/amauta_web/live/admin/institution_live.ex:178 lib/amauta_web/live/admin/institutions_live.ex:72 lib/amauta_web/live/admin/institutions_live.ex:108 lib/amauta_web/live/people_live.ex:228
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Nombre"
@@ -470,7 +470,7 @@ msgstr "¿Le quitás la administración a %{name}?"
 msgid "Retry"
 msgstr "Reintentar"
 
-#: lib/amauta_web/live/admin/institution_live.ex:183
+#: lib/amauta_web/live/admin/institution_live.ex:183 lib/amauta_web/live/people_live.ex:186
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr "Guardar"
@@ -480,7 +480,7 @@ msgstr "Guardar"
 msgid "Short name"
 msgstr "Nombre corto"
 
-#: lib/amauta_web/live/admin/institution_live.ex:188 lib/amauta_web/live/admin/institutions_live.ex:114
+#: lib/amauta_web/live/admin/institution_live.ex:188 lib/amauta_web/live/admin/institutions_live.ex:114 lib/amauta_web/live/people_live.ex:218 lib/amauta_web/live/people_live.ex:244
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr "Estado"
@@ -495,12 +495,12 @@ msgstr "¿Suspendés %{name}? Nadie va a poder entrar."
 msgid "Suspend institution"
 msgstr "Suspender la institución"
 
-#: lib/amauta_web/live/admin/institutions_live.ex:136
+#: lib/amauta_web/live/admin/institutions_live.ex:136 lib/amauta_web/live/people_live.ex:334
 #, elixir-autogen, elixir-format
 msgid "Suspended"
 msgstr "Suspendida"
 
-#: lib/amauta_web/components/layouts.ex:88
+#: lib/amauta_web/components/layouts.ex:94
 #, elixir-autogen, elixir-format
 msgid "Telemetry"
 msgstr "Telemetría"
@@ -549,3 +549,357 @@ msgstr "Tu cuenta está lista. Entrá para crear la primera institución."
 #, elixir-autogen, elixir-format
 msgid "Your name"
 msgstr "Tu nombre"
+
+#: lib/amauta_web/live/people_import_live.ex:245
+#, elixir-autogen, elixir-format
+msgid "%{count} already existed."
+msgid_plural "%{count} already existed."
+msgstr[0] "%{count} ya existía."
+msgstr[1] "%{count} ya existían."
+
+#: lib/amauta_web/live/people_import_live.ex:198
+#, elixir-autogen, elixir-format
+msgid "%{count} already exists"
+msgid_plural "%{count} already exist"
+msgstr[0] "%{count} ya existe"
+msgstr[1] "%{count} ya existen"
+
+#: lib/amauta_web/live/people_import_live.ex:195
+#, elixir-autogen, elixir-format
+msgid "%{count} new person"
+msgid_plural "%{count} new people"
+msgstr[0] "%{count} persona nueva"
+msgstr[1] "%{count} personas nuevas"
+
+#: lib/amauta_web/live/people_live.ex:136
+#, elixir-autogen, elixir-format
+msgid "%{count} person"
+msgid_plural "%{count} people"
+msgstr[0] "%{count} persona"
+msgstr[1] "%{count} personas"
+
+#: lib/amauta_web/live/people_import_live.ex:244
+#, elixir-autogen, elixir-format
+msgid "%{count} person was added."
+msgid_plural "%{count} people were added."
+msgstr[0] "Se agregó %{count} persona."
+msgstr[1] "Se agregaron %{count} personas."
+
+#: lib/amauta_web/live/people_import_live.ex:201
+#, elixir-autogen, elixir-format
+msgid "%{count} row with errors"
+msgid_plural "%{count} rows with errors"
+msgstr[0] "%{count} fila con errores"
+msgstr[1] "%{count} filas con errores"
+
+#: lib/amauta_web/live/people_import_live.ex:172
+#, elixir-autogen, elixir-format
+msgid "(not imported)"
+msgstr "(no se importa)"
+
+#: lib/amauta_web/live/people_import_live.ex:144
+#, elixir-autogen, elixir-format
+msgid "1. Choose the file"
+msgstr "1. Elegí el archivo"
+
+#: lib/amauta_web/live/people_import_live.ex:163
+#, elixir-autogen, elixir-format
+msgid "2. Check the columns"
+msgstr "2. Revisá las columnas"
+
+#: lib/amauta_web/live/people_import_live.ex:187
+#, elixir-autogen, elixir-format
+msgid "3. Simulation"
+msgstr "3. Simulación"
+
+#: lib/amauta_web/live/people_live.ex:155
+#, elixir-autogen, elixir-format
+msgid "Add person"
+msgstr "Agregar persona"
+
+#: lib/amauta_web/live/people_live.ex:216
+#, elixir-autogen, elixir-format
+msgid "All statuses"
+msgstr "Todos los estados"
+
+#: lib/amauta_web/live/people_live.ex:335
+#, elixir-autogen, elixir-format
+msgid "Archived"
+msgstr "Archivada"
+
+#: lib/amauta_web/live/people_import_live.ex:138
+#, elixir-autogen, elixir-format
+msgid "Back to people"
+msgstr "Volver a personas"
+
+#: lib/amauta_web/live/people_import_live.ex:257
+#, elixir-autogen, elixir-format
+msgid "Choose a .csv file."
+msgstr "Elegí un archivo .csv."
+
+#: lib/amauta_web/live/people_import_live.ex:58
+#, elixir-autogen, elixir-format
+msgid "Choose a CSV file first."
+msgstr "Primero elegí un archivo CSV."
+
+#: lib/amauta_web/live/people_import_live.ex:235
+#, elixir-autogen, elixir-format
+msgid "Choose another file"
+msgstr "Elegir otro archivo"
+
+#: lib/amauta_web/live/people_import_live.ex:189
+#, elixir-autogen, elixir-format
+msgid "Choose the columns for first name, last name and email to simulate."
+msgstr "Elegí las columnas de nombre, apellido y email para simular."
+
+#: lib/amauta_web/live/people_import_live.ex:219
+#, elixir-autogen, elixir-format
+msgid "Download the error report"
+msgstr "Descargar el reporte de errores"
+
+#: lib/amauta_web/live/people_live.ex:250
+#, elixir-autogen, elixir-format
+msgid "Edit"
+msgstr "Editar"
+
+#: lib/amauta_web/live/people_live.ex:144
+#, elixir-autogen, elixir-format
+msgid "Export"
+msgstr "Exportar"
+
+#: lib/amauta_web/live/people_import_live.ex:135
+#, elixir-autogen, elixir-format
+msgid "From a CSV file with one person per row."
+msgstr "Desde un archivo CSV con una persona por fila."
+
+#: lib/amauta_web/components/layouts.ex:147
+#, elixir-autogen, elixir-format
+msgid "Home"
+msgstr "Inicio"
+
+#: lib/amauta_web/live/people_import_live.ex:233
+#, elixir-autogen, elixir-format
+msgid "Import %{count} person"
+msgid_plural "Import %{count} people"
+msgstr[0] "Importar %{count} persona"
+msgstr[1] "Importar %{count} personas"
+
+#: lib/amauta_web/live/people_live.ex:152
+#, elixir-autogen, elixir-format
+msgid "Import CSV"
+msgstr "Importar CSV"
+
+#: lib/amauta_web/live/people_import_live.ex:249
+#, elixir-autogen, elixir-format
+msgid "Import another file"
+msgstr "Importar otro archivo"
+
+#: lib/amauta_web/live/people_import_live.ex:242
+#, elixir-autogen, elixir-format
+msgid "Import finished"
+msgstr "Importación terminada"
+
+#: lib/amauta_web/live/people_import_live.ex:22 lib/amauta_web/live/people_import_live.ex:134
+#, elixir-autogen, elixir-format
+msgid "Import people"
+msgstr "Importar personas"
+
+#: lib/amauta_web/live/people_import_live.ex:230
+#, elixir-autogen, elixir-format
+msgid "Importing..."
+msgstr "Importando…"
+
+#: lib/amauta_web/live/people_live.ex:332
+#, elixir-autogen, elixir-format
+msgid "Invitation pending"
+msgstr "Invitación pendiente"
+
+#: lib/amauta_web/live/people_live.ex:112
+#, elixir-autogen, elixir-format
+msgid "Invitation sent again."
+msgstr "Volviste a enviar la invitación."
+
+#: lib/amauta_web/components/layouts.ex:129
+#, elixir-autogen, elixir-format
+msgid "Main"
+msgstr "Principal"
+
+#: lib/amauta_web/live/people_live.ex:161
+#, elixir-autogen, elixir-format
+msgid "New person"
+msgstr "Nueva persona"
+
+#: lib/amauta_web/live/people_live.ex:312
+#, elixir-autogen, elixir-format
+msgid "Next"
+msgstr "Siguiente"
+
+#: lib/amauta_web/live/people_live.ex:224
+#, elixir-autogen, elixir-format
+msgid "No person matches the search."
+msgstr "Ninguna persona coincide con la búsqueda."
+
+#: lib/amauta_web/live/people_live.ex:223
+#, elixir-autogen, elixir-format
+msgid "Nobody here"
+msgstr "No hay nadie"
+
+#: lib/amauta_web/live/people_live.ex:169
+#, elixir-autogen, elixir-format
+msgid "Optional: how the person wants to be called."
+msgstr "Opcional: cómo quiere que la llamen."
+
+#: lib/amauta_web/live/people_live.ex:301
+#, elixir-autogen, elixir-format
+msgid "Page %{page} of %{pages}"
+msgstr "Página %{page} de %{pages}"
+
+#: lib/amauta_web/live/people_live.ex:289
+#, elixir-autogen, elixir-format
+msgid "Pagination"
+msgstr "Paginación"
+
+#: lib/amauta_web/components/layouts.ex:148 lib/amauta_web/live/people_live.ex:31 lib/amauta_web/live/people_live.ex:134
+#, elixir-autogen, elixir-format
+msgid "People"
+msgstr "Personas"
+
+#: lib/amauta_web/live/people_live.ex:84
+#, elixir-autogen, elixir-format
+msgid "Person added. The invitation is on its way."
+msgstr "Agregaste a la persona. La invitación está en camino."
+
+#: lib/amauta_web/live/people_live.ex:109
+#, elixir-autogen, elixir-format
+msgid "Person reactivated."
+msgstr "Reactivaste a la persona."
+
+#: lib/amauta_web/live/people_live.ex:106
+#, elixir-autogen, elixir-format
+msgid "Person suspended."
+msgstr "Suspendiste a la persona."
+
+#: lib/amauta_web/live/people_import_live.ex:122 lib/amauta_web/live/people_live.ex:168
+#, elixir-autogen, elixir-format
+msgid "Preferred name"
+msgstr "Nombre preferido"
+
+#: lib/amauta_web/live/people_live.ex:298
+#, elixir-autogen, elixir-format
+msgid "Previous"
+msgstr "Anterior"
+
+#: lib/amauta_web/live/people_live.ex:278
+#, elixir-autogen, elixir-format
+msgid "Reactivate"
+msgstr "Reactivar"
+
+#: lib/amauta_web/live/people_import_live.ex:157
+#, elixir-autogen, elixir-format
+msgid "Read file"
+msgstr "Leer el archivo"
+
+#: lib/amauta_web/live/people_live.ex:237
+#, elixir-autogen, elixir-format
+msgid "Roles"
+msgstr "Roles"
+
+#: lib/amauta_web/live/people_import_live.ex:208
+#, elixir-autogen, elixir-format
+msgid "Row %{line}"
+msgstr "Fila %{line}"
+
+#: lib/amauta_web/live/people_import_live.ex:222
+#, elixir-autogen, elixir-format
+msgid "Rows with errors are skipped. You can fix them and import the file again."
+msgstr "Las filas con errores no se importan. Podés corregirlas e importar el archivo de nuevo."
+
+#: lib/amauta_web/live/people_live.ex:208
+#, elixir-autogen, elixir-format
+msgid "Search"
+msgstr "Buscar"
+
+#: lib/amauta_web/live/people_live.ex:206
+#, elixir-autogen, elixir-format
+msgid "Search by name or email"
+msgstr "Buscar por nombre o email"
+
+#: lib/amauta_web/live/people_import_live.ex:248
+#, elixir-autogen, elixir-format
+msgid "See people"
+msgstr "Ver personas"
+
+#: lib/amauta_web/live/people_live.ex:257
+#, elixir-autogen, elixir-format
+msgid "Send invitation again"
+msgstr "Reenviar la invitación"
+
+#: lib/amauta_web/live/people_live.ex:183
+#, elixir-autogen, elixir-format
+msgid "Send the invitation by email now"
+msgstr "Enviar ahora la invitación por email"
+
+#: lib/amauta_web/live/people_import_live.ex:181
+#, elixir-autogen, elixir-format
+msgid "Send the invitations by email"
+msgstr "Enviar las invitaciones por email"
+
+#: lib/amauta_web/live/people_live.ex:265
+#, elixir-autogen, elixir-format
+msgid "Suspend"
+msgstr "Suspender"
+
+#: lib/amauta_web/live/people_live.ex:270
+#, elixir-autogen, elixir-format
+msgid "Suspend %{name}? They will not be able to log in."
+msgstr "¿Suspendés a %{name}? No va a poder entrar."
+
+#: lib/amauta_web/live/people_live.ex:125
+#, elixir-autogen, elixir-format
+msgid "That could not be done."
+msgstr "No se pudo hacer."
+
+#: lib/amauta_web/live/people_import_live.ex:117
+#, elixir-autogen, elixir-format
+msgid "The file could not be read as CSV."
+msgstr "No se pudo leer el archivo como CSV."
+
+#: lib/amauta_web/live/people_import_live.ex:258
+#, elixir-autogen, elixir-format
+msgid "The file could not be uploaded."
+msgstr "No se pudo subir el archivo."
+
+#: lib/amauta_web/live/people_import_live.ex:115
+#, elixir-autogen, elixir-format
+msgid "The file has more than 5,000 rows. Split it into smaller files."
+msgstr "El archivo tiene más de 5.000 filas. Dividilo en archivos más chicos."
+
+#: lib/amauta_web/live/people_import_live.ex:112
+#, elixir-autogen, elixir-format
+msgid "The file is empty."
+msgstr "El archivo está vacío."
+
+#: lib/amauta_web/live/people_import_live.ex:110
+#, elixir-autogen, elixir-format
+msgid "The file is not in UTF-8. Save it as «CSV UTF-8» and try again."
+msgstr "El archivo no está en UTF-8. Guardalo como «CSV UTF-8» y probá de nuevo."
+
+#: lib/amauta_web/live/people_import_live.ex:256
+#, elixir-autogen, elixir-format
+msgid "The file is too big (maximum 5 MB)."
+msgstr "El archivo es demasiado grande (máximo 5 MB)."
+
+#: lib/amauta_web/live/people_import_live.ex:146
+#, elixir-autogen, elixir-format
+msgid "The first row must have the column names. We recognize, among others: nombre, apellido, email and nombre preferido."
+msgstr "La primera fila tiene que tener los nombres de las columnas. Reconocemos, entre otros: nombre, apellido, email y nombre preferido."
+
+#: lib/amauta_web/live/people_import_live.ex:90
+#, elixir-autogen, elixir-format
+msgid "The import could not be applied. Nothing was changed."
+msgstr "No se pudo aplicar la importación. No se cambió nada."
+
+#: lib/amauta_web/live/people_live.ex:101
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to do that."
+msgstr "No tenés permiso para hacer eso."

@@ -20,6 +20,12 @@ defmodule AmautaWeb.Paths do
   def settings(tenant), do: ~p"/#{slug(tenant)}/settings"
   def confirm_email(tenant, token), do: ~p"/#{slug(tenant)}/settings/confirm-email/#{token}"
   def update_password(tenant), do: ~p"/#{slug(tenant)}/update-password"
+  def people(tenant), do: ~p"/#{slug(tenant)}/people"
+  def people(tenant, params), do: ~p"/#{slug(tenant)}/people?#{params}"
+  def new_person(tenant), do: ~p"/#{slug(tenant)}/people/new"
+  def edit_person(tenant, user), do: ~p"/#{slug(tenant)}/people/#{user.id}/edit"
+  def import_people(tenant), do: ~p"/#{slug(tenant)}/people/import"
+  def export_people(tenant, params), do: ~p"/#{slug(tenant)}/people/export?#{params}"
 
   @doc """
   Inicio de sesión rápido de desarrollo (RNF-DEV-009). Sin rutas
@@ -27,6 +33,9 @@ defmodule AmautaWeb.Paths do
   """
   def dev_login(tenant), do: "/#{slug(tenant)}/dev/login"
   def dev_login(tenant, user), do: "/#{slug(tenant)}/dev/login/#{user.id}"
+
+  @doc "URL absoluta del enlace mágico (la usa el dominio para las invitaciones)."
+  def absolute_log_in(tenant, token), do: absolute(log_in(tenant, token))
 
   @doc "URL absoluta, para emails y enlaces que salen de la plataforma."
   def absolute(path) when is_binary(path), do: AmautaWeb.Endpoint.url() <> path

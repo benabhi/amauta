@@ -96,8 +96,13 @@ defmodule AmautaWeb.Router do
       live "/", HomeLive, :index
       live "/settings", UserLive.Settings, :edit
       live "/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+      live "/people", PeopleLive, :index
+      live "/people/new", PeopleLive, :new
+      live "/people/import", PeopleImportLive
+      live "/people/:id/edit", PeopleLive, :edit
     end
 
+    get "/people/export", PeopleExportController, :export
     post "/update-password", UserSessionController, :update_password
   end
 
