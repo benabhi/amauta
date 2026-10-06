@@ -26,8 +26,8 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:126
-#: lib/amauta_web/components/layouts.ex:140
+#: lib/amauta_web/components/layouts.ex:186
+#: lib/amauta_web/components/layouts.ex:200
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
@@ -63,6 +63,9 @@ msgstr ""
 msgid "Confirming..."
 msgstr ""
 
+#: lib/amauta_web/controllers/admin/session_controller.ex:62
+#: lib/amauta_web/live/admin/institution_live.ex:170
+#: lib/amauta_web/live/setup_live.ex:69
 #: lib/amauta_web/live/user_live/login.ex:37
 #: lib/amauta_web/live/user_live/login.ex:62
 #: lib/amauta_web/live/user_live/settings.ex:21
@@ -91,6 +94,7 @@ msgstr ""
 msgid "If your email is in our system, you will receive instructions for logging in shortly."
 msgstr ""
 
+#: lib/amauta_web/controllers/admin/session_controller.ex:36
 #: lib/amauta_web/controllers/user_session_controller.ex:62
 #, elixir-autogen, elixir-format
 msgid "Invalid email or password"
@@ -101,6 +105,7 @@ msgstr ""
 msgid "Keep me logged in on this device"
 msgstr ""
 
+#: lib/amauta_web/controllers/admin/session_controller.ex:73
 #: lib/amauta_web/controllers/dev_login_controller.ex:76
 #: lib/amauta_web/live/user_live/confirmation.ex:56
 #, elixir-autogen, elixir-format
@@ -132,8 +137,10 @@ msgstr ""
 msgid "Log me in only this time"
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:96
-#: lib/amauta_web/components/layouts.ex:97
+#: lib/amauta_web/components/layouts.ex:98
+#: lib/amauta_web/components/layouts.ex:99
+#: lib/amauta_web/components/layouts.ex:156
+#: lib/amauta_web/components/layouts.ex:157
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr ""
@@ -165,6 +172,8 @@ msgstr ""
 msgid "New password"
 msgstr ""
 
+#: lib/amauta_web/controllers/admin/session_controller.ex:69
+#: lib/amauta_web/live/setup_live.ex:76
 #: lib/amauta_web/live/user_live/login.ex:70
 #: lib/amauta_web/live/user_live/settings.ex:41
 #, elixir-autogen, elixir-format
@@ -181,17 +190,18 @@ msgstr ""
 msgid "Save Password"
 msgstr ""
 
+#: lib/amauta_web/live/admin/institution_live.ex:183
 #: lib/amauta_web/live/user_live/settings.ex:73
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:87
+#: lib/amauta_web/components/layouts.ex:147
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:132
+#: lib/amauta_web/components/layouts.ex:192
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr ""
@@ -211,7 +221,7 @@ msgstr ""
 msgid "User confirmed successfully."
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:118
+#: lib/amauta_web/components/layouts.ex:178
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr ""
@@ -226,6 +236,7 @@ msgstr ""
 msgid "Welcome back!"
 msgstr ""
 
+#: lib/amauta_web/staff_auth.ex:51
 #: lib/amauta_web/user_auth.ex:181
 #: lib/amauta_web/user_auth.ex:226
 #, elixir-autogen, elixir-format
@@ -257,17 +268,17 @@ msgstr ""
 msgid "An open source learning platform. Enter through your institution's address."
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:155
+#: lib/amauta_web/components/layouts.ex:215
 #, elixir-autogen, elixir-format
 msgid "Color theme"
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:167
+#: lib/amauta_web/components/layouts.ex:227
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:166
+#: lib/amauta_web/components/layouts.ex:226
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr ""
@@ -277,7 +288,7 @@ msgstr ""
 msgid "Skip to content"
 msgstr ""
 
-#: lib/amauta_web/components/layouts.ex:165
+#: lib/amauta_web/components/layouts.ex:225
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr ""
@@ -315,3 +326,260 @@ msgid "Too many failed attempts. Try again in %{count} minute or use a link sent
 msgid_plural "Too many failed attempts. Try again in %{count} minutes or use a link sent to your email."
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:86
+#, elixir-autogen, elixir-format
+msgid "%{name} is now an administrator and got an email to log in."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:190
+#, elixir-autogen, elixir-format
+msgid "A suspended institution keeps all its data, but nobody can log in."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:133
+#, elixir-autogen, elixir-format
+msgid "Active"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:181
+#: lib/amauta_web/live/admin/institutions_live.ex:77
+#: lib/amauta_web/live/admin/institutions_live.ex:111
+#, elixir-autogen, elixir-format
+msgid "Address"
+msgstr ""
+
+#: lib/amauta_web/components/layouts.ex:72
+#: lib/amauta_web/components/layouts.ex:74
+#: lib/amauta_web/live/admin/institution_live.ex:138
+#, elixir-autogen, elixir-format
+msgid "Administration"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:102
+#, elixir-autogen, elixir-format
+msgid "Administration removed."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:171
+#, elixir-autogen, elixir-format
+msgid "Assign and invite"
+msgstr ""
+
+#: lib/amauta_web/live/setup_live.ex:77
+#, elixir-autogen, elixir-format
+msgid "At least 12 characters."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:84
+#, elixir-autogen, elixir-format
+msgid "Cancel"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:46
+#, elixir-autogen, elixir-format
+msgid "Changes saved."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:83
+#, elixir-autogen, elixir-format
+msgid "Create"
+msgstr ""
+
+#: lib/amauta_web/live/setup_live.ex:82
+#, elixir-autogen, elixir-format
+msgid "Create account"
+msgstr ""
+
+#: lib/amauta_web/live/setup_live.ex:57
+#, elixir-autogen, elixir-format
+msgid "Create the administration account for this instance. You will use it to create institutions and assign their administrators."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:94
+#, elixir-autogen, elixir-format
+msgid "Create the first one to start using Amauta."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:83
+#: lib/amauta_web/live/setup_live.ex:81
+#, elixir-autogen, elixir-format
+msgid "Creating..."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:129
+#, elixir-autogen, elixir-format
+msgid "Database"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:127
+#, elixir-autogen, elixir-format
+msgid "Database error"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:69
+#, elixir-autogen, elixir-format
+msgid "Database ready."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:176
+#, elixir-autogen, elixir-format
+msgid "Details"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:167
+#, elixir-autogen, elixir-format
+msgid "First name"
+msgstr ""
+
+#: lib/amauta_web/controllers/admin/session_controller.ex:54
+#, elixir-autogen, elixir-format
+msgid "Instance administration"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:37
+#, elixir-autogen, elixir-format
+msgid "Institution created. Now assign its administration."
+msgstr ""
+
+#: lib/amauta_web/components/layouts.ex:82
+#: lib/amauta_web/live/admin/institutions_live.ex:61
+#, elixir-autogen, elixir-format
+msgid "Institutions"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:168
+#, elixir-autogen, elixir-format
+msgid "Last name"
+msgstr ""
+
+#: lib/amauta_web/controllers/admin/session_controller.ex:55
+#, elixir-autogen, elixir-format
+msgid "Log in with your administration account."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:78
+#, elixir-autogen, elixir-format
+msgid "Lowercase letters, numbers and hyphens: it goes in the URL."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:178
+#: lib/amauta_web/live/admin/institutions_live.ex:72
+#: lib/amauta_web/live/admin/institutions_live.ex:108
+#, elixir-autogen, elixir-format
+msgid "Name"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:64
+#: lib/amauta_web/live/admin/institutions_live.ex:70
+#: lib/amauta_web/live/admin/institutions_live.ex:97
+#, elixir-autogen, elixir-format
+msgid "New institution"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:122
+#, elixir-autogen, elixir-format
+msgid "Open"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:203
+#, elixir-autogen, elixir-format
+msgid "Reactivate institution"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:148
+#, elixir-autogen, elixir-format
+msgid "Remove administration"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:152
+#, elixir-autogen, elixir-format
+msgid "Remove the administration from %{name}?"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:134
+#, elixir-autogen, elixir-format
+msgid "Retry"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:183
+#, elixir-autogen, elixir-format
+msgid "Save"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:180
+#: lib/amauta_web/live/admin/institutions_live.ex:74
+#, elixir-autogen, elixir-format
+msgid "Short name"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:188
+#: lib/amauta_web/live/admin/institutions_live.ex:114
+#, elixir-autogen, elixir-format
+msgid "Status"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:198
+#, elixir-autogen, elixir-format
+msgid "Suspend %{name}? Nobody will be able to log in."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:202
+#, elixir-autogen, elixir-format
+msgid "Suspend institution"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:136
+#, elixir-autogen, elixir-format
+msgid "Suspended"
+msgstr ""
+
+#: lib/amauta_web/components/layouts.ex:88
+#, elixir-autogen, elixir-format
+msgid "Telemetry"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:48
+#, elixir-autogen, elixir-format
+msgid "The institution was created but its database could not be prepared. Retry from its page."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:131
+#, elixir-autogen, elixir-format
+msgid "The last migration of this institution failed:"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:70
+#, elixir-autogen, elixir-format
+msgid "The migration failed again."
+msgstr ""
+
+#: lib/amauta_web/live/admin/institutions_live.ex:92
+#, elixir-autogen, elixir-format
+msgid "There are no institutions yet"
+msgstr ""
+
+#: lib/amauta_web/live/admin/institution_live.ex:158
+#, elixir-autogen, elixir-format
+msgid "This institution has no administrators yet."
+msgstr ""
+
+#: lib/amauta_web/controllers/admin/session_controller.ex:29
+#, elixir-autogen, elixir-format
+msgid "Too many failed attempts. Try again in a few minutes."
+msgstr ""
+
+#: lib/amauta_web/live/setup_live.ex:55
+#, elixir-autogen, elixir-format
+msgid "Welcome to Amauta"
+msgstr ""
+
+#: lib/amauta_web/live/setup_live.ex:37
+#, elixir-autogen, elixir-format
+msgid "Your account is ready. Log in to create the first institution."
+msgstr ""
+
+#: lib/amauta_web/live/setup_live.ex:65
+#, elixir-autogen, elixir-format
+msgid "Your name"
+msgstr ""

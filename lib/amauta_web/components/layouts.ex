@@ -52,6 +52,66 @@ defmodule AmautaWeb.Layouts do
     """
   end
 
+  @doc """
+  Layout de la administración de la instancia (`/admin`), para el personal
+  de plataforma.
+  """
+  attr :flash, :map, required: true
+  attr :current_staff, :map, required: true
+  attr :active, :atom, default: :institutions, values: [:institutions, :dashboard]
+  slot :inner_block, required: true
+
+  def admin(assigns) do
+    ~H"""
+    <header class="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur">
+      <div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        <.link navigate={~p"/admin"} class="flex items-center gap-2.5 rounded-control">
+          <span class="flex size-8 items-center justify-center rounded-control bg-airampo-soft text-airampo-deep">
+            <.icon name="gear" class="size-5" />
+          </span>
+          <span class="font-display text-lg font-semibold">{gettext("Administration")}</span>
+        </.link>
+        <nav class="ms-4 hidden items-center gap-1 sm:flex" aria-label={gettext("Administration")}>
+          <.link
+            navigate={~p"/admin"}
+            class={[
+              "rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken",
+              @active == :institutions && "bg-surface-sunken font-semibold"
+            ]}
+          >
+            {gettext("Institutions")}
+          </.link>
+          <.link
+            href={~p"/admin/dashboard"}
+            class="rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken"
+          >
+            {gettext("Telemetry")}
+          </.link>
+        </nav>
+        <div class="ms-auto flex items-center gap-2">
+          <.theme_toggle />
+          <.avatar name={@current_staff.name} size="sm" />
+          <.link
+            href={~p"/admin/log-out"}
+            method="delete"
+            class="flex size-9 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
+            aria-label={gettext("Log out")}
+            title={gettext("Log out")}
+          >
+            <.icon name="sign-out" class="size-5" />
+          </.link>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="px-4 py-10 sm:px-6">
+      <div class="mx-auto max-w-5xl">{render_slot(@inner_block)}</div>
+    </main>
+
+    <.flash_group flash={@flash} />
+    """
+  end
+
   defp content_width("sm"), do: "max-w-sm"
   defp content_width("md"), do: "max-w-3xl"
   defp content_width("lg"), do: "max-w-6xl"

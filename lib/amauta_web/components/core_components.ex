@@ -68,7 +68,7 @@ defmodule AmautaWeb.CoreComponents do
   attr :class, :any, default: nil
 
   attr :rest, :global,
-    include: ~w(href navigate patch method download name value disabled type form)
+    include: ~w(href navigate patch method download name value disabled type form target rel)
 
   slot :inner_block, required: true
 

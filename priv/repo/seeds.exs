@@ -19,6 +19,20 @@ people = [
   {"Carla", "Administración", "admin", "institution_admin"}
 ]
 
+# Superadministración de la instancia (solo desarrollo).
+staff_email = "superadmin@amauta.test"
+
+unless Amauta.Repo.get_by(Amauta.Platform.Staff, email: staff_email) do
+  {:ok, _} =
+    Amauta.Platform.StaffAccounts.create_first_superadmin(%{
+      name: "Superadministración",
+      email: staff_email,
+      password: password
+    })
+end
+
+IO.puts("Administración → http://localhost:4000/admin · #{staff_email} / #{password}")
+
 for {slug, name, short_name} <- institutions do
   institution =
     Platform.get_institution_by_slug(slug) ||

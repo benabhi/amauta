@@ -20,7 +20,7 @@ defmodule Amauta.Tenancy.MigratorTest do
   alias Ecto.Adapters.SQL.Sandbox
 
   @latest Migrator.migrations() |> List.last() |> elem(0)
-  @slugs ~w(unsur sana rota)
+  @slugs ~w(unsur sana rota creada)
 
   setup do
     :ok = Sandbox.checkout(Repo, sandbox: false)
@@ -39,6 +39,37 @@ defmodule Amauta.Tenancy.MigratorTest do
 
     Repo.query!(~s(DROP SCHEMA IF EXISTS "inst_broken" CASCADE))
     Repo.delete_all(from(i in Institution, where: i.slug in @slugs))
+
+    # La auditoría de plataforma es inmutable: para limpiar el test hay que
+    # desactivar el trigger un momento.
+    Repo.query!(
+      "ALTER TABLE global.platform_audit_events DISABLE TRIGGER platform_audit_events_immutable"
+    )
+
+    Repo.query!("DELETE FROM global.platform_audit_events")
+
+    Repo.query!(
+      "ALTER TABLE global.platform_audit_events ENABLE TRIGGER platform_audit_events_immutable"
+    )
+
+    Repo.query!("DELETE FROM global.platform_staff WHERE email LIKE '%@migrator.test'")
+  end
+
+  test "la superadministración da de alta una institución y queda auditado" do
+    staff = Amauta.PlatformFixtures.staff_fixture(email: "ana@migrator.test")
+
+    assert {:ok, institution} =
+             Amauta.Platform.Administration.create_institution(staff, %{
+               slug: "creada",
+               name: "Creada desde la administración"
+             })
+
+    assert institution.schema_version == @latest
+
+    assert [%{action: "platform.institution.create", staff_id: staff_id}] =
+             Amauta.Platform.Administration.list_events()
+
+    assert staff_id == staff.id
   end
 
   test "el alta crea el schema, lo migra y registra la versión" do
