@@ -1,5 +1,5 @@
 [
-  import_deps: [:ecto, :ecto_sql, :phoenix, :phoenix_storybook],
+  import_deps: [:ecto, :ecto_sql, :phoenix],
   subdirectories: ["priv/*/migrations", "priv/*/tenant_migrations"],
   plugins: [Phoenix.LiveView.HTMLFormatter],
   inputs: [
