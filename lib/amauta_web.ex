@@ -81,6 +81,8 @@ defmodule AmautaWeb do
     quote do
       # Translation
       use Gettext, backend: AmautaWeb.Gettext
+      # Terminología de la institución (term/3, gettext_term/4)
+      import AmautaWeb.Terminology
 
       # HTML escaping functionality
       import Phoenix.HTML

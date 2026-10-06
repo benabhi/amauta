@@ -7,4 +7,6 @@ Amauta.TenantMigrationsHelper.with_real_connection(fn ->
   end
 end)
 
-ExUnit.start()
+# Las pruebas contra servicios reales (Garage) se corren aparte:
+# mix test --only integration
+ExUnit.start(exclude: [:integration])

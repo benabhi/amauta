@@ -18,6 +18,12 @@ defmodule Amauta.Tenancy.Migrator do
 
   @default_concurrency 4
 
+  @doc """
+  Concurrencia por defecto. Cada migración en curso usa dos conexiones del
+  pool: con la aplicación en marcha, no conviene pasar de la mitad del pool.
+  """
+  def default_concurrency, do: @default_concurrency
+
   @type result :: {:ok, version :: integer() | nil} | {:error, String.t()}
 
   @doc "Migra todas las instituciones. Devuelve `[{institución, resultado}]`."

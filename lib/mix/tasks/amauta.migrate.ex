@@ -22,10 +22,15 @@ defmodule Mix.Tasks.Amauta.Migrate do
     Mix.Task.run("ecto.migrate", if(opts[:quiet], do: ["--quiet"], else: []))
     Mix.Task.run("app.config")
 
+    concurrency = Keyword.get(opts, :concurrency, Migrator.default_concurrency())
+
+    # Cada migración en curso usa dos conexiones (el lock y la ejecución).
     {:ok, results, _} =
-      Ecto.Migrator.with_repo(Amauta.Repo, fn _repo ->
-        Migrator.migrate_all(Keyword.take(opts, [:concurrency]))
-      end)
+      Ecto.Migrator.with_repo(
+        Amauta.Repo,
+        fn _repo -> Migrator.migrate_all(concurrency: concurrency) end,
+        pool_size: concurrency * 2 + 1
+      )
 
     failed = for {institution, {:error, message}} <- results, do: {institution, message}
 
