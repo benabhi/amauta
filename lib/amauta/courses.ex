@@ -4,23 +4,16 @@ defmodule Amauta.Courses do
   consultas y operaciones sin permisos: los cambios desde la interfaz pasan
   por `Amauta.Courses.Actions`.
 
-  Quiénes participan de un curso salen, por ahora, de las asignaciones de
-  rol en su ámbito; las matrículas con estado y comisión llegan con la
-  matriculación (RF-MAT-002).
+  Quiénes participan de un curso salen de sus matrículas
+  (`Amauta.Enrollments`).
   """
   import Ecto.Query
 
-  alias Amauta.Accounts.User
   alias Amauta.Authorization
-  alias Amauta.Authorization.{RoleAssignment, Roles}
+  alias Amauta.Authorization.Roles
   alias Amauta.Courses.Course
   alias Amauta.Pathways.{Pathway, Stage}
   alias Amauta.{Periods, Repo, Scope, Slug, Tenancy}
-
-  @teaching_roles ~w(course_lead teacher assistant)
-
-  @doc "Roles del equipo docente de un curso, en el orden en que se muestran."
-  def teaching_roles, do: @teaching_roles
 
   ## Consultas
 
@@ -63,7 +56,13 @@ defmodule Amauta.Courses do
       |> Enum.filter(&MapSet.member?(Roles.permissions(&1.role), "course.view"))
 
     ids = fn type -> for a <- assignments, a.scope_type == type, do: a.scope_id end
-    {ids.("course"), ids.("pathway")}
+
+    # Las matrículas activas incluyen a los docentes de comisión, cuya
+    # asignación es en la comisión y no en el curso.
+    courses =
+      Enum.uniq(ids.("course") ++ Amauta.Enrollments.active_course_ids(scope, scope.user.id))
+
+    {courses, ids.("pathway")}
   end
 
   defp filter_q(query, q) when q in [nil, ""], do: query
@@ -111,32 +110,6 @@ defmodule Amauta.Courses do
     )
     |> Repo.all(Tenancy.opts(tenant))
     |> Enum.group_by(& &1.stage_id)
-  end
-
-  @doc """
-  Participantes del curso con su rol, a partir de las asignaciones en su
-  ámbito. Devuelve `{equipo_docente, estudiantes}`, cada uno como lista de
-  `{persona, rol}`.
-  """
-  def participants(tenant, %Course{id: id}) do
-    rows =
-      from(a in RoleAssignment,
-        join: u in User,
-        on: u.id == a.user_id,
-        where: a.scope_type == "course" and a.scope_id == ^id,
-        order_by: [u.last_name, u.first_name],
-        select: {u, a.role}
-      )
-      |> Repo.all(Tenancy.opts(tenant))
-
-    {teaching, others} = Enum.split_with(rows, fn {_u, role} -> role in @teaching_roles end)
-
-    teaching =
-      Enum.sort_by(teaching, fn {_u, role} ->
-        Enum.find_index(@teaching_roles, &(&1 == role))
-      end)
-
-    {teaching, Enum.filter(others, fn {_u, role} -> role == "student" end)}
   end
 
   ## Escritura (sin permisos)

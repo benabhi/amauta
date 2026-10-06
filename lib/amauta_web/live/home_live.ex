@@ -22,6 +22,11 @@ defmodule AmautaWeb.HomeLive do
         title={gettext_term(@current_scope, :course, "You have no %{terms} yet")}
       >
         {gettext("When you join a class, you will find it here.")}
+        <:action>
+          <.button variant="secondary" icon="key" navigate={AmautaWeb.Paths.join(@current_scope)}>
+            {gettext("Join with a code")}
+          </.button>
+        </:action>
       </.empty_state>
     </Layouts.app>
     """

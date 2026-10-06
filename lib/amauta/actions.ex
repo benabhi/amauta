@@ -38,7 +38,16 @@ defmodule Amauta.Actions do
     Amauta.Courses.Actions.RegenerateEnrollmentCode,
     Amauta.Courses.Actions.PublishCourse,
     Amauta.Courses.Actions.ArchiveCourse,
-    Amauta.Courses.Actions.ReopenCourse
+    Amauta.Courses.Actions.ReopenCourse,
+    Amauta.Enrollments.Actions.CreateSection,
+    Amauta.Enrollments.Actions.UpdateSection,
+    Amauta.Enrollments.Actions.DeleteSection,
+    Amauta.Enrollments.Actions.EnrollUser,
+    Amauta.Enrollments.Actions.UpdateEnrollment,
+    Amauta.Enrollments.Actions.EndEnrollment,
+    Amauta.Enrollments.Actions.ImportEnrollments,
+    Amauta.Enrollments.Actions.EnrollInPathway,
+    Amauta.Enrollments.Actions.JoinWithCode
   ]
 
   @doc "Todas las acciones."

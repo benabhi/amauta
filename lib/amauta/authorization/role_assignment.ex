@@ -17,6 +17,7 @@ defmodule Amauta.Authorization.RoleAssignment do
     field :scope_type, :string
     field :scope_id, Ecto.UUID
     field :granted_by_id, Ecto.UUID
+    field :enrollment_id, Ecto.UUID
     belongs_to :user, Amauta.Accounts.User
 
     timestamps(updated_at: false)
@@ -26,7 +27,7 @@ defmodule Amauta.Authorization.RoleAssignment do
 
   def changeset(assignment, attrs) do
     assignment
-    |> cast(attrs, [:user_id, :role, :scope_type, :scope_id, :granted_by_id])
+    |> cast(attrs, [:user_id, :role, :scope_type, :scope_id, :granted_by_id, :enrollment_id])
     |> validate_required([:user_id, :role, :scope_type])
     |> validate_inclusion(:role, Roles.keys())
     |> validate_inclusion(:scope_type, @scope_types)

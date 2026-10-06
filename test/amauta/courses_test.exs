@@ -170,18 +170,6 @@ defmodule Amauta.CoursesTest do
       assert [%{id: b}] = Courses.list_visible(Scope.for_user(institution(), coordinator))
       assert b == in_pathway.id
     end
-
-    test "los participantes salen de las asignaciones del curso", %{course: course} do
-      lead = user_fixture(last_name: "Ríos")
-      student = user_fixture()
-      assign!(lead, "course_lead", {"course", course.id})
-      assign!(student, "student", {"course", course.id})
-
-      assert {[{%{id: l}, "course_lead"}], [{%{id: s}, "student"}]} =
-               Courses.participants(institution(), course)
-
-      assert {l, s} == {lead.id, student.id}
-    end
   end
 
   describe "matriz rol × acción" do

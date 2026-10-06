@@ -249,6 +249,14 @@ defmodule AmautaWeb.PathwayLive do
         </:subtitle>
         <:actions>
           <.button
+            :if={@can_manage_people}
+            variant="secondary"
+            icon="users"
+            navigate={Paths.enroll_pathway(@current_scope, @pathway)}
+          >
+            {gettext("Enroll students")}
+          </.button>
+          <.button
             :if={@can_update and !@form}
             variant="secondary"
             icon="pencil-simple"
