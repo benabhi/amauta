@@ -28,6 +28,10 @@ import topbar from "../vendor/topbar"
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
+  // Esperar antes de dar la conexión por perdida: evita que el aviso de
+  // desconexión parpadee al recargar (en desarrollo cada pedido tarda) o en
+  // cortes de un segundo en el celular.
+  disconnectedTimeout: 2500,
   params: {_csrf_token: csrfToken},
   hooks: {...colocatedHooks},
 })
