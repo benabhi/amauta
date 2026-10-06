@@ -23,7 +23,7 @@ Verificado a mano: lo publicado por la API aparece en vivo en el LiveView abiert
 | Líneas (sin generados) | Dominio 543 · Web 389 (de las cuales 62 son schemas OpenAPI escritos a mano) · Tests 288 |
 | Tiempo | La porción completa salió en una sesión, con los tests en verde a la primera ejecución. |
 | Paridad de la API | Manual: cada operación se declara en el controlador y su schema OpenAPI se escribe aparte. La paridad se garantiza con un test que compara el catálogo de acciones con los `operationId`. |
-| Rendimiento | Pendiente: se mide con el mismo script en las dos ramas. |
+| Rendimiento | `bench/feed_bench.exs`, dos corridas en el entorno de desarrollo (Docker Desktop, 12 núcleos). Listar 50: p50 ≈ 0,77 ms en serie y ≈ 7.800 op/s con 20 procesos. Publicar: p50 ≈ 2,0 ms en serie (p95 ≈ 7 ms) y ≈ 1.600 op/s con 20 procesos (p50 ≈ 11 ms). Una publicación hace 5 consultas. |
 | Facilidad para testear | Alta: los tests de fuga y la matriz son ExUnit plano; el único cuidado es crear los schemas de institución fuera del sandbox (`test_helper.exs`). |
 
 ## Observaciones
