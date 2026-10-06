@@ -12,8 +12,7 @@ defmodule Amauta.Application do
       Amauta.Repo,
       {DNSCluster, query: Application.get_env(:amauta, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Amauta.PubSub},
-      # Start a worker by calling: Amauta.Worker.start_link(arg)
-      # {Amauta.Worker, arg},
+      Amauta.Authorization.Cache,
       # Start to serve requests, typically the last entry
       AmautaWeb.Endpoint
     ]
