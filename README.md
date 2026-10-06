@@ -5,6 +5,8 @@ Plataforma educativa (LMS) open source, autoalojada y al hueso, construida con E
 - Requisitos: [docs/ERS.md](docs/ERS.md)
 - Alcance del MVP: [docs/MVP.md](docs/MVP.md)
 - Decisiones de arquitectura: [docs/adr/](docs/adr/README.md)
+- Sistema de diseño: [docs/diseno/](docs/diseno/README.md)
+- Guía de redacción: [docs/guia-de-redaccion.md](docs/guia-de-redaccion.md)
 
 ## Desarrollo
 
@@ -18,6 +20,7 @@ bin/dev up        # en PowerShell: .\bin\dev.ps1 up
 |---|---|
 | Amauta | http://localhost:4000 |
 | Mailpit (correos capturados) | http://localhost:8025 |
+| Catálogo de componentes | http://localhost:4000/storybook |
 | Garage (S3) | http://localhost:3900 |
 | PostgreSQL | `localhost:5432`, usuario y contraseña `postgres` |
 

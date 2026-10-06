@@ -65,9 +65,19 @@ defmodule Amauta.Actions do
     Repo.transact(fn ->
       with {:ok, result} <- action.run(scope, input) do
         record_audit(action, scope, input, result)
+        enqueue_effects(action, scope, input, result)
         {:ok, result}
       end
     end)
+  end
+
+  # Los trabajos se insertan en la misma transacción que el cambio
+  # (ERS 8.2): nunca se pierden por una caída justo después del commit.
+  defp enqueue_effects(action, scope, input, result) do
+    case action.effects(scope, input, result) do
+      [] -> :ok
+      jobs -> Oban.insert_all(jobs)
+    end
   end
 
   defp record_audit(action, scope, input, result) do

@@ -1,0 +1,13 @@
+{
+  "name": "amauta-assets",
+  "private": true,
+  "description": "Fuentes e íconos del sistema de diseño. Se copian a priv/static con mix amauta.assets.vendor.",
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-mono": "5.3.0",
+    "@fontsource-variable/atkinson-hyperlegible-next": "5.3.0",
+    "@fontsource-variable/bricolage-grotesque": "5.3.0",
+    "@fontsource-variable/fraunces": "5.3.0",
+    "@phosphor-icons/core": "2.1.1"
+  }
+}
