@@ -3,6 +3,7 @@ defmodule AmautaWeb.UserLive.Login do
   use AmautaWeb, :live_view
 
   alias Amauta.Accounts
+  alias Amauta.Accounts.LoginThrottle
   alias AmautaWeb.Paths
 
   @impl true
@@ -102,7 +103,10 @@ defmodule AmautaWeb.UserLive.Login do
   def handle_event("submit_magic", %{"user" => %{"email" => email}}, socket) do
     scope = socket.assigns.current_scope
 
-    if user = Accounts.get_user_by_email(scope, email) do
+    # Límite de envíos por cuenta, para no usar la plataforma para inundar un
+    # buzón (RF-AUT-006). La respuesta es siempre la misma.
+    with true <- LoginThrottle.allow_magic_link?(scope.institution.id, email),
+         %Accounts.User{} = user <- Accounts.get_user_by_email(scope, email) do
       Accounts.deliver_login_instructions(scope, user, &Paths.absolute(Paths.log_in(scope, &1)))
     end
 

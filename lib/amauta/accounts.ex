@@ -192,6 +192,67 @@ defmodule Amauta.Accounts do
     :ok
   end
 
+  ## Proveedores de identidad (RF-AUT-008)
+
+  @providers %{
+    password: Amauta.Accounts.Providers.Password,
+    magic_link: Amauta.Accounts.Providers.MagicLink
+  }
+
+  @doc "Autentica con un proveedor de identidad (ver `IdentityProvider`)."
+  @spec authenticate(Amauta.Platform.Institution.t(), atom(), map()) ::
+          Amauta.Accounts.IdentityProvider.result()
+  def authenticate(institution, provider, params) do
+    Map.fetch!(@providers, provider).authenticate(institution, params)
+  end
+
+  ## Dispositivos (RF-AUT-006)
+
+  @doc """
+  Registra el dispositivo del inicio de sesión. Devuelve `:new` si la
+  persona ya tenía otros y este es nuevo (hay que avisarle), `:first` si es
+  el primero y `:known` si ya lo conocíamos.
+  """
+  @spec register_device(Tenancy.tenant(), User.t(), String.t() | nil) :: :new | :first | :known
+  def register_device(tenant, %User{id: user_id}, user_agent) do
+    user_agent = String.slice(user_agent || "", 0, 255)
+    fingerprint = :crypto.hash(:sha256, user_agent)
+    opts = Tenancy.opts(tenant)
+    now = DateTime.utc_now(:second)
+
+    existing = from(d in Amauta.Accounts.UserDevice, where: d.user_id == ^user_id)
+
+    {:ok, status} =
+      Repo.transact(fn ->
+        known? = Repo.exists?(where(existing, fingerprint: ^fingerprint), opts)
+        any? = Repo.exists?(existing, opts)
+
+        Repo.insert!(
+          %Amauta.Accounts.UserDevice{
+            user_id: user_id,
+            fingerprint: fingerprint,
+            user_agent: user_agent,
+            last_seen_at: now
+          },
+          Keyword.merge(opts,
+            on_conflict: [set: [last_seen_at: now]],
+            conflict_target: [:user_id, :fingerprint]
+          )
+        )
+
+        status =
+          cond do
+            known? -> :known
+            any? -> :new
+            true -> :first
+          end
+
+        {:ok, status}
+      end)
+
+    status
+  end
+
   defp locale(%Amauta.Platform.Institution{} = institution, user),
     do: Amauta.Locale.resolve(user, institution)
 

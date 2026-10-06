@@ -175,7 +175,7 @@ defmodule AmautaWeb.CoreComponents do
   def badge(assigns) do
     ~H"""
     <span class={[
-      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+      "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold",
       family_classes(@family),
       @class
     ]}>
