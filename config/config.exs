@@ -48,6 +48,9 @@ config :ex_cldr, default_backend: Amauta.Cldr
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 config :tzdata, :autoupdate, :disabled
 
+# URL del enlace mágico para los emails que arma el dominio (invitaciones).
+config :amauta, :login_url, {AmautaWeb.Paths, :absolute_log_in}
+
 # Remitente de los emails de la plataforma. El remitente por institución
 # (RF-INS-012) llega con su configuración.
 config :amauta, :mail_from, {"Amauta", "no-responder@amauta.localhost"}

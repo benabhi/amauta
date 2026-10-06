@@ -21,6 +21,7 @@ defmodule AmautaWeb.Layouts do
   attr :flash, :map, required: true
   attr :current_scope, :map, default: nil, doc: "el Amauta.Scope de la pantalla"
   attr :width, :string, default: "md", values: ~w(sm md lg), doc: "ancho del contenido"
+  attr :active, :atom, default: nil, doc: "sección activa de la navegación"
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -35,6 +36,11 @@ defmodule AmautaWeb.Layouts do
     <header class="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur">
       <div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
         <.brand current_scope={@current_scope} />
+        <.institution_nav
+          :if={@current_scope && @current_scope.user}
+          current_scope={@current_scope}
+          active={@active}
+        />
         <div class="ms-auto flex items-center gap-2">
           <.theme_toggle />
           <.user_menu :if={@current_scope && @current_scope.user} current_scope={@current_scope} />
@@ -110,6 +116,41 @@ defmodule AmautaWeb.Layouts do
 
     <.flash_group flash={@flash} />
     """
+  end
+
+  attr :current_scope, :map, required: true
+  attr :active, :atom, default: nil
+
+  # Navegación de la institución: solo las secciones que la persona puede ver.
+  defp institution_nav(assigns) do
+    assigns = assign(assigns, :items, nav_items(assigns.current_scope))
+
+    ~H"""
+    <nav class="ms-2 hidden items-center gap-1 md:flex" aria-label={gettext("Main")}>
+      <.link
+        :for={{key, label, path} <- @items}
+        navigate={path}
+        aria-current={@active == key && "page"}
+        class={[
+          "rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken",
+          @active == key && "bg-surface-sunken font-semibold"
+        ]}
+      >
+        {label}
+      </.link>
+    </nav>
+    """
+  end
+
+  defp nav_items(scope) do
+    [
+      {:home, gettext("Home"), Paths.home(scope), nil},
+      {:people, gettext("People"), Paths.people(scope), "institution.users.view"}
+    ]
+    |> Enum.filter(fn {_key, _label, _path, permission} ->
+      is_nil(permission) or Amauta.Authorization.can?(scope, permission)
+    end)
+    |> Enum.map(fn {key, label, path, _permission} -> {key, label, path} end)
   end
 
   defp content_width("sm"), do: "max-w-sm"

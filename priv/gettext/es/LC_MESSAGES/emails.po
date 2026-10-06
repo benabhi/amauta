@@ -11,7 +11,7 @@ msgstr ""
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/amauta/accounts/user_notifier.ex:104
+#: lib/amauta/accounts/user_notifier.ex:131
 #, elixir-autogen, elixir-format
 msgid "Confirmation instructions"
 msgstr "Confirmá tu cuenta"
@@ -35,7 +35,7 @@ msgstr ""
 "\n"
 "Si no pediste este cambio, ignorá este mensaje.\n"
 
-#: lib/amauta/accounts/user_notifier.ex:105
+#: lib/amauta/accounts/user_notifier.ex:132
 #, elixir-autogen, elixir-format
 msgid ""
 "Hi %{name},\n"
@@ -54,7 +54,7 @@ msgstr ""
 "\n"
 "Si no esperabas este email, ignoralo.\n"
 
-#: lib/amauta/accounts/user_notifier.ex:128
+#: lib/amauta/accounts/user_notifier.ex:155
 #, elixir-autogen, elixir-format
 msgid ""
 "Hi %{name},\n"
@@ -73,7 +73,7 @@ msgstr ""
 "\n"
 "Si no lo pediste, ignorá este mensaje.\n"
 
-#: lib/amauta/accounts/user_notifier.ex:127
+#: lib/amauta/accounts/user_notifier.ex:154
 #, elixir-autogen, elixir-format
 msgid "Log in instructions"
 msgstr "Tu enlace para entrar"
@@ -83,7 +83,7 @@ msgstr "Tu enlace para entrar"
 msgid "Update email instructions"
 msgstr "Confirmá tu nuevo email"
 
-#: lib/amauta/accounts/user_notifier.ex:55
+#: lib/amauta/accounts/user_notifier.ex:82
 #, elixir-autogen, elixir-format
 msgid ""
 "Hi %{name},\n"
@@ -104,7 +104,7 @@ msgstr ""
 "Si fuiste vos, podés ignorar este mensaje. Si no, cambiá tu\n"
 "contraseña cuanto antes.\n"
 
-#: lib/amauta/accounts/user_notifier.ex:80
+#: lib/amauta/accounts/user_notifier.ex:107
 #, elixir-autogen, elixir-format
 msgid ""
 "Hi %{name},\n"
@@ -123,12 +123,40 @@ msgstr ""
 "Si no fuiste vos, puede que alguien esté intentando adivinar tu contraseña.\n"
 "Siempre podés entrar con un enlace enviado a este email.\n"
 
-#: lib/amauta/accounts/user_notifier.ex:54
+#: lib/amauta/accounts/user_notifier.ex:81
 #, elixir-autogen, elixir-format
 msgid "New sign-in to your account"
 msgstr "Nuevo inicio de sesión en tu cuenta"
 
-#: lib/amauta/accounts/user_notifier.ex:79
+#: lib/amauta/accounts/user_notifier.ex:106
 #, elixir-autogen, elixir-format
 msgid "Too many failed sign-in attempts"
 msgstr "Demasiados intentos fallidos para entrar"
+
+#: lib/amauta/accounts/user_notifier.ex:54
+#, elixir-autogen, elixir-format
+msgid "You are invited to %{institution}"
+msgstr "Te invitaron a %{institution}"
+
+#: lib/amauta/accounts/user_notifier.ex:55
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"%{institution} invited you to Amauta, its learning platform.\n"
+"To enter, use the link below:\n"
+"\n"
+"%{url}\n"
+"\n"
+"The link is valid for 7 days. If it expires, ask for a new one from\n"
+"the login page using this email.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"%{institution} te invitó a Amauta, su plataforma educativa.\n"
+"Para entrar, usá este enlace:\n"
+"\n"
+"%{url}\n"
+"\n"
+"El enlace vale por 7 días. Si vence, pedí uno nuevo desde\n"
+"la página de inicio de sesión con este email.\n"

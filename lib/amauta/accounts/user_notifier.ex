@@ -46,6 +46,33 @@ defmodule Amauta.Accounts.UserNotifier do
     end)
   end
 
+  @doc "Invitación a una institución."
+  def deliver_invitation(user, institution, url, locale) do
+    Gettext.with_locale(AmautaWeb.Gettext, locale, fn ->
+      deliver(
+        user.email,
+        dgettext("emails", "You are invited to %{institution}", institution: institution.name),
+        dgettext(
+          "emails",
+          """
+          Hi %{name},
+
+          %{institution} invited you to Amauta, its learning platform.
+          To enter, use the link below:
+
+          %{url}
+
+          The link is valid for 7 days. If it expires, ask for a new one from
+          the login page using this email.
+          """,
+          name: User.given_name(user),
+          institution: institution.name,
+          url: url
+        )
+      )
+    end)
+  end
+
   @doc "Aviso de inicio de sesión desde un dispositivo nuevo."
   def deliver_new_device_notice(user, user_agent, locale) do
     Gettext.with_locale(AmautaWeb.Gettext, locale, fn ->

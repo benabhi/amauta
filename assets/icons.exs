@@ -14,6 +14,6 @@
     folder file upload-simple download-simple link
   ),
   duotone: ~w(
-    graduation-cap book-open chats-circle folder-open calendar-check confetti
+    graduation-cap book-open chats-circle folder-open calendar-check confetti users
   )
 }

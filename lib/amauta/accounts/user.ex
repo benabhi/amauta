@@ -12,14 +12,33 @@ defmodule Amauta.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
-    field :status, :string, default: "active"
+    field :status, :string, default: "invited"
     field :locale, :string
+    field :preferred_name, :string
+    field :timezone, :string
+    field :invited_at, :utc_datetime
 
     timestamps()
   end
 
-  @doc "Nombre para mostrar."
+  @statuses ~w(invited active suspended archived)
+
+  @doc "Estados de cuenta (RF-USR-003)."
+  def statuses, do: @statuses
+
+  @doc "Nombre para mostrar: el preferido, si lo hay, y el apellido."
+  def display_name(%__MODULE__{preferred_name: preferred, last_name: last})
+      when is_binary(preferred) and preferred != "",
+      do: "#{preferred} #{last}"
+
   def display_name(%__MODULE__{first_name: first, last_name: last}), do: "#{first} #{last}"
+
+  @doc "Nombre de pila para saludar."
+  def given_name(%__MODULE__{preferred_name: preferred})
+      when is_binary(preferred) and preferred != "",
+      do: preferred
+
+  def given_name(%__MODULE__{first_name: first}), do: first
 
   @doc """
   Alta de una persona por parte de la institución (no hay autorregistro en
@@ -27,18 +46,46 @@ defmodule Amauta.Accounts.User do
   """
   def create_changeset(user, attrs) do
     user
-    |> cast(attrs, [:first_name, :last_name])
+    |> cast(attrs, [:first_name, :last_name, :preferred_name, :timezone])
     |> validate_names()
+    |> validate_timezone()
     |> email_changeset(attrs)
   end
+
+  @doc "Edición del perfil por la institución o por la persona (sin el email)."
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:first_name, :last_name, :preferred_name, :timezone, :locale])
+    |> validate_names()
+    |> validate_timezone()
+    |> validate_inclusion(:locale, Amauta.Locale.supported())
+  end
+
+  @doc "Cambio de estado."
+  def status_changeset(user, status) do
+    user |> change(status: status) |> validate_inclusion(:status, @statuses)
+  end
+
+  defp validate_timezone(changeset) do
+    changeset
+    |> update_change(:timezone, &blank_to_nil/1)
+    |> validate_inclusion(:timezone, Tzdata.zone_list())
+  end
+
+  defp blank_to_nil(value) when is_binary(value),
+    do: if(String.trim(value) == "", do: nil, else: value)
+
+  defp blank_to_nil(value), do: value
 
   defp validate_names(changeset) do
     changeset
     |> update_change(:first_name, &String.trim/1)
     |> update_change(:last_name, &String.trim/1)
+    |> update_change(:preferred_name, &blank_to_nil/1)
     |> validate_required([:first_name, :last_name])
     |> validate_length(:first_name, max: 100)
     |> validate_length(:last_name, max: 100)
+    |> validate_length(:preferred_name, max: 100)
   end
 
   @doc """
@@ -122,7 +169,8 @@ defmodule Amauta.Accounts.User do
 
   @doc "Confirma la cuenta."
   def confirm_changeset(user) do
-    change(user, confirmed_at: DateTime.utc_now(:second))
+    status = if user.status == "invited", do: "active", else: user.status
+    change(user, confirmed_at: DateTime.utc_now(:second), status: status)
   end
 
   @doc """

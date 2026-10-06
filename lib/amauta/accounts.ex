@@ -38,6 +38,8 @@ defmodule Amauta.Accounts do
     tenant
     |> new_user()
     |> User.create_changeset(attrs)
+    |> Ecto.Changeset.put_change(:status, "invited")
+    |> Ecto.Changeset.put_change(:invited_at, DateTime.utc_now(:second))
     |> Repo.insert()
   end
 
@@ -142,7 +144,9 @@ defmodule Amauta.Accounts do
     {:ok, query} = UserToken.verify_magic_link_token_query(token)
 
     case Repo.one(query, Tenancy.opts(tenant)) do
-      {%User{status: status}, _token} when status != "active" ->
+      # Solo pueden entrar las cuentas activas o invitadas (al confirmar,
+      # la invitada pasa a activa).
+      {%User{status: status}, _token} when status not in ["active", "invited"] ->
         {:error, :not_found}
 
       {%User{confirmed_at: nil, hashed_password: hash}, _token} when not is_nil(hash) ->

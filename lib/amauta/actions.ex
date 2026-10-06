@@ -11,6 +11,13 @@ defmodule Amauta.Actions do
   alias Amauta.{Audit, Repo, Scope}
 
   @actions [
+    Amauta.Accounts.Actions.CreateUser,
+    Amauta.Accounts.Actions.UpdateUser,
+    Amauta.Accounts.Actions.SuspendUser,
+    Amauta.Accounts.Actions.ReactivateUser,
+    Amauta.Accounts.Actions.ResendInvitation,
+    Amauta.Accounts.Actions.ImportUsers,
+    Amauta.Accounts.Actions.ExportUsers,
     Amauta.Authorization.Actions.AssignRole,
     Amauta.Authorization.Actions.RevokeRole
   ]
