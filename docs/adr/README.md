@@ -24,3 +24,4 @@ Estados posibles: Propuesto, Aceptado, Rechazado, Reemplazado por ADR-NNNN.
 | [0008](0008-trabajos-almacenamiento-y-auditoria.md) | Trabajos, almacenamiento y auditoría encadenada | Aceptado |
 | [0009](0009-sistema-de-diseno.md) | Sistema de diseño base | Aceptado |
 | [0010](0010-seguridad-del-acceso.md) | Seguridad del acceso | Aceptado |
+| [0011](0011-administracion-de-la-instancia.md) | Administración de la instancia | Aceptado |

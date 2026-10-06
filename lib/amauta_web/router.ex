@@ -2,6 +2,8 @@ defmodule AmautaWeb.Router do
   use AmautaWeb, :router
 
   import AmautaWeb.UserAuth
+  import AmautaWeb.StaffAuth
+  import Phoenix.LiveDashboard.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -19,30 +21,63 @@ defmodule AmautaWeb.Router do
     plug AmautaWeb.Locale
   end
 
+  # Personal de plataforma (/admin).
+  pipeline :staff do
+    plug :fetch_current_staff
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
 
   scope "/", AmautaWeb do
-    pipe_through :browser
+    pipe_through [:browser, :redirect_to_setup]
 
     get "/", PageController, :home
   end
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
+  # Asistente de primera ejecución (RF-ADM-001).
+  scope "/", AmautaWeb do
+    pipe_through :browser
+
+    live "/setup", SetupLive
+  end
+
+  # Administración de la instancia.
+  scope "/admin", AmautaWeb.Admin do
+    pipe_through [:browser, :staff]
+
+    get "/log-in", SessionController, :new
+    post "/log-in", SessionController, :create
+    delete "/log-out", SessionController, :delete
+  end
+
+  scope "/admin", AmautaWeb.Admin do
+    pipe_through [:browser, :staff, :require_staff]
+
+    live_session :staff, on_mount: [{AmautaWeb.StaffAuth, :require_staff}] do
+      live "/", InstitutionsLive, :index
+      live "/institutions/new", InstitutionsLive, :new
+      live "/institutions/:id", InstitutionLive, :show
+    end
+  end
+
+  # Telemetría, solo para la superadministración (RNF-OBS-004).
+  scope "/admin" do
+    pipe_through [:browser, :staff, :require_staff]
+
+    live_dashboard "/dashboard",
+      metrics: AmautaWeb.Telemetry,
+      on_mount: [{AmautaWeb.StaffAuth, :require_staff}]
+  end
+
+  # Vista previa de correos y catálogo de componentes, solo en desarrollo.
   if Application.compile_env(:amauta, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
     require AmautaWeb.StorybookRoutes
 
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: AmautaWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
 
