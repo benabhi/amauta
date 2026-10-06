@@ -31,7 +31,14 @@ defmodule Amauta.Actions do
     Amauta.Pathways.Actions.AddStage,
     Amauta.Pathways.Actions.RenameStage,
     Amauta.Pathways.Actions.MoveStage,
-    Amauta.Pathways.Actions.DeleteStage
+    Amauta.Pathways.Actions.DeleteStage,
+    Amauta.Courses.Actions.CreateCourse,
+    Amauta.Courses.Actions.UpdateCourse,
+    Amauta.Courses.Actions.UpdateCourseSettings,
+    Amauta.Courses.Actions.RegenerateEnrollmentCode,
+    Amauta.Courses.Actions.PublishCourse,
+    Amauta.Courses.Actions.ArchiveCourse,
+    Amauta.Courses.Actions.ReopenCourse
   ]
 
   @doc "Todas las acciones."
@@ -78,6 +85,31 @@ defmodule Amauta.Actions do
     |> validate_required(required)
     |> action.validate()
     |> apply_action(:run)
+    |> with_cleared(params, Map.keys(types))
+  end
+
+  # Un campo que llega vacío no es un cambio para Ecto (el valor previo
+  # también es nil) y quedaría fuera de la entrada. Se pasa como nil
+  # explícito para que la acción pueda vaciarlo.
+  defp with_cleared({:ok, input}, params, fields) do
+    cleared =
+      for field <- fields,
+          not Map.has_key?(input, field),
+          {:ok, value} <- [fetch_param(params, field)],
+          value in [nil, ""] or (is_binary(value) and String.trim(value) == ""),
+          into: %{},
+          do: {field, nil}
+
+    {:ok, Map.merge(input, cleared)}
+  end
+
+  defp with_cleared(error, _params, _fields), do: error
+
+  defp fetch_param(params, field) do
+    case Map.fetch(params, Atom.to_string(field)) do
+      :error -> Map.fetch(params, field)
+      found -> found
+    end
   end
 
   defp transact(action, scope, input) do

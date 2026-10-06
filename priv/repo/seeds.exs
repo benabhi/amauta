@@ -2,7 +2,7 @@
 # Uso: bin/dev seed, o bin/dev reset para empezar de cero.
 #
 # La contraseña de todas las personas de ejemplo es solo para desarrollo.
-alias Amauta.{Accounts, Authorization, Pathways, Periods, Platform, Tenancy}
+alias Amauta.{Accounts, Authorization, Courses, Pathways, Periods, Platform, Tenancy}
 
 password = "amauta-dev-1234"
 
@@ -114,4 +114,46 @@ for {slug, name, short_name} <- institutions do
   IO.puts(
     "  Trayecto: #{AmautaWeb.Paths.absolute(AmautaWeb.Paths.pathway(institution, pathway))}"
   )
+
+  # Un curso publicado en la primera etapa, con docente y estudiante
+  # asignados en su ámbito (RF-CUR-001).
+  course =
+    Courses.get_by_slug(institution, "programacion-i") ||
+      with [first_stage | _] <- Pathways.list_stages(institution, pathway),
+           {:ok, course} <-
+             Courses.create(institution, %{
+               name: "Programación I",
+               code: "PROG1",
+               icon: "code",
+               color: "airampo",
+               pathway_id: pathway.id,
+               stage_id: first_stage.id
+             }),
+           {:ok, course} <-
+             course
+             |> Courses.Course.settings_changeset(%{settings: %{enrollment_code_enabled: true}})
+             |> Amauta.Repo.update(Tenancy.opts(institution)) do
+        course
+        |> Courses.Course.status_changeset("published")
+        |> Amauta.Repo.update!(Tenancy.opts(institution))
+      end
+
+  for {handle, role} <- [{"docente", "course_lead"}, {"estudiante", "student"}] do
+    user = Accounts.get_user_by_email(institution, "#{handle}@#{slug}.test")
+
+    unless Enum.any?(
+             Authorization.list_assignments(institution, user.id),
+             &(&1.scope_type == "course" and &1.scope_id == course.id)
+           ) do
+      {:ok, _} =
+        Authorization.create_assignment(institution, %{
+          user_id: user.id,
+          role: role,
+          scope_type: "course",
+          scope_id: course.id
+        })
+    end
+  end
+
+  IO.puts("  Curso: #{AmautaWeb.Paths.absolute(AmautaWeb.Paths.course(institution, course))}")
 end

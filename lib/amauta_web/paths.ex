@@ -34,6 +34,18 @@ defmodule AmautaWeb.Paths do
   def new_pathway(tenant), do: ~p"/#{slug(tenant)}/pathways/new"
   def pathway(tenant, pathway), do: ~p"/#{slug(tenant)}/pathways/#{pathway.slug}"
   def edit_pathway(tenant, pathway), do: ~p"/#{slug(tenant)}/pathways/#{pathway.slug}/edit"
+  def courses(tenant), do: ~p"/#{slug(tenant)}/courses"
+  def courses(tenant, params), do: ~p"/#{slug(tenant)}/courses?#{params}"
+  def new_course(tenant), do: ~p"/#{slug(tenant)}/courses/new"
+  def new_course(tenant, params), do: ~p"/#{slug(tenant)}/courses/new?#{params}"
+
+  @doc "Pestaña de un curso: `:feed` (por defecto), `:content`, `:people`, `:grades` o `:settings`."
+  def course(tenant, course, tab \\ :feed)
+  def course(tenant, course, :feed), do: ~p"/#{slug(tenant)}/c/#{course.slug}"
+  def course(tenant, course, :content), do: ~p"/#{slug(tenant)}/c/#{course.slug}/content"
+  def course(tenant, course, :people), do: ~p"/#{slug(tenant)}/c/#{course.slug}/people"
+  def course(tenant, course, :grades), do: ~p"/#{slug(tenant)}/c/#{course.slug}/grades"
+  def course(tenant, course, :settings), do: ~p"/#{slug(tenant)}/c/#{course.slug}/settings"
 
   @doc """
   Inicio de sesión rápido de desarrollo (RNF-DEV-009). Sin rutas

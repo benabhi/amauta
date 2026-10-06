@@ -145,6 +145,7 @@ defmodule AmautaWeb.Layouts do
   defp nav_items(scope) do
     [
       {:home, gettext("Home"), Paths.home(scope), nil},
+      {:courses, Amauta.Terminology.title(scope, :course, 2), Paths.courses(scope), nil},
       {:pathways, Amauta.Terminology.title(scope, :pathway, 2), Paths.pathways(scope), nil},
       {:people, gettext("People"), Paths.people(scope), "institution.users.view"},
       {:periods, Amauta.Terminology.title(scope, :period, 2), Paths.periods(scope),

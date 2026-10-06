@@ -146,6 +146,20 @@ defmodule Amauta.ActionsTest do
     end
   end
 
+  describe "cast/2" do
+    test "un campo vacío llega como nil explícito, para poder vaciarlo" do
+      action = Amauta.Accounts.Actions.UpdateUser
+      id = Ecto.UUID.generate()
+
+      assert {:ok, input} =
+               Actions.cast(action, %{"user_id" => id, "preferred_name" => "  ", "timezone" => ""})
+
+      assert input == %{user_id: id, preferred_name: nil, timezone: nil}
+      assert {:ok, %{user_id: ^id} = input} = Actions.cast(action, %{"user_id" => id})
+      refute Map.has_key?(input, :preferred_name)
+    end
+  end
+
   describe "catálogo" do
     test "los nombres son únicos y siguen la convención" do
       names = Enum.map(Actions.all(), & &1.name())

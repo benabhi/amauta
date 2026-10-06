@@ -126,7 +126,7 @@ defmodule Amauta.Pathways do
 
     attrs =
       if blank?(attrs["slug"]),
-        do: Map.put(attrs, "slug", available_slug(tenant, Slug.slugify(attrs["name"]))),
+        do: Map.put(attrs, "slug", Slug.available(tenant, Pathway, Slug.slugify(attrs["name"]))),
         else: attrs
 
     %Pathway{}
@@ -135,22 +135,6 @@ defmodule Amauta.Pathways do
   end
 
   defp blank?(value), do: is_nil(value) or String.trim(to_string(value)) == ""
-
-  defp available_slug(_tenant, ""), do: nil
-
-  defp available_slug(tenant, base) do
-    taken =
-      from(p in Pathway, where: p.slug == ^base or like(p.slug, ^"#{base}-%"), select: p.slug)
-      |> Repo.all(Tenancy.opts(tenant))
-      |> MapSet.new()
-
-    Stream.iterate(1, &(&1 + 1))
-    |> Stream.map(fn
-      1 -> base
-      n -> "#{base}-#{n}"
-    end)
-    |> Enum.find(&(not MapSet.member?(taken, &1)))
-  end
 
   @doc "Agrega una etapa al final del trayecto."
   def add_stage(tenant, %Pathway{id: pathway_id}, attrs) do

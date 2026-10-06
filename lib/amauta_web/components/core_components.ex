@@ -332,6 +332,110 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Pestañas de navegación (por ejemplo, las fijas del curso, ERS 4.3). Cada
+  pestaña es un enlace con `patch`: cambia la URL sin recargar. En el
+  celular se desliza de costado.
+
+      <.tabs label="Curso">
+        <:tab patch={~p"/unsur/c/prog1"} active>Tablón</:tab>
+        <:tab patch={~p"/unsur/c/prog1/content"}>Contenido</:tab>
+      </.tabs>
+  """
+  attr :label, :string, required: true, doc: "nombre de la navegación para lectores de pantalla"
+  attr :class, :any, default: nil
+
+  slot :tab, required: true do
+    attr :patch, :string, required: true
+    attr :active, :boolean
+    attr :icon, :string
+  end
+
+  def tabs(assigns) do
+    ~H"""
+    <nav
+      aria-label={@label}
+      class={["overflow-x-auto overflow-y-hidden border-b border-line", @class]}
+    >
+      <ul class="flex min-w-max gap-1">
+        <li :for={tab <- @tab}>
+          <.link
+            patch={tab.patch}
+            aria-current={tab[:active] && "page"}
+            class={[
+              "-mb-px flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold",
+              if(tab[:active],
+                do: "border-primary text-ink",
+                else: "border-transparent text-ink-muted hover:text-ink"
+              )
+            ]}
+          >
+            <.icon :if={tab[:icon]} name={tab.icon} class="size-4" />
+            {render_slot(tab)}
+          </.link>
+        </li>
+      </ul>
+    </nav>
+    """
+  end
+
+  @doc """
+  Portada generativa de un curso (RF-CUR-001): un patrón de círculos y
+  arcos que sale de una semilla (el ID del curso), así cada curso tiene la
+  suya, siempre igual, sin guardar imágenes. Es decorativa: el nombre del
+  curso va al lado, en texto.
+
+      <.cover seed={@course.id} icon={@course.icon} family={@course.color} class="h-28" />
+  """
+  attr :seed, :string, required: true
+  attr :icon, :string, default: nil
+  attr :family, :string, default: "anil", values: ~w(anil airampo chilca qolle cochinilla nogal)
+  attr :class, :any, default: nil
+
+  def cover(assigns) do
+    assigns = assign(assigns, :shapes, cover_shapes(assigns.seed))
+
+    ~H"""
+    <div
+      class={["relative overflow-hidden rounded-card", family_classes(@family), @class]}
+      aria-hidden="true"
+    >
+      <svg
+        class="absolute inset-0 size-full"
+        viewBox="0 0 400 120"
+        preserveAspectRatio="xMidYMid slice"
+        fill="none"
+      >
+        <circle
+          :for={{x, y, r, filled} <- @shapes}
+          cx={x}
+          cy={y}
+          r={r}
+          class={if filled, do: "fill-current opacity-15", else: "stroke-current opacity-25"}
+          stroke-width={if filled, do: 0, else: 6}
+        />
+      </svg>
+      <span
+        :if={@icon}
+        class="absolute bottom-3 start-4 flex size-11 items-center justify-center rounded-control bg-surface/80 shadow-sm"
+      >
+        <.icon name={@icon} class="size-6" />
+      </span>
+    </div>
+    """
+  end
+
+  # Seis formas deterministas a partir de la semilla.
+  defp cover_shapes(seed) do
+    for i <- 0..5 do
+      h = :erlang.phash2({seed, i}, 1_000_000)
+      x = rem(h, 400)
+      y = rem(div(h, 400), 120)
+      r = 18 + rem(div(h, 48_000), 70)
+      {x, y, r, rem(i, 2) == 0}
+    end
+  end
+
+  @doc """
   Estado vacío, con un ícono duotone y una acción opcional (ERS 6.5.4).
   """
   attr :icon, :string, default: "folder-open"
