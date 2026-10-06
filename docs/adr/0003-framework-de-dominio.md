@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto: el spike terminó y la recomendación espera aprobación |
+| Estado | Aceptado |
 | Fecha | 2026-10-06 |
 | Requisitos y decisiones | DEC-007 (ERS, sección 8.14) |
 
@@ -52,9 +52,9 @@ Las dos ramas pasan los mismos 27 casos de prueba, y en las dos se verificó a m
 
 Ninguno es grave por separado, y todos tienen solución documentada. Juntos muestran el costo principal de Ash para este proyecto: comportamientos implícitos que hay que conocer de antemano y errores que no explican la causa.
 
-## Recomendación
+## Decisión
 
-**Contextos de Phoenix con Ecto**, con una capa de acciones propia (la del spike) como única puerta al dominio.
+Se acepta la recomendación (2026-10-06): **contextos de Phoenix con Ecto**, con una capa de acciones propia (la del spike) como única puerta al dominio.
 
 Motivos, en orden de peso:
 
