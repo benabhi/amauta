@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      name="longpoll-fallback-ms"
+      content={Application.get_env(:amauta, :longpoll_fallback_ms)}
+    />
     <.live_title default="Amauta" phx-no-format>{assigns[:page_title]}</.live_title>
     <link
       rel="preload"

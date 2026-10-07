@@ -45,7 +45,7 @@ defmodule AmautaWeb.Endpoint do
   if code_reloading? do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
-    plug Phoenix.CodeReloader
+    plug AmautaWeb.DevCodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :amauta
   end
 

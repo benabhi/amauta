@@ -58,6 +58,11 @@ config :amauta, AmautaWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :amauta, dev_routes: true
 
+# Sin respaldo de long-poll: en desarrollo el WebSocket puede tardar en
+# conectar mientras la app se reinicia, y quedar en long-poll volvía lenta
+# cada acción hasta cerrar el navegador.
+config :amauta, :longpoll_fallback_ms, nil
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 
