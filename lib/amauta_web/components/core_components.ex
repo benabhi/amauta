@@ -282,6 +282,70 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Indicador: un número grande con su etiqueta y, opcionalmente, un detalle.
+  Si lleva `navigate`, toda la tarjeta es el enlace a lo que cuenta.
+
+      <.stat value={128} label="Personas activas" icon="users" navigate={~p"/unsur/people"}>
+        <:detail>12 con la invitación pendiente</:detail>
+      </.stat>
+  """
+  attr :value, :any, required: true
+  attr :label, :string, required: true
+  attr :icon, :string, default: nil
+  attr :family, :string, default: "anil", values: ~w(anil airampo chilca qolle cochinilla nogal)
+  attr :navigate, :string, default: nil
+  attr :rest, :global
+  slot :detail
+
+  def stat(%{navigate: nil} = assigns) do
+    ~H"""
+    <div
+      class="flex items-start gap-3 rounded-card border border-line bg-surface p-4 shadow-sm"
+      {@rest}
+    >
+      <.stat_body {assigns} />
+    </div>
+    """
+  end
+
+  def stat(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class={[
+        "flex items-start gap-3 rounded-card border border-line bg-surface p-4 shadow-sm",
+        "transition-transform duration-fast ease-standard hover:-translate-y-0.5",
+        "focus-visible:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      ]}
+      {@rest}
+    >
+      <.stat_body {assigns} />
+    </.link>
+    """
+  end
+
+  defp stat_body(assigns) do
+    ~H"""
+    <span
+      :if={@icon}
+      class={[
+        "flex size-10 shrink-0 items-center justify-center rounded-control",
+        family_classes(@family)
+      ]}
+    >
+      <.icon name={@icon} class="size-5" />
+    </span>
+    <span class="min-w-0">
+      <span class="block font-display text-2xl font-semibold leading-tight">{@value}</span>
+      <span class="block text-sm text-ink-muted">{@label}</span>
+      <span :if={@detail != []} class="mt-1 block text-xs text-ink-muted">
+        {render_slot(@detail)}
+      </span>
+    </span>
+    """
+  end
+
+  @doc """
   Tarjeta navegable, para grillas de trayectos y cursos: toda la tarjeta es
   el enlace. Se eleva apenas al pasar el puntero o con el foco.
 

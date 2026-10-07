@@ -21,7 +21,7 @@ msgstr ""
 msgid "Account Settings"
 msgstr ""
 
-#: lib/amauta_web/components/core_components.ex:742
+#: lib/amauta_web/components/core_components.ex:806
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -86,7 +86,7 @@ msgstr ""
 msgid "Email changed successfully."
 msgstr ""
 
-#: lib/amauta_web/live/home_live.ex:15
+#: lib/amauta_web/live/home_live.ex:43
 #, elixir-autogen, elixir-format
 msgid "Hello, %{name}"
 msgstr ""
@@ -265,7 +265,7 @@ msgstr ""
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr ""
 
-#: lib/amauta_web/components/core_components.ex:514
+#: lib/amauta_web/components/core_components.ex:578
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
@@ -305,18 +305,18 @@ msgstr ""
 msgid "System theme"
 msgstr ""
 
-#: lib/amauta_web/live/home_live.ex:24
+#: lib/amauta_web/live/home_live.ex:128
 #, elixir-autogen, elixir-format
 msgid "When you join a class, you will find it here."
 msgstr ""
 
-#: lib/amauta_web/live/home_live.ex:22
+#: lib/amauta_web/live/home_live.ex:126
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "You have no %{terms} yet"
 msgstr ""
 
-#: lib/amauta_web/live/home_live.ex:22
+#: lib/amauta_web/live/home_live.ex:126
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "You have no %{terms} yet"
@@ -770,6 +770,7 @@ msgid "From a CSV file with one person per row."
 msgstr ""
 
 #: lib/amauta_web/components/layouts.ex:147
+#: lib/amauta_web/live/home_live.ex:28
 #, elixir-autogen, elixir-format
 msgid "Home"
 msgstr ""
@@ -1957,7 +1958,7 @@ msgstr ""
 msgid "Join"
 msgstr ""
 
-#: lib/amauta_web/live/home_live.ex:27
+#: lib/amauta_web/live/home_live.ex:47
 #: lib/amauta_web/live/join_live.ex:17
 #: lib/amauta_web/live/join_live.ex:54
 #, elixir-autogen, elixir-format
@@ -2251,4 +2252,115 @@ msgstr ""
 #: lib/amauta_web/components/direct_upload.ex:91
 #, elixir-autogen, elixir-format
 msgid "We couldn't recognize the type of file."
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:82
+#, elixir-autogen, elixir-format
+msgid "%{count} draft"
+msgid_plural "%{count} drafts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/amauta_web/live/home_live.ex:179
+#, elixir-autogen, elixir-format
+msgid "%{count} invitation not accepted yet"
+msgid_plural "%{count} invitations not accepted yet"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/amauta_web/live/home_live.ex:66
+#, elixir-autogen, elixir-format
+msgid "%{count} with a pending invitation"
+msgid_plural "%{count} with a pending invitation"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/amauta_web/live/home_live.ex:96
+#, elixir-autogen, elixir-format
+msgid "Active enrollments"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:61
+#, elixir-autogen, elixir-format
+msgid "Active people"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:163
+#, elixir-autogen, elixir-format
+msgid "For today and this week"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:186
+#, elixir-autogen, elixir-format
+msgid "In draft: %{count} %{what}"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:103
+#, elixir-autogen, elixir-format
+msgid "Pending"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:159
+#, elixir-autogen, elixir-format
+msgid "Submissions waiting for feedback will appear here."
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:157
+#, elixir-autogen, elixir-format
+msgid "To review"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:196
+#, elixir-autogen, elixir-format
+msgid "Without %{section}: %{count} student"
+msgid_plural "Without %{section}: %{count} students"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/amauta_web/live/home_live.ex:189
+#, elixir-autogen, elixir-format
+msgid "Without a teaching team: %{count} %{what}"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:165
+#, elixir-autogen, elixir-format
+msgid "Your upcoming assignments and assessments will appear here."
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:120
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "My %{terms}"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:76
+#: lib/amauta_web/live/home_live.ex:88
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "Published %{terms}"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:55
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "Your %{term} today"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:120
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "My %{terms}"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:76
+#: lib/amauta_web/live/home_live.ex:88
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "Published %{terms}"
+msgstr ""
+
+#: lib/amauta_web/live/home_live.ex:55
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "Your %{term} today"
 msgstr ""
