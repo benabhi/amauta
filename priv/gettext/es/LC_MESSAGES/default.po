@@ -21,7 +21,7 @@ msgstr "Te mandamos un enlace a la nueva dirección para confirmar el cambio de 
 msgid "Account Settings"
 msgstr "Ajustes de la cuenta"
 
-#: lib/amauta_web/components/core_components.ex:888
+#: lib/amauta_web/components/core_components.ex:890
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Acciones"
@@ -263,7 +263,7 @@ msgstr "Volvé a entrar para ver esta página."
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr "Para hacer cambios sensibles en tu cuenta, volvé a entrar."
 
-#: lib/amauta_web/components/core_components.ex:660
+#: lib/amauta_web/components/core_components.ex:662
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr "cerrar"
