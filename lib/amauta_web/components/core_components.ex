@@ -615,7 +615,9 @@ defmodule AmautaWeb.CoreComponents do
         </h1>
         <p :if={@subtitle != []} class="mt-1 text-ink-muted">{render_slot(@subtitle)}</p>
       </div>
-      <div :if={@actions != []} class="flex flex-wrap gap-2">{render_slot(@actions)}</div>
+      <div :if={@actions != []} class="flex flex-wrap items-center gap-2">
+        {render_slot(@actions)}
+      </div>
     </header>
     """
   end
