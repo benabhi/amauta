@@ -56,6 +56,7 @@ defmodule AmautaWeb.CourseLive do
      |> assign(page_title: course.name, form: nil, settings_form: nil)
      |> assign(periods: [], pathways: [], stages: [], standalone: true)
      |> assign(section_filter: nil, section_form: nil, editing_section: nil, pinned: [])
+     |> assign(post_id: nil)
      |> assign(people_query: "", people_results: [], enroll_form: enroll_form())
      |> assign_course(course)
      |> subscribe_feed(course)}
@@ -96,6 +97,18 @@ defmodule AmautaWeb.CourseLive do
         :settings ->
           unless socket.assigns.can_settings, do: raise(AmautaWeb.ForbiddenError)
           assign_settings_forms(socket)
+
+        # Una publicación con toda su conversación: tiene que existir y
+        # poder verla esta persona (si no, ni se sabe que existe).
+        :post ->
+          %{current_scope: scope, course: course} = socket.assigns
+
+          with {:ok, id} <- Ecto.UUID.cast(params["post_id"]),
+               %{} <- Amauta.Feed.get_visible(scope, course, id) do
+            assign(socket, post_id: id)
+          else
+            _ -> raise AmautaWeb.NotFoundError
+          end
 
         _tab ->
           socket
@@ -435,8 +448,17 @@ defmodule AmautaWeb.CourseLive do
   end
 
   @impl true
+  # Borraron la publicación que se está mirando en su página: al tablón.
+  def handle_info(
+        {:feed, :deleted, %{id: id}},
+        %{assigns: %{live_action: :post, post_id: id}} = socket
+      ) do
+    %{current_scope: scope, course: course} = socket.assigns
+    {:noreply, push_navigate(socket, to: Paths.course(scope, course))}
+  end
+
   def handle_info({:feed, event, post}, socket) do
-    if socket.assigns.live_action == :feed do
+    if socket.assigns.live_action in [:feed, :post] do
       send_update(AmautaWeb.CourseFeed, id: "course-feed", feed_event: {event, post})
     end
 
@@ -531,7 +553,7 @@ defmodule AmautaWeb.CourseLive do
       >
         <.link
           :for={post <- Enum.take(@pinned, 3)}
-          patch={Paths.pinned_post(@current_scope, @course, post)}
+          patch={Paths.course_post(@current_scope, @course, post)}
           class="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full bg-anil-soft px-4 text-sm text-anil-deep transition-opacity duration-fast hover:opacity-80"
         >
           <.icon name="push-pin" class="size-4 shrink-0" />
@@ -570,7 +592,7 @@ defmodule AmautaWeb.CourseLive do
         <:tab
           :for={{action, icon, label} <- course_tabs(@can_settings)}
           patch={Paths.course(@current_scope, @course, action, tab_params(@section_filter))}
-          active={@live_action == action}
+          active={@live_action == action or (@live_action == :post and action == :feed)}
           icon={icon}
         >
           {label}
@@ -578,13 +600,14 @@ defmodule AmautaWeb.CourseLive do
       </.tabs>
 
       <.live_component
-        :if={@live_action == :feed}
+        :if={@live_action in [:feed, :post]}
         module={AmautaWeb.CourseFeed}
         id="course-feed"
         current_scope={@current_scope}
         course={@course}
         sections={@sections}
         section_filter={@section_filter}
+        post_id={if @live_action == :post, do: @post_id}
       />
       <.content :if={@live_action == :content} current_scope={@current_scope} />
       <.people :if={@live_action == :people} {people_assigns(assigns)} />

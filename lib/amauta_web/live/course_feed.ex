@@ -3,6 +3,11 @@ defmodule AmautaWeb.CourseFeed do
   Tablón del curso (RF-TAB-001 a 003, 007 y 008), dentro de la pestaña
   Tablón de `AmautaWeb.CourseLive`.
 
+  Tiene dos modos. En el tablón, cada publicación es una tarjeta compacta
+  (el comienzo del texto, los adjuntos y cómo va la conversación) y las
+  fijadas, una línea arriba. Con `post_id`, muestra esa publicación
+  completa, con toda su conversación (su página).
+
   Quien puede publicar ve el editor arriba, con su borrador guardado
   mientras escribe y el destinatario (todo el curso o una comisión). Las
   publicaciones nuevas llegan en tiempo real: la vista del curso escucha el
@@ -35,6 +40,10 @@ defmodule AmautaWeb.CourseFeed do
   # De a cuántas respuestas más trae «Ver anteriores».
   @more 20
 
+  # Cuántas respuestas más se muestran de entrada en la página de una
+  # publicación (además de las del tablón).
+  @single_window 30
+
   @impl true
   def mount(socket) do
     {:ok,
@@ -48,6 +57,14 @@ defmodule AmautaWeb.CourseFeed do
        reply_key: 0,
        editing_reply: nil,
        edit_reply_form: nil,
+       # El editor para publicar arranca plegado en una línea.
+       composer_open: false,
+       has_draft: false,
+       # Fijada cuyo vencimiento se está eligiendo (desde su menú).
+       pin_editing: nil,
+       # La publicación de su página (`post_id`), con toda su conversación.
+       post_id: nil,
+       single: nil,
        # Cuántas respuestas mostrar, por publicación o respuesta, cuando
        # alguien pidió ver más (`Amauta.Feed.with_replies/3`).
        windows: %{},
@@ -76,7 +93,10 @@ defmodule AmautaWeb.CourseFeed do
 
   def update(assigns, socket) do
     %{current_scope: scope, course: course} = assigns
-    filter_changed = assigns.section_filter != socket.assigns[:section_filter]
+
+    filter_changed =
+      assigns.section_filter != socket.assigns[:section_filter] or
+        assigns[:post_id] != socket.assigns[:post_id]
 
     socket =
       socket
@@ -114,6 +134,19 @@ defmodule AmautaWeb.CourseFeed do
     |> assign_composer()
   end
 
+  # Una sola publicación (su página): con toda su conversación.
+  defp load_posts(%{assigns: %{post_id: id}} = socket) when is_binary(id) do
+    # En su página la conversación es lo principal: se muestran más respuestas.
+    socket =
+      if Map.has_key?(socket.assigns.windows, id),
+        do: socket,
+        else: widen(socket, nil, id, @single_window)
+
+    socket
+    |> assign(single: visible(socket, id), pinned: [], empty: false, more_posts: false)
+    |> stream(:posts, [], reset: true)
+  end
+
   # Fijadas arriba (RF-TAB-006) y el resto en el stream, sin repetirse.
   defp load_posts(socket) do
     %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
@@ -142,9 +175,14 @@ defmodule AmautaWeb.CourseFeed do
     Feed.get_visible(scope, course, id, windows: windows)
   end
 
-  # Dibuja de nuevo una publicación donde esté: entre las fijadas o en el
-  # stream.
-  defp put_post(socket, post, opts \\ []) do
+  # Dibuja de nuevo una publicación donde esté: la de su página, entre las
+  # fijadas o en el stream.
+  defp put_post(socket, post, opts \\ [])
+
+  defp put_post(%{assigns: %{post_id: id}} = socket, post, _opts) when is_binary(id),
+    do: if(post.id == id, do: assign(socket, single: post), else: socket)
+
+  defp put_post(socket, post, opts) do
     if Enum.any?(socket.assigns.pinned, &(&1.id == post.id)) do
       update(socket, :pinned, fn pinned ->
         Enum.map(pinned, &if(&1.id == post.id, do: post, else: &1))
@@ -155,6 +193,10 @@ defmodule AmautaWeb.CourseFeed do
   end
 
   defp assign_composer(%{assigns: %{can_post: false}} = socket),
+    do: assign(socket, form: nil, targets: [])
+
+  # En la página de una publicación no se publica.
+  defp assign_composer(%{assigns: %{post_id: id}} = socket) when is_binary(id),
     do: assign(socket, form: nil, targets: [])
 
   defp assign_composer(socket) do
@@ -170,12 +212,15 @@ defmodule AmautaWeb.CourseFeed do
     section =
       (draft && draft.section_id) || default_target(targets, socket.assigns.section_filter)
 
+    files = if draft, do: Feed.attached_files(scope, draft), else: []
+
     socket
     |> assign(
       targets: targets,
+      has_draft: draft != nil and draft_content?(draft.body, files),
       form: to_form(%{"body" => draft && draft.body, "section_id" => section}, as: "post")
     )
-    |> put_files(:composer, if(draft, do: Feed.attached_files(scope, draft), else: []))
+    |> put_files(:composer, files)
   end
 
   # Por defecto, el curso entero; si no se puede, la comisión del filtro o
@@ -189,7 +234,13 @@ defmodule AmautaWeb.CourseFeed do
   end
 
   # Llega algo del tablón en tiempo real: se muestra solo si esta persona lo
-  # puede ver (y si coincide con el filtro de comisión).
+  # puede ver (y si coincide con el filtro de comisión). En la página de una
+  # publicación solo importa esa (si la borran, la vista del curso vuelve al
+  # tablón).
+  defp apply_event(%{assigns: %{post_id: id}} = socket, event, post) when is_binary(id) do
+    if post.id == id and event != :deleted, do: refresh_post(socket, id), else: socket
+  end
+
   defp apply_event(socket, :deleted, post) do
     socket
     |> stream_delete(:posts, post)
@@ -231,6 +282,13 @@ defmodule AmautaWeb.CourseFeed do
     {:noreply, socket |> assign(form: to_form(params, as: "post")) |> save_draft()}
   end
 
+  def handle_event("open_composer", _params, socket),
+    do: {:noreply, assign(socket, composer_open: true)}
+
+  # Cerrar no borra: lo escrito queda como borrador.
+  def handle_event("close_composer", _params, socket),
+    do: {:noreply, assign(socket, composer_open: false)}
+
   def handle_event("publish", %{"post" => params}, socket) do
     params =
       Map.merge(params, %{
@@ -244,6 +302,7 @@ defmodule AmautaWeb.CourseFeed do
         {:noreply,
          socket
          |> update(:editor_key, &(&1 + 1))
+         |> assign(composer_open: false, has_draft: false)
          |> put_files(:composer, [])
          |> assign(form: to_form(%{"section_id" => params["section_id"]}, as: "post"))}
 
@@ -365,6 +424,12 @@ defmodule AmautaWeb.CourseFeed do
       {:noreply, socket}
     end
   end
+
+  def handle_event("edit_pin_expiry", %{"id" => id}, socket),
+    do: {:noreply, assign(socket, pin_editing: id)}
+
+  def handle_event("close_pin_expiry", _params, socket),
+    do: {:noreply, assign(socket, pin_editing: nil)}
 
   def handle_event("pin_expiry", %{"pin" => %{"post_id" => id, "expires_on" => date}}, socket) do
     params = %{
@@ -578,8 +643,21 @@ defmodule AmautaWeb.CourseFeed do
       })
 
     Actions.run(SaveDraft, socket.assigns.current_scope, params)
-    socket
+    assign(socket, has_draft: draft_content?(params["body"], socket.assigns.files.composer))
   end
+
+  # Si el borrador tiene algo: texto o adjuntos. Un borrador vacío (se abrió
+  # el editor y no se escribió nada) no cuenta.
+  defp draft_content?(_body, [_ | _]), do: true
+
+  defp draft_content?(body, []) when is_binary(body) do
+    case Jason.decode(body) do
+      {:ok, doc} -> draft_content?(doc, [])
+      {:error, _} -> String.trim(body) != ""
+    end
+  end
+
+  defp draft_content?(doc, []), do: not Amauta.RichText.blank?(doc)
 
   # Agranda la ventana de respuestas: las anidadas de `parent` o, sin él,
   # las de primer nivel de la publicación.
@@ -611,7 +689,32 @@ defmodule AmautaWeb.CourseFeed do
   def render(assigns) do
     ~H"""
     <div id={@id} class="grid gap-6">
-      <.card :if={@form} id="feed-composer-card">
+      <%!-- Plegado, el editor es una línea: lo primero son las publicaciones. --%>
+      <button
+        :if={@form && !@composer_open}
+        id="feed-composer-open"
+        type="button"
+        phx-click="open_composer"
+        phx-target={@myself}
+        class="group flex min-h-14 w-full items-center gap-3 rounded-full border border-dashed border-line bg-surface-sunken ps-2 pe-2 text-start text-ink-muted transition-colors duration-fast hover:border-primary hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <.avatar
+          name={User.display_name(@current_scope.user)}
+          src={Paths.avatar(@current_scope, @current_scope.user)}
+          size="sm"
+        />
+        <span class="min-w-0 flex-1 truncate">
+          {if @has_draft,
+            do: gettext("Continue your draft…"),
+            else: gettext_term(@current_scope, :course, "Share something with the %{term}…")}
+        </span>
+        <span class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary transition-opacity duration-fast group-hover:opacity-90">
+          <.icon name="pencil-simple" class="size-4" />
+          <span class="hidden sm:inline">{gettext("New post")}</span>
+        </span>
+      </button>
+
+      <.card :if={@form && @composer_open} id="feed-composer-card">
         <.form
           for={@form}
           id="feed-composer"
@@ -637,18 +740,35 @@ defmodule AmautaWeb.CourseFeed do
                 options={target_options(@current_scope, @targets, @sections)}
               />
             </div>
-            <.button
-              icon="paper-plane-tilt"
-              phx-disable-with={gettext("Publishing...")}
-              class="ms-auto"
-            >
-              {gettext("Publish")}
-            </.button>
+            <div class="ms-auto flex gap-2">
+              <.button
+                type="button"
+                variant="ghost"
+                phx-click="close_composer"
+                phx-target={@myself}
+                title={gettext("The draft is kept.")}
+              >
+                {gettext("Close")}
+              </.button>
+              <.button icon="paper-plane-tilt" phx-disable-with={gettext("Publishing...")}>
+                {gettext("Publish")}
+              </.button>
+            </div>
           </div>
         </.form>
       </.card>
 
-      <div id={"#{@id}-new"} phx-hook=".FeedNewPosts" class="relative">
+      <div :if={@single} id="feed-post-page" class="grid gap-4">
+        <.link
+          navigate={Paths.course(@current_scope, @course)}
+          class="inline-flex min-h-11 items-center gap-2 justify-self-start text-sm font-semibold text-ink-muted hover:text-ink"
+        >
+          <.icon name="arrow-left" class="size-4" /> {gettext("Back to the feed")}
+        </.link>
+        <.post post={@single} ui={ui(assigns)} pin={single_pin(@single)} />
+      </div>
+
+      <div :if={!@post_id} id={"#{@id}-new"} phx-hook=".FeedNewPosts" class="relative">
         <button
           type="button"
           data-new-posts
@@ -681,14 +801,14 @@ defmodule AmautaWeb.CourseFeed do
           >
             <.icon name="push-pin" class="size-5" /> {gettext("Drop a post here to pin it")}
           </p>
-          <ol :if={@pinned != []} class="grid gap-4" aria-label={gettext("Pinned posts")}>
+          <ol :if={@pinned != []} class="grid gap-2" aria-label={gettext("Pinned posts")}>
             <li
               :for={{post, index} <- Enum.with_index(@pinned)}
               id={"pinned-#{post.id}"}
               data-pinned-item
               data-post-id={post.id}
             >
-              <.post
+              <.pinned_row
                 post={post}
                 ui={ui(assigns)}
                 pin={%{first: index == 0, last: index == length(@pinned) - 1}}
@@ -706,7 +826,7 @@ defmodule AmautaWeb.CourseFeed do
           aria-label={gettext("Feed")}
         >
           <li :for={{dom_id, post} <- @streams.posts} id={dom_id} data-post-id={post.id}>
-            <.post post={post} ui={ui(assigns)} />
+            <.post_card post={post} ui={ui(assigns)} />
           </li>
         </ol>
 
@@ -797,6 +917,15 @@ defmodule AmautaWeb.CourseFeed do
     """
   end
 
+  # En su página, una fijada vigente se muestra como tal (sin orden: eso se
+  # cambia desde el tablón).
+  defp single_pin(%{pinned_at: nil}), do: nil
+
+  defp single_pin(post) do
+    if is_nil(post.pin_expires_at) or DateTime.after?(post.pin_expires_at, DateTime.utc_now()),
+      do: %{first: true, last: true}
+  end
+
   defp target_options(scope, targets, sections) do
     Enum.map(targets, fn
       nil -> {gettext_term(scope, :course, "The whole %{term}"), ""}
@@ -819,6 +948,8 @@ defmodule AmautaWeb.CourseFeed do
       :reply_key,
       :editing_reply,
       :edit_reply_form,
+      :pin_editing,
+      :post_id,
       :mentions,
       :files,
       :can_attach,
@@ -836,162 +967,118 @@ defmodule AmautaWeb.CourseFeed do
 
   defp post(assigns) do
     %{post: post, ui: ui} = assigns
-    user_id = ui.current_scope.user.id
 
     assigns =
       assign(assigns,
-        mine: post.author_id == user_id,
         author: post.author,
         editing: ui.editing == post.id,
         hidden: post.top_reply_count - length(post.replies),
-        can_toggle: post.author_id == user_id or ui.can_moderate,
         can_answer: ui.can_reply and post.replies_enabled
       )
 
     ~H"""
     <article class={[
-      "rounded-card border bg-surface p-5 shadow-sm",
+      "overflow-hidden rounded-card border bg-surface shadow-sm",
       if(@pin, do: "border-primary", else: "border-line")
     ]}>
-      <header class="mb-3 flex items-start gap-3">
-        <span
-          :if={@ui.can_moderate and not @editing}
-          data-drag-handle
-          draggable="true"
-          aria-hidden="true"
-          title={gettext("Drag to the pinned area")}
-          class="-ms-2 hidden cursor-grab self-center text-ink-muted hover:text-ink md:block"
-        >
-          <.icon name="dots-six-vertical" class="size-5" />
-        </span>
-        <.avatar
-          :if={@author}
-          name={User.display_name(@author)}
-          src={Paths.avatar(@ui.current_scope, @author)}
-          size="md"
-        />
-        <div class="min-w-0 flex-1">
-          <p class="font-semibold">
-            {(@author && User.display_name(@author)) || gettext("Former member")}
-            <.badge :if={@author && MapSet.member?(@ui.muted, @author.id)} family="nogal" class="ms-1">
-              {gettext("muted")}
-            </.badge>
-          </p>
-          <p class="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted">
-            <time datetime={DateTime.to_iso8601(@post.published_at)}>
-              {Format.datetime(@post.published_at, @ui.timezone, :short)}
-            </time>
-            <span :if={@post.edited_at}>· {gettext("edited")}</span>
-            <.badge :if={@post.section} family="airampo">{@post.section.name}</.badge>
-            <span :if={@pin} class="inline-flex items-center gap-1 font-semibold text-anil-deep">
-              <.icon name="push-pin" class="size-3.5" /> {gettext("Pinned")}
-              <span :if={@post.pin_expires_at} class="font-normal">
-                {gettext("until %{date}", date: Format.date(@post.pin_expires_at, @ui.timezone))}
-              </span>
+      <div class="p-5">
+        <header class="mb-3 flex items-center gap-3">
+          <.avatar
+            :if={@author}
+            name={User.display_name(@author)}
+            src={Paths.avatar(@ui.current_scope, @author)}
+            size="md"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold">
+              {(@author && User.display_name(@author)) || gettext("Former member")}
+              <.badge
+                :if={@author && MapSet.member?(@ui.muted, @author.id)}
+                family="nogal"
+                class="ms-1"
+              >
+                {gettext("muted")}
+              </.badge>
+            </p>
+            <p class="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted">
+              <time datetime={DateTime.to_iso8601(@post.published_at)}>
+                {Format.datetime(@post.published_at, @ui.timezone, :short)}
+              </time>
+              <span :if={@post.edited_at}>· {gettext("edited")}</span>
+              <.badge :if={@post.section} family="airampo">{@post.section.name}</.badge>
+            </p>
+          </div>
+          <.badge :if={@pin} family="anil" icon="push-pin" class="shrink-0">
+            {gettext("Pinned")}
+            <span :if={@post.pin_expires_at} class="font-normal">
+              {gettext("until %{date}", date: Format.date(@post.pin_expires_at, @ui.timezone))}
             </span>
-          </p>
-        </div>
-        <.dropdown
-          :if={(@mine or @ui.can_moderate) and not @editing}
-          id={"post-menu-#{@post.id}"}
-          label={gettext("Post options")}
-        >
-          <:trigger><.icon name="dots-three" class="size-5 text-ink-muted" /></:trigger>
-          <.dropdown_item
-            :if={@mine}
-            icon="pencil-simple"
-            phx-click="edit"
-            phx-value-id={@post.id}
-            phx-target={@ui.myself}
-          >
-            {gettext("Edit")}
-          </.dropdown_item>
-          <.dropdown_item
-            :if={@ui.can_moderate}
-            icon={if @pin, do: "push-pin-slash", else: "push-pin"}
-            phx-click={if @pin, do: "unpin", else: "pin"}
-            phx-value-id={@post.id}
-            phx-target={@ui.myself}
-          >
-            {if @pin, do: gettext("Unpin"), else: gettext("Pin to the top")}
-          </.dropdown_item>
-          <.dropdown_item
-            :if={@can_toggle}
-            icon={if @post.replies_enabled, do: "lock", else: "chats-circle"}
-            phx-click="toggle_replies"
-            phx-value-post={@post.id}
-            phx-value-enabled={to_string(!@post.replies_enabled)}
-            phx-target={@ui.myself}
-          >
-            {if @post.replies_enabled, do: gettext("Close replies"), else: gettext("Open replies")}
-          </.dropdown_item>
-          <.mute_item :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
-          <.dropdown_item
-            icon="trash"
-            phx-click="delete"
-            phx-value-id={@post.id}
-            phx-target={@ui.myself}
-            data-confirm={gettext("Delete this post?")}
-          >
-            {gettext("Delete")}
-          </.dropdown_item>
-        </.dropdown>
-      </header>
+          </.badge>
+          <.post_menu :if={not @editing} post={@post} ui={@ui} pin={@pin} />
+        </header>
 
-      <.pin_controls :if={@pin && @ui.can_moderate && !@editing} post={@post} pin={@pin} ui={@ui} />
-
-      <.form
-        :if={@editing}
-        for={@ui.edit_form}
-        id={"edit-post-#{@post.id}"}
-        phx-submit="save_edit"
-        phx-target={@ui.myself}
-      >
-        <.rich_text_editor
-          id={"edit-editor-#{@post.id}"}
-          field={@ui.edit_form[:body]}
-          label={gettext("Edit")}
-          mentions={@ui.mentions}
+        <.pin_expiry
+          :if={@pin && @ui.can_moderate && !@editing && @ui.pin_editing == @post.id}
+          post={@post}
+          ui={@ui}
         />
-        <.attach_field context={:edit_post} ui={@ui} />
-        <div class="flex gap-2">
-          <.button phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
-          <.button type="button" variant="ghost" phx-click="cancel_edit" phx-target={@ui.myself}>
-            {gettext("Cancel")}
-          </.button>
-        </div>
-      </.form>
 
-      <.collapsible :if={!@editing} id={"post-text-#{@post.id}"}>
-        <.rich_text id={"post-body-#{@post.id}"} doc={@post.body} />
-      </.collapsible>
+        <.form
+          :if={@editing}
+          for={@ui.edit_form}
+          id={"edit-post-#{@post.id}"}
+          phx-submit="save_edit"
+          phx-target={@ui.myself}
+        >
+          <.rich_text_editor
+            id={"edit-editor-#{@post.id}"}
+            field={@ui.edit_form[:body]}
+            label={gettext("Edit")}
+            mentions={@ui.mentions}
+          />
+          <.attach_field context={:edit_post} ui={@ui} />
+          <div class="flex gap-2">
+            <.button phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
+            <.button type="button" variant="ghost" phx-click="cancel_edit" phx-target={@ui.myself}>
+              {gettext("Cancel")}
+            </.button>
+          </div>
+        </.form>
 
-      <.attachment_list
-        :if={!@editing}
-        id={"post-files-#{@post.id}"}
-        files={Enum.map(@post.attachments, & &1.file)}
-        tenant={@ui.current_scope}
-        class="mt-3"
-      />
+        <.collapsible :if={!@editing} id={"post-text-#{@post.id}"}>
+          <.rich_text id={"post-body-#{@post.id}"} doc={@post.body} />
+        </.collapsible>
 
-      <section
-        :if={@post.reply_count > 0 or @can_answer or !@post.replies_enabled}
-        id={"replies-#{@post.id}"}
-        class="mt-4 grid gap-3 border-t border-line pt-3"
-        aria-label={gettext("Replies")}
-      >
+        <.attachment_list
+          :if={!@editing}
+          id={"post-files-#{@post.id}"}
+          files={Enum.map(@post.attachments, & &1.file)}
+          tenant={@ui.current_scope}
+          class="mt-3"
+        />
+
         <p
           :if={@post.reply_count > 0 or !@post.replies_enabled}
-          class="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted"
+          id={"reply-summary-#{@post.id}"}
+          class="mt-4 flex flex-wrap items-center gap-x-4 text-sm text-ink-muted"
         >
-          <span :if={@post.reply_count > 0}>
+          <span :if={@post.reply_count > 0} class="inline-flex items-center gap-1">
+            <.icon name="chats-circle" class="size-4" />
             {ngettext("%{count} reply", "%{count} replies", @post.reply_count)}
           </span>
           <span :if={!@post.replies_enabled} class="inline-flex items-center gap-1">
-            <.icon name="lock" class="size-3.5" /> {gettext("Replies are closed")}
+            <.icon name="lock" class="size-4" /> {gettext("Replies are closed")}
           </span>
         </p>
+      </div>
 
+      <%!-- Las respuestas, en una franja aparte debajo de la publicación. --%>
+      <section
+        :if={@post.reply_count > 0 or @can_answer}
+        id={"replies-#{@post.id}"}
+        class="grid gap-3 border-t border-line bg-surface-sunken px-5 py-4"
+        aria-label={gettext("Replies")}
+      >
         <.more_replies count={@hidden} post={@post} ui={@ui} />
 
         <ul :if={@post.replies != []} class="grid gap-3">
@@ -1019,27 +1106,281 @@ defmodule AmautaWeb.CourseFeed do
 
         <.reply_form :if={@ui.replying == {@post.id, nil}} post={@post} ui={@ui} />
 
-        <button
-          :if={@can_answer and @ui.replying == nil}
-          type="button"
-          phx-click="reply"
-          phx-value-post={@post.id}
-          phx-target={@ui.myself}
-          class="flex min-h-11 w-full items-center gap-2 rounded-full bg-surface-sunken px-4 text-start text-sm text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          <.icon name="chats-circle" class="size-4" /> {gettext("Write a reply…")}
-        </button>
+        <div :if={@can_answer and @ui.replying == nil} class="flex items-center gap-2">
+          <.avatar
+            name={User.display_name(@ui.current_scope.user)}
+            src={Paths.avatar(@ui.current_scope, @ui.current_scope.user)}
+            size="sm"
+          />
+          <button
+            id={"reply-open-#{@post.id}"}
+            type="button"
+            phx-click="reply"
+            phx-value-post={@post.id}
+            phx-target={@ui.myself}
+            class="flex min-h-11 flex-1 items-center gap-2 rounded-full border border-line bg-surface px-4 text-start text-sm text-ink-muted transition-colors hover:border-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            {gettext("Write a reply…")}
+          </button>
+        </div>
       </section>
     </article>
     """
   end
 
   attr :post, :map, required: true
-  attr :pin, :map, required: true
   attr :ui, :map, required: true
 
-  # Para quien modera, en una fijada: vencimiento y orden (RF-TAB-006).
-  defp pin_controls(assigns) do
+  # Una publicación en el tablón, compacta: el comienzo del texto, los
+  # adjuntos y cómo va la conversación. Toda la tarjeta lleva a su página.
+  defp post_card(assigns) do
+    %{post: post} = assigns
+
+    assigns =
+      assign(assigns,
+        author: post.author,
+        excerpt: excerpt(post),
+        files: Enum.map(post.attachments, & &1.file),
+        last_reply: List.last(post.replies)
+      )
+
+    ~H"""
+    <article class="relative rounded-card border border-line bg-surface p-5 shadow-sm transition-colors duration-fast hover:border-ink-muted has-[a[data-open]:focus-visible]:outline-2 has-[a[data-open]:focus-visible]:outline-primary">
+      <header class="mb-2 flex items-center gap-3">
+        <.drag_handle :if={@ui.can_moderate} />
+        <.avatar
+          :if={@author}
+          name={User.display_name(@author)}
+          src={Paths.avatar(@ui.current_scope, @author)}
+          size="md"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">
+            {(@author && User.display_name(@author)) || gettext("Former member")}
+            <.badge :if={@author && MapSet.member?(@ui.muted, @author.id)} family="nogal" class="ms-1">
+              {gettext("muted")}
+            </.badge>
+          </p>
+          <p class="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted">
+            <time datetime={DateTime.to_iso8601(@post.published_at)}>
+              {Format.datetime(@post.published_at, @ui.timezone, :short)}
+            </time>
+            <span :if={@post.edited_at}>· {gettext("edited")}</span>
+            <.badge :if={@post.section} family="airampo">{@post.section.name}</.badge>
+          </p>
+        </div>
+        <div class="relative z-10">
+          <.post_menu post={@post} ui={@ui} />
+        </div>
+      </header>
+
+      <.link
+        navigate={Paths.course_post(@ui.current_scope, @ui.course, @post)}
+        id={"post-open-#{@post.id}"}
+        data-open
+        class="line-clamp-3 text-ink outline-none after:absolute after:inset-0 after:rounded-card"
+      >
+        {if @excerpt == "", do: gettext("Open post"), else: @excerpt}
+      </.link>
+
+      <footer class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-muted">
+        <span
+          :for={file <- Enum.take(@files, 2)}
+          class="inline-flex max-w-48 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-xs"
+        >
+          <.icon name="paperclip" class="size-3.5 shrink-0" />
+          <span class="truncate">{file.filename}</span>
+        </span>
+        <span :if={length(@files) > 2} class="text-xs">
+          {gettext("+%{count} more", count: length(@files) - 2)}
+        </span>
+        <span
+          :if={@post.reply_count > 0}
+          id={"reply-summary-#{@post.id}"}
+          class="inline-flex min-w-0 items-center gap-1"
+        >
+          <.icon name="chats-circle" class="size-4 shrink-0" />
+          {ngettext("%{count} reply", "%{count} replies", @post.reply_count)}
+          <span :if={@last_reply && @last_reply.author} class="truncate">
+            · {gettext("last by %{name}", name: User.given_name(@last_reply.author))}
+          </span>
+        </span>
+        <span :if={!@post.replies_enabled} class="inline-flex items-center gap-1">
+          <.icon name="lock" class="size-4" /> {gettext("Replies are closed")}
+        </span>
+        <span
+          class="ms-auto inline-flex items-center gap-1 font-semibold text-anil-deep"
+          aria-hidden="true"
+        >
+          {gettext("Open")} <.icon name="arrow-right" class="size-4" />
+        </span>
+      </footer>
+    </article>
+    """
+  end
+
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+  attr :pin, :map, required: true
+
+  # Una fijada, arriba del tablón: una línea que lleva a su página. Quien
+  # modera la ordena (arrastrándola o desde el menú) y le pone vencimiento.
+  defp pinned_row(assigns) do
+    assigns = assign(assigns, excerpt: excerpt(assigns.post))
+
+    ~H"""
+    <div class="grid gap-2">
+      <div class="relative flex min-h-12 items-center gap-3 rounded-card border border-primary/50 bg-surface px-4 py-1 shadow-sm transition-colors duration-fast hover:border-primary has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-primary">
+        <.drag_handle :if={@ui.can_moderate} />
+        <.icon name="push-pin" class="size-4 shrink-0 text-anil-deep" />
+        <.link
+          navigate={Paths.course_post(@ui.current_scope, @ui.course, @post)}
+          class="min-w-0 flex-1 truncate font-semibold outline-none after:absolute after:inset-0 after:rounded-card"
+        >
+          {if @excerpt == "", do: gettext("Open post"), else: @excerpt}
+        </.link>
+        <span class="hidden shrink-0 text-xs text-ink-muted sm:inline">
+          <span :if={@post.author}>{User.given_name(@post.author)}</span>
+          <span :if={@post.pin_expires_at}>
+            · {gettext("until %{date}", date: Format.date(@post.pin_expires_at, @ui.timezone))}
+          </span>
+        </span>
+        <div class="relative z-10">
+          <.post_menu post={@post} ui={@ui} pin={@pin} />
+        </div>
+      </div>
+      <.pin_expiry :if={@ui.can_moderate && @ui.pin_editing == @post.id} post={@post} ui={@ui} />
+    </div>
+    """
+  end
+
+  # El comienzo del texto, en una línea, para las vistas compactas.
+  defp excerpt(post) do
+    post.body
+    |> Amauta.RichText.to_text()
+    |> String.replace(~r/\s+/u, " ")
+    |> String.trim()
+    |> String.slice(0, 400)
+  end
+
+  # Manija para arrastrar a la zona de fijadas (solo quien modera).
+  defp drag_handle(assigns) do
+    ~H"""
+    <span
+      data-drag-handle
+      draggable="true"
+      aria-hidden="true"
+      title={gettext("Drag to the pinned area")}
+      class="relative z-10 -ms-2 hidden cursor-grab self-center text-ink-muted hover:text-ink md:block"
+    >
+      <.icon name="dots-six-vertical" class="size-5" />
+    </span>
+    """
+  end
+
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+  attr :pin, :map, default: nil
+
+  # El menú «…» de una publicación. Editar solo está en su página: en el
+  # tablón la publicación se ve recortada.
+  defp post_menu(assigns) do
+    %{post: post, ui: ui} = assigns
+    mine = post.author_id == ui.current_scope.user.id
+
+    assigns =
+      assign(assigns,
+        mine: mine,
+        author: post.author,
+        can_edit: mine and is_binary(ui.post_id),
+        can_toggle: mine or ui.can_moderate
+      )
+
+    ~H"""
+    <.dropdown
+      :if={@mine or @ui.can_moderate}
+      id={"post-menu-#{@post.id}"}
+      label={gettext("Post options")}
+    >
+      <:trigger><.icon name="dots-three" class="size-5 text-ink-muted" /></:trigger>
+      <.dropdown_item
+        :if={@can_edit}
+        icon="pencil-simple"
+        phx-click="edit"
+        phx-value-id={@post.id}
+        phx-target={@ui.myself}
+      >
+        {gettext("Edit")}
+      </.dropdown_item>
+      <.dropdown_item
+        :if={@ui.can_moderate}
+        icon={if @pin, do: "push-pin-slash", else: "push-pin"}
+        phx-click={if @pin, do: "unpin", else: "pin"}
+        phx-value-id={@post.id}
+        phx-target={@ui.myself}
+      >
+        {if @pin, do: gettext("Unpin"), else: gettext("Pin to the top")}
+      </.dropdown_item>
+      <.dropdown_item
+        :if={@pin && @ui.can_moderate}
+        icon="calendar-blank"
+        phx-click="edit_pin_expiry"
+        phx-value-id={@post.id}
+        phx-target={@ui.myself}
+      >
+        {gettext("Unpin on a date…")}
+      </.dropdown_item>
+      <.dropdown_item
+        :if={@pin && @ui.can_moderate && !@pin.first}
+        icon="arrow-up"
+        phx-click="move_pin"
+        phx-value-id={@post.id}
+        phx-value-dir="up"
+        phx-target={@ui.myself}
+      >
+        {gettext("Move up")}
+      </.dropdown_item>
+      <.dropdown_item
+        :if={@pin && @ui.can_moderate && !@pin.last}
+        icon="arrow-down"
+        phx-click="move_pin"
+        phx-value-id={@post.id}
+        phx-value-dir="down"
+        phx-target={@ui.myself}
+      >
+        {gettext("Move down")}
+      </.dropdown_item>
+      <.dropdown_item
+        :if={@can_toggle}
+        icon={if @post.replies_enabled, do: "lock", else: "chats-circle"}
+        phx-click="toggle_replies"
+        phx-value-post={@post.id}
+        phx-value-enabled={to_string(!@post.replies_enabled)}
+        phx-target={@ui.myself}
+      >
+        {if @post.replies_enabled, do: gettext("Close replies"), else: gettext("Open replies")}
+      </.dropdown_item>
+      <.mute_item :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
+      <.dropdown_item
+        icon="trash"
+        phx-click="delete"
+        phx-value-id={@post.id}
+        phx-target={@ui.myself}
+        data-confirm={gettext("Delete this post?")}
+      >
+        {gettext("Delete")}
+      </.dropdown_item>
+    </.dropdown>
+    """
+  end
+
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+
+  # Para quien modera, en una fijada: la fecha en que deja de estarlo
+  # (RF-TAB-006). Se abre desde el menú de la publicación; el orden también
+  # está en el menú.
+  defp pin_expiry(assigns) do
     expires = assigns.post.pin_expires_at
 
     assigns =
@@ -1050,7 +1391,7 @@ defmodule AmautaWeb.CourseFeed do
       )
 
     ~H"""
-    <div class="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+    <div class="mb-3 flex flex-wrap items-center gap-2 rounded-card bg-surface-sunken px-3 py-2 text-sm">
       <.form
         for={%{}}
         as={:pin}
@@ -1068,28 +1409,16 @@ defmodule AmautaWeb.CourseFeed do
           label={gettext("Unpin on")}
         />
       </.form>
-      <div class="ms-auto flex gap-1">
-        <.icon_button
-          :if={!@pin.first}
-          icon="arrow-up"
-          label={gettext("Move up")}
-          size="sm"
-          phx-click="move_pin"
-          phx-value-id={@post.id}
-          phx-value-dir="up"
-          phx-target={@ui.myself}
-        />
-        <.icon_button
-          :if={!@pin.last}
-          icon="arrow-down"
-          label={gettext("Move down")}
-          size="sm"
-          phx-click="move_pin"
-          phx-value-id={@post.id}
-          phx-value-dir="down"
-          phx-target={@ui.myself}
-        />
-      </div>
+      <.button
+        type="button"
+        size="sm"
+        variant="ghost"
+        class="ms-auto"
+        phx-click="close_pin_expiry"
+        phx-target={@ui.myself}
+      >
+        {gettext("Done")}
+      </.button>
     </div>
     """
   end
@@ -1190,8 +1519,8 @@ defmodule AmautaWeb.CourseFeed do
         <div
           :if={!@editing}
           class={[
-            "inline-block max-w-full rounded-card px-3 py-2",
-            if(@hidden, do: "border border-dashed border-line", else: "bg-surface-sunken")
+            "rounded-card px-3 py-2",
+            if(@hidden, do: "border border-dashed border-line", else: "bg-surface")
           ]}
         >
           <p class="flex flex-wrap items-center gap-x-2 text-sm font-semibold">

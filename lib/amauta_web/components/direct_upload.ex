@@ -139,20 +139,47 @@ defmodule AmautaWeb.Components.DirectUpload do
       </label>
       <input id={"#{@id}-input"} type="file" accept={@accept} class="sr-only" />
 
-      <div :if={@status == :uploading} class="grid gap-1" aria-live="polite">
-        <span class="truncate text-sm">{gettext("Uploading %{name}…", name: @filename)}</span>
+      <%!-- Lo maneja el hook (phx-update="ignore"): aparece apenas se elige
+           el archivo, muestra el avance y, al terminar de transferir, avisa
+           que se está verificando. `data-stage`: preparing, sending, verifying. --%>
+      <div
+        id={"#{@id}-status"}
+        phx-update="ignore"
+        hidden
+        data-stage="preparing"
+        class="group grid gap-1"
+        aria-live="polite"
+      >
+        <span class="flex items-center justify-between gap-2 text-sm">
+          <span class="min-w-0 truncate">
+            <span class="hidden group-data-[stage=preparing]:inline">{gettext("Preparing")}</span>
+            <span class="hidden group-data-[stage=sending]:inline">{gettext("Uploading")}</span>
+            <span class="hidden group-data-[stage=verifying]:inline">{gettext("Checking")}</span>
+            <span data-filename class="font-semibold"></span>…
+          </span>
+          <span
+            data-percent
+            class="hidden shrink-0 tabular-nums text-ink-muted group-data-[stage=sending]:inline"
+          >
+            0 %
+          </span>
+        </span>
         <div
-          id={"#{@id}-progress"}
-          phx-update="ignore"
           role="progressbar"
           aria-valuemin="0"
           aria-valuemax="100"
+          aria-valuenow="0"
           aria-label={gettext("Upload progress")}
-          class="h-2 overflow-hidden rounded-full bg-surface-sunken"
+          class="h-2 overflow-hidden rounded-full border border-line bg-surface-sunken"
         >
           <div
             data-progress
-            class="h-full origin-left scale-x-0 bg-primary motion-safe:transition-transform motion-safe:duration-fast"
+            style="width: 0%"
+            class={[
+              "h-full rounded-full bg-primary motion-safe:transition-[width] motion-safe:duration-fast",
+              "group-data-[stage=preparing]:motion-safe:animate-pulse",
+              "group-data-[stage=verifying]:motion-safe:animate-pulse"
+            ]}
           />
         </div>
       </div>
@@ -222,9 +249,11 @@ defmodule AmautaWeb.Components.DirectUpload do
 
           upload(file) {
             const params = {filename: file.name, size: file.size, declared_type: file.type}
+            this.stage("preparing", file.name)
 
             this.pushEventTo(this.el, "start", params, async (plan) => {
-              if (plan.error) return
+              if (plan.error) return this.stage(null)
+              this.stage("sending")
 
               try {
                 if (plan.mode === "single") {
@@ -232,11 +261,25 @@ defmodule AmautaWeb.Components.DirectUpload do
                 } else {
                   await this.multipart(plan, file)
                 }
-                this.pushEventTo(this.el, "complete", {file_id: plan.file_id})
+                this.progress(1)
+                this.stage("verifying")
+                this.pushEventTo(this.el, "complete", {file_id: plan.file_id}, () => this.stage(null))
               } catch (_error) {
-                this.pushEventTo(this.el, "failed", {})
+                this.pushEventTo(this.el, "failed", {}, () => this.stage(null))
               }
             })
+          },
+
+          // Muestra el estado de la subida (o lo esconde, con `null`).
+          stage(name, filename) {
+            const status = this.el.querySelector(`#${this.el.id}-status`)
+            if (!status) return
+            status.hidden = name === null
+            if (name) status.dataset.stage = name
+            if (filename !== undefined) {
+              status.querySelector("[data-filename]").textContent = filename
+              this.progress(0)
+            }
           },
 
           async multipart(plan, file) {
@@ -277,12 +320,16 @@ defmodule AmautaWeb.Components.DirectUpload do
             })
           },
 
+          // El ancho, no una escala: con Tailwind v4 la clase scale-x-*
+          // usa la propiedad `scale` y anulaba un `transform` en línea.
           progress(ratio) {
-            const value = Math.min(1, Math.max(0, ratio))
+            const percent = Math.round(Math.min(1, Math.max(0, ratio)) * 100)
             const bar = this.el.querySelector("[data-progress]")
             if (!bar) return
-            bar.style.transform = `scaleX(${value})`
-            bar.parentElement.setAttribute("aria-valuenow", Math.round(value * 100))
+            bar.style.width = `${percent}%`
+            bar.parentElement.setAttribute("aria-valuenow", percent)
+            const label = this.el.querySelector("[data-percent]")
+            if (label) label.textContent = `${percent} %`
           }
         }
       </script>
