@@ -113,6 +113,18 @@ const embedUrl = ({provider, id}) =>
     ? `https://www.youtube-nocookie.com/embed/${id}`
     : `https://player.vimeo.com/video/${id}`
 
+// Si el video se confirma al perder el foco por un clic (por ejemplo, en
+// «Publicar»), el reproductor se muestra después de soltar: si apareciera
+// antes, el bloque crecería, correría el botón y el clic se perdería.
+let pointerDown = false
+document.addEventListener("pointerdown", () => (pointerDown = true), true)
+document.addEventListener("pointerup", () => (pointerDown = false), true)
+
+const afterPointer = (fn) => {
+  if (!pointerDown) return fn()
+  document.addEventListener("pointerup", () => setTimeout(fn), {once: true, capture: true})
+}
+
 export const VideoEmbed = (labels) =>
   Node.create({
     name: "videoEmbed",
@@ -157,19 +169,37 @@ export const VideoEmbed = (labels) =>
             const hint = document.createElement("p")
             hint.className = "rich-video-hint"
             hint.textContent = labels.videoHint
-            input.addEventListener("keydown", (event) => {
-              if (event.key !== "Enter") return
-              event.preventDefault()
+            // El enlace se toma sin esperar el Enter: al pegarlo, soltarlo o
+            // autocompletarlo, y al salir del campo. Si no, al publicar el
+            // bloque iría vacío y el servidor lo descartaría sin avisar. Lo
+            // tipeado espera al Enter o al blur, para no tomar un ID a medias.
+            let committed = false
+            const commit = () => {
+              if (committed) return true
               const parsed = parseVideoUrl(input.value)
-              if (!parsed) {
-                hint.textContent = labels.videoInvalid
-                hint.dataset.error = ""
-                return
-              }
+              if (!parsed) return false
+              committed = true
               const pos = getPos()
               if (typeof pos === "number") {
                 editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, parsed))
               }
+              return true
+            }
+            const invalid = () => {
+              hint.textContent = labels.videoInvalid
+              hint.dataset.error = ""
+            }
+            input.addEventListener("input", (event) => {
+              // Sin inputType: autocompletado del navegador.
+              if (!event.inputType || /^insert(FromPaste|FromDrop|ReplacementText)/.test(event.inputType)) commit()
+            })
+            input.addEventListener("blur", () => {
+              if (input.value.trim() !== "" && !commit()) invalid()
+            })
+            input.addEventListener("keydown", (event) => {
+              if (event.key !== "Enter") return
+              event.preventDefault()
+              if (!commit()) invalid()
             })
             dom.append(input, hint)
             requestAnimationFrame(() => input.focus())
@@ -184,7 +214,7 @@ export const VideoEmbed = (labels) =>
           ignoreMutation: () => true,
           update: (updated) => {
             if (updated.type.name !== "videoEmbed") return false
-            show(updated.attrs)
+            afterPointer(() => show(updated.attrs))
             return true
           },
         }
