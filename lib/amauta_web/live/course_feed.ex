@@ -57,6 +57,9 @@ defmodule AmautaWeb.CourseFeed do
        reply_key: 0,
        editing_reply: nil,
        edit_reply_form: nil,
+       # El editor para publicar arranca plegado en una línea.
+       composer_open: false,
+       has_draft: false,
        # Fijada cuyo vencimiento se está eligiendo (desde su menú).
        pin_editing: nil,
        # La publicación de su página (`post_id`), con toda su conversación.
@@ -212,6 +215,7 @@ defmodule AmautaWeb.CourseFeed do
     socket
     |> assign(
       targets: targets,
+      has_draft: draft != nil,
       form: to_form(%{"body" => draft && draft.body, "section_id" => section}, as: "post")
     )
     |> put_files(:composer, if(draft, do: Feed.attached_files(scope, draft), else: []))
@@ -273,8 +277,16 @@ defmodule AmautaWeb.CourseFeed do
 
   @impl true
   def handle_event("draft", %{"post" => params}, socket) do
-    {:noreply, socket |> assign(form: to_form(params, as: "post")) |> save_draft()}
+    {:noreply,
+     socket |> assign(form: to_form(params, as: "post"), has_draft: true) |> save_draft()}
   end
+
+  def handle_event("open_composer", _params, socket),
+    do: {:noreply, assign(socket, composer_open: true)}
+
+  # Cerrar no borra: lo escrito queda como borrador.
+  def handle_event("close_composer", _params, socket),
+    do: {:noreply, assign(socket, composer_open: false)}
 
   def handle_event("publish", %{"post" => params}, socket) do
     params =
@@ -289,6 +301,7 @@ defmodule AmautaWeb.CourseFeed do
         {:noreply,
          socket
          |> update(:editor_key, &(&1 + 1))
+         |> assign(composer_open: false, has_draft: false)
          |> put_files(:composer, [])
          |> assign(form: to_form(%{"section_id" => params["section_id"]}, as: "post"))}
 
@@ -662,7 +675,29 @@ defmodule AmautaWeb.CourseFeed do
   def render(assigns) do
     ~H"""
     <div id={@id} class="grid gap-6">
-      <.card :if={@form} id="feed-composer-card">
+      <%!-- Plegado, el editor es una línea: lo primero son las publicaciones. --%>
+      <button
+        :if={@form && !@composer_open}
+        id="feed-composer-open"
+        type="button"
+        phx-click="open_composer"
+        phx-target={@myself}
+        class="flex min-h-16 w-full items-center gap-3 rounded-card border border-line bg-surface px-4 text-start text-ink-muted shadow-sm transition-colors duration-fast hover:border-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <.avatar
+          name={User.display_name(@current_scope.user)}
+          src={Paths.avatar(@current_scope, @current_scope.user)}
+          size="sm"
+        />
+        <span class="min-w-0 flex-1 truncate">
+          {if @has_draft,
+            do: gettext("Continue your draft…"),
+            else: gettext_term(@current_scope, :course, "Share something with the %{term}…")}
+        </span>
+        <.icon name="pencil-simple" class="size-5 shrink-0" />
+      </button>
+
+      <.card :if={@form && @composer_open} id="feed-composer-card">
         <.form
           for={@form}
           id="feed-composer"
@@ -688,13 +723,20 @@ defmodule AmautaWeb.CourseFeed do
                 options={target_options(@current_scope, @targets, @sections)}
               />
             </div>
-            <.button
-              icon="paper-plane-tilt"
-              phx-disable-with={gettext("Publishing...")}
-              class="ms-auto"
-            >
-              {gettext("Publish")}
-            </.button>
+            <div class="ms-auto flex gap-2">
+              <.button
+                type="button"
+                variant="ghost"
+                phx-click="close_composer"
+                phx-target={@myself}
+                title={gettext("The draft is kept.")}
+              >
+                {gettext("Close")}
+              </.button>
+              <.button icon="paper-plane-tilt" phx-disable-with={gettext("Publishing...")}>
+                {gettext("Publish")}
+              </.button>
+            </div>
           </div>
         </.form>
       </.card>

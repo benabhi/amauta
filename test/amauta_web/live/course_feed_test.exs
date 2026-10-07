@@ -49,6 +49,10 @@ defmodule AmautaWeb.CourseFeedTest do
     teacher = member(course, "teacher")
     {:ok, view, _html} = conn |> log_in_user(teacher) |> live(Paths.course(institution(), course))
 
+    # El editor arranca plegado: lo primero son las publicaciones.
+    refute has_element?(view, "#feed-composer")
+    view |> element("#feed-composer-open") |> render_click()
+
     view
     |> form("#feed-composer")
     |> render_submit(%{post: %{body: body("Bienvenidos a Programación I")}})
@@ -62,9 +66,11 @@ defmodule AmautaWeb.CourseFeedTest do
     conn = log_in_user(conn, teacher)
     {:ok, view, _html} = live(conn, Paths.course(institution(), course))
 
+    view |> element("#feed-composer-open") |> render_click()
     view |> form("#feed-composer") |> render_change(%{post: %{body: body("A medio escribir")}})
 
     {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+    view |> element("#feed-composer-open", "Continue your draft") |> render_click()
     assert has_element?(view, "#feed-composer [data-editor-input][value*=\"A medio escribir\"]")
   end
 
@@ -558,6 +564,7 @@ defmodule AmautaWeb.CourseFeedTest do
       teacher = member(course, "teacher")
       {:ok, view, _html} = open(conn, teacher, course)
 
+      view |> element("#feed-composer-open") |> render_click()
       attach(view, teacher, course, "composer")
       assert has_element?(view, "#feed-files-composer", "programa.pdf")
 
@@ -576,9 +583,11 @@ defmodule AmautaWeb.CourseFeedTest do
       teacher = member(course, "teacher")
       conn = log_in_user(conn, teacher)
       {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+      view |> element("#feed-composer-open") |> render_click()
       file = attach(view, teacher, course, "composer")
 
       {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+      view |> element("#feed-composer-open", "Continue your draft") |> render_click()
       assert has_element?(view, "#feed-files-composer", "programa.pdf")
 
       view
