@@ -34,12 +34,27 @@ config :amauta, Amauta.Repo,
   migration_lock: false,
   pool_size: System.schedulers_online() * 2
 
-# We don't run a server during test. If one is required,
-# you can enable the server option below.
+# Las pruebas en navegador (mix test --only e2e) necesitan el servidor:
+# el navegador corre en otro contenedor (Playwright) y entra por
+# E2E_APP_HOST (en desarrollo, el contenedor «app»; en CI, localhost).
 config :amauta, AmautaWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4002],
+  http: [ip: {0, 0, 0, 0}, port: 4002],
+  url: [host: System.get_env("E2E_APP_HOST", "localhost"), port: 4002],
   secret_key_base: "w9bRJKeIlTIac9Sj42UgLIQffIuJTkbFh8ne/37Dq1uMLRImnI2T7K9hI0FMpS6l",
-  server: false
+  server: true
+
+# Los pedidos del navegador comparten la transacción del test (sandbox).
+config :amauta, :sql_sandbox, true
+
+# Pruebas en navegador con Playwright, contra un servidor remoto (ver
+# compose.yaml, perfil «e2e», y .github/workflows/ci.yml).
+config :phoenix_test,
+  otp_app: :amauta,
+  playwright: [
+    ws_endpoint: System.get_env("PLAYWRIGHT_WS_ENDPOINT", "ws://localhost:3000"),
+    browser_pool: false,
+    timeout: 5_000
+  ]
 
 # In test we don't send emails
 config :amauta, Amauta.Mailer, adapter: Swoosh.Adapters.Test

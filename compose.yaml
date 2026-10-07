@@ -99,6 +99,22 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  # Navegador para las pruebas de extremo a extremo (RNF-TST, Playwright).
+  # Solo se levanta con el perfil «e2e» (bin/dev e2e). La versión tiene que
+  # coincidir con la que espera phoenix_test_playwright. Comparte la red de
+  # la app: el navegador entra por localhost (Chromium pasa a HTTPS los
+  # demás nombres) y la app lo encuentra en localhost:3000, como en la CI.
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    profiles: ["e2e"]
+    network_mode: "service:app"
+    init: true
+    user: pwuser
+    working_dir: /home/pwuser
+    command: >-
+      /bin/sh -c "corepack pnpm@11.19.0 dlx playwright@1.63.0 run-server
+      --port 3000 --host 0.0.0.0"
+
 volumes:
   deps:
   build:

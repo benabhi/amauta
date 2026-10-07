@@ -1,6 +1,12 @@
 defmodule AmautaWeb.Router do
   use AmautaWeb, :router
 
+  # En los tests en navegador, cada LiveView usa la transacción del test
+  # (AmautaWeb.SandboxHook); tiene que ir antes que los demás on_mount.
+  @sandbox if Application.compile_env(:amauta, :sql_sandbox),
+             do: [AmautaWeb.SandboxHook],
+             else: []
+
   import AmautaWeb.UserAuth
   import AmautaWeb.StaffAuth
   import Phoenix.LiveDashboard.Router
@@ -55,7 +61,7 @@ defmodule AmautaWeb.Router do
   scope "/admin", AmautaWeb.Admin do
     pipe_through [:browser, :staff, :require_staff]
 
-    live_session :staff, on_mount: [{AmautaWeb.StaffAuth, :require_staff}] do
+    live_session :staff, on_mount: @sandbox ++ [{AmautaWeb.StaffAuth, :require_staff}] do
       live "/", InstitutionsLive, :index
       live "/institutions/new", InstitutionsLive, :new
       live "/institutions/:id", InstitutionLive, :show
@@ -92,7 +98,7 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{AmautaWeb.UserAuth, :require_authenticated}, AmautaWeb.Locale] do
+      on_mount: @sandbox ++ [{AmautaWeb.UserAuth, :require_authenticated}, AmautaWeb.Locale] do
       live "/", HomeLive, :index
       live "/settings", UserLive.Settings, :edit
       live "/settings/confirm-email/:token", UserLive.Settings, :confirm_email
@@ -128,7 +134,7 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution]
 
     live_session :current_user,
-      on_mount: [{AmautaWeb.UserAuth, :mount_current_scope}, AmautaWeb.Locale] do
+      on_mount: @sandbox ++ [{AmautaWeb.UserAuth, :mount_current_scope}, AmautaWeb.Locale] do
       live "/log-in", UserLive.Login, :new
       live "/log-in/:token", UserLive.Confirmation, :new
     end

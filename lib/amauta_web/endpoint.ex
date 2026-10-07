@@ -11,9 +11,15 @@ defmodule AmautaWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  # En los tests en navegador, el sandbox de Ecto viaja en el user agent y
+  # cada pedido (y cada LiveView) usa la transacción del test.
+  if Application.compile_env(:amauta, :sql_sandbox) do
+    plug Phoenix.Ecto.SQL.Sandbox
+  end
+
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:user_agent, session: @session_options]],
+    longpoll: [connect_info: [:user_agent, session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
