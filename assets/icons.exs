@@ -13,7 +13,8 @@
     book-open graduation-cap chats-circle paper-plane-tilt clipboard-text
     folder file upload-simple download-simple link
     path archive arrow-counter-clockwise arrow-up arrow-down star push-pin push-pin-slash
-    dots-six-vertical dots-three
+    dots-six-vertical dots-three paperclip file-pdf file-doc file-xls file-ppt file-zip
+    file-audio file-video file-image file-text arrows-out
     code calculator flask globe-hemisphere-west palette music-notes translate chart-line
     scales heartbeat leaf copy text-b text-italic text-strikethrough arrow-clockwise
   ),

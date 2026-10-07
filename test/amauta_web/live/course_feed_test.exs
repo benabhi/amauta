@@ -455,4 +455,104 @@ defmodule AmautaWeb.CourseFeedTest do
     [oldest | _] = Feed.list_posts(scope, course, %{}, before: List.last(posts)) |> Enum.reverse()
     oldest.id
   end
+
+  @pdf "%PDF-1.7\n" <> :binary.copy("x", 200)
+
+  # Sube un archivo como lo haría el navegador y avisa a la vista, como
+  # hace `AmautaWeb.Components.DirectUpload` al terminar.
+  defp attach(view, user, course, context, name \\ "programa.pdf") do
+    scope = Amauta.Scope.for_user(institution(), user)
+
+    {:ok, %{file: file}} =
+      Actions.run(Amauta.Files.Actions.StartUpload, scope, %{
+        "purpose" => "feed_attachment",
+        "owner_id" => course.id,
+        "filename" => name,
+        "size" => byte_size(@pdf)
+      })
+
+    :ok = Amauta.Storage.put(file.key, @pdf)
+    {:ok, file} = Actions.run(Amauta.Files.Actions.CompleteUpload, scope, %{"file_id" => file.id})
+
+    send(
+      view.pid,
+      {AmautaWeb.Components.DirectUpload, "feed-upload-#{context}", {:uploaded, file}}
+    )
+
+    _ = render(view)
+    file
+  end
+
+  describe "adjuntos" do
+    test "se adjunta al escribir y queda en la publicación", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      attach(view, teacher, course, "composer")
+      assert has_element?(view, "#feed-files-composer", "programa.pdf")
+
+      view
+      |> form("#feed-composer")
+      |> render_submit(%{post: %{body: body("Programa de la materia")}})
+
+      assert has_element?(view, "#feed-posts [id^=post-files-]", "programa.pdf")
+      refute has_element?(view, "#feed-files-composer")
+    end
+
+    test "el adjunto del borrador vuelve al recargar y se puede quitar", %{
+      conn: conn,
+      course: course
+    } do
+      teacher = member(course, "teacher")
+      conn = log_in_user(conn, teacher)
+      {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+      file = attach(view, teacher, course, "composer")
+
+      {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+      assert has_element?(view, "#feed-files-composer", "programa.pdf")
+
+      view
+      |> element(
+        ~s(#feed-files-composer [phx-click="remove_file:composer"][phx-value-id="#{file.id}"])
+      )
+      |> render_click()
+
+      refute has_element?(view, "#feed-files-composer")
+      assert %{status: "rejected"} = Amauta.Files.get(institution(), file.id)
+    end
+
+    test "un estudiante adjunta al responder", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      post = publish(teacher, course, "Consultas")
+      {:ok, view, _html} = open(conn, student, course)
+
+      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+      attach(view, student, course, "reply", "duda.pdf")
+
+      view
+      |> form("#reply-form-#{post.id}")
+      |> render_submit(%{reply: %{body: body("Adjunto mi duda")}})
+
+      assert has_element?(view, "#replies-#{post.id} [id^=reply-files-]", "duda.pdf")
+    end
+
+    test "sin permiso para adjuntar no aparece el botón", %{conn: conn, course: course} do
+      admin = member_scope("institution_admin")
+
+      {:ok, _} =
+        Actions.run(Amauta.Courses.Actions.UpdateCourseSettings, admin, %{
+          "course_id" => course.id,
+          "settings" => %{"student_attachments" => false}
+        })
+
+      teacher = member(course, "teacher")
+      post = publish(teacher, course, "Consultas")
+      {:ok, view, _html} = open(conn, member(course, "student"), course)
+
+      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+      assert has_element?(view, "#reply-form-#{post.id}")
+      refute has_element?(view, "#feed-upload-reply")
+    end
+  end
 end

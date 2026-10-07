@@ -52,12 +52,27 @@ defmodule AmautaWeb.CourseFeed do
        # alguien pidió ver más (`Amauta.Feed.with_replies/3`).
        windows: %{},
        cursor: nil,
-       more_posts: false
+       more_posts: false,
+       # Adjuntos de cada formulario abierto (RF-TAB-005), antes de guardar.
+       files: %{composer: [], reply: [], edit_post: [], edit_reply: []}
      )}
   end
 
   @impl true
   def update(%{feed_event: {event, post}}, socket), do: {:ok, apply_event(socket, event, post)}
+
+  # Un archivo terminó de subir en uno de los formularios.
+  def update(%{uploaded: {upload_id, file}}, socket) do
+    case upload_context(upload_id) do
+      nil ->
+        {:ok, socket}
+
+      context ->
+        files = Enum.take(socket.assigns.files[context] ++ [file], Feed.max_attachments())
+        socket = put_files(socket, context, files)
+        {:ok, if(context == :composer, do: save_draft(socket), else: socket)}
+    end
+  end
 
   def update(assigns, socket) do
     %{current_scope: scope, course: course} = assigns
@@ -70,6 +85,7 @@ defmodule AmautaWeb.CourseFeed do
         can_post: Feed.can_post?(scope, course),
         can_moderate: Feed.can_moderate?(scope, course),
         can_reply: Feed.can_reply?(scope, course),
+        can_attach: Feed.can_attach?(scope, course),
         muted: Feed.muted_ids(scope, course),
         timezone: scope.user.timezone || scope.institution.timezone
       )
@@ -154,10 +170,12 @@ defmodule AmautaWeb.CourseFeed do
     section =
       (draft && draft.section_id) || default_target(targets, socket.assigns.section_filter)
 
-    assign(socket,
+    socket
+    |> assign(
       targets: targets,
       form: to_form(%{"body" => draft && draft.body, "section_id" => section}, as: "post")
     )
+    |> put_files(:composer, if(draft, do: Feed.attached_files(scope, draft), else: []))
   end
 
   # Por defecto, el curso entero; si no se puede, la comisión del filtro o
@@ -210,13 +228,15 @@ defmodule AmautaWeb.CourseFeed do
 
   @impl true
   def handle_event("draft", %{"post" => params}, socket) do
-    params = Map.put(params, "course_id", socket.assigns.course.id)
-    Actions.run(SaveDraft, socket.assigns.current_scope, params)
-    {:noreply, assign(socket, form: to_form(params, as: "post"))}
+    {:noreply, socket |> assign(form: to_form(params, as: "post")) |> save_draft()}
   end
 
   def handle_event("publish", %{"post" => params}, socket) do
-    params = Map.put(params, "course_id", socket.assigns.course.id)
+    params =
+      Map.merge(params, %{
+        "course_id" => socket.assigns.course.id,
+        "attachment_ids" => file_ids(socket, :composer)
+      })
 
     case Actions.run(PublishPost, socket.assigns.current_scope, params) do
       {:ok, _post} ->
@@ -224,6 +244,7 @@ defmodule AmautaWeb.CourseFeed do
         {:noreply,
          socket
          |> update(:editor_key, &(&1 + 1))
+         |> put_files(:composer, [])
          |> assign(form: to_form(%{"section_id" => params["section_id"]}, as: "post"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -244,6 +265,7 @@ defmodule AmautaWeb.CourseFeed do
         {:noreply,
          socket
          |> assign(editing: post.id, edit_form: to_form(%{"body" => post.body}, as: "edit"))
+         |> put_files(:edit_post, Enum.map(post.attachments, & &1.file))
          |> put_post(post)}
     end
   end
@@ -256,7 +278,11 @@ defmodule AmautaWeb.CourseFeed do
   end
 
   def handle_event("save_edit", %{"edit" => %{"body" => body}}, socket) do
-    params = %{"post_id" => socket.assigns.editing, "body" => body}
+    params = %{
+      "post_id" => socket.assigns.editing,
+      "body" => body,
+      "attachment_ids" => file_ids(socket, :edit_post)
+    }
 
     case Actions.run(UpdatePost, socket.assigns.current_scope, params) do
       {:ok, post} ->
@@ -359,6 +385,17 @@ defmodule AmautaWeb.CourseFeed do
     end
   end
 
+  ## Adjuntos (RF-TAB-005)
+
+  # Quitar un archivo de un formulario. En el borrador se guarda enseguida
+  # (y el archivo se descarta); en los demás, al enviar.
+  def handle_event("remove_file:" <> context, %{"id" => id}, socket) do
+    context = String.to_existing_atom(context)
+    files = Enum.reject(socket.assigns.files[context], &(&1.id == id))
+    socket = put_files(socket, context, files)
+    {:noreply, if(context == :composer, do: save_draft(socket), else: socket)}
+  end
+
   ## Respuestas (RF-TAB-004) y moderación (RF-TAB-007)
 
   def handle_event("reply", %{"post" => post_id} = params, socket) do
@@ -367,6 +404,7 @@ defmodule AmautaWeb.CourseFeed do
     {:noreply,
      socket
      |> assign(replying: target, reply_form: to_form(%{"body" => nil}, as: "reply"))
+     |> put_files(:reply, [])
      |> update(:reply_key, &(&1 + 1))
      |> refresh_post(post_id)}
   end
@@ -378,7 +416,13 @@ defmodule AmautaWeb.CourseFeed do
 
   def handle_event("send_reply", %{"reply" => %{"body" => body}}, socket) do
     {post_id, parent_id} = socket.assigns.replying
-    params = %{"post_id" => post_id, "parent_id" => parent_id, "body" => body}
+
+    params = %{
+      "post_id" => post_id,
+      "parent_id" => parent_id,
+      "body" => body,
+      "attachment_ids" => file_ids(socket, :reply)
+    }
 
     case Actions.run(ReplyToPost, socket.assigns.current_scope, params) do
       {:ok, reply} ->
@@ -399,13 +443,14 @@ defmodule AmautaWeb.CourseFeed do
 
   def handle_event("edit_reply", %{"id" => id, "post" => post_id}, socket) do
     case Feed.get_reply(socket.assigns.current_scope, id) do
-      %{body: body} ->
+      %{body: body} = reply ->
         {:noreply,
          socket
          |> assign(
            editing_reply: id,
            edit_reply_form: to_form(%{"body" => body}, as: "edit_reply")
          )
+         |> put_files(:edit_reply, Feed.attached_files(socket.assigns.current_scope, reply))
          |> refresh_post(post_id)}
 
       nil ->
@@ -419,7 +464,11 @@ defmodule AmautaWeb.CourseFeed do
        socket |> assign(editing_reply: nil, edit_reply_form: nil) |> refresh_post(post_id)}
 
   def handle_event("save_reply", %{"edit_reply" => %{"body" => body}}, socket) do
-    params = %{"reply_id" => socket.assigns.editing_reply, "body" => body}
+    params = %{
+      "reply_id" => socket.assigns.editing_reply,
+      "body" => body,
+      "attachment_ids" => file_ids(socket, :edit_reply)
+    }
 
     case Actions.run(UpdateReply, socket.assigns.current_scope, params) do
       {:ok, reply} ->
@@ -504,6 +553,34 @@ defmodule AmautaWeb.CourseFeed do
     end
   end
 
+  # A qué formulario va cada zona de subida.
+  defp upload_context("feed-upload-composer"), do: :composer
+  defp upload_context("feed-upload-reply"), do: :reply
+  defp upload_context("feed-upload-edit-post"), do: :edit_post
+  defp upload_context("feed-upload-edit-reply"), do: :edit_reply
+  defp upload_context(_id), do: nil
+
+  defp put_files(socket, context, files),
+    do: update(socket, :files, &Map.put(&1, context, files))
+
+  defp file_ids(socket, context), do: Enum.map(socket.assigns.files[context], & &1.id)
+
+  # Guarda el borrador con lo que hay en el editor y sus adjuntos.
+  defp save_draft(%{assigns: %{form: nil}} = socket), do: socket
+
+  defp save_draft(socket) do
+    params =
+      socket.assigns.form.params
+      |> Map.take(["body", "section_id"])
+      |> Map.merge(%{
+        "course_id" => socket.assigns.course.id,
+        "attachment_ids" => file_ids(socket, :composer)
+      })
+
+    Actions.run(SaveDraft, socket.assigns.current_scope, params)
+    socket
+  end
+
   # Agranda la ventana de respuestas: las anidadas de `parent` o, sin él,
   # las de primer nivel de la publicación.
   defp widen(socket, parent, post_id, count) do
@@ -550,6 +627,7 @@ defmodule AmautaWeb.CourseFeed do
             debounce="1000"
             mentions={@mentions}
           />
+          <.attach_field context={:composer} ui={ui(assigns)} />
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div :if={length(@targets) > 1} class="w-60">
               <.input
@@ -742,6 +820,9 @@ defmodule AmautaWeb.CourseFeed do
       :editing_reply,
       :edit_reply_form,
       :mentions,
+      :files,
+      :can_attach,
+      :course,
       :myself
     ])
   end
@@ -872,6 +953,7 @@ defmodule AmautaWeb.CourseFeed do
           label={gettext("Edit")}
           mentions={@ui.mentions}
         />
+        <.attach_field context={:edit_post} ui={@ui} />
         <div class="flex gap-2">
           <.button phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
           <.button type="button" variant="ghost" phx-click="cancel_edit" phx-target={@ui.myself}>
@@ -883,6 +965,14 @@ defmodule AmautaWeb.CourseFeed do
       <.collapsible :if={!@editing} id={"post-text-#{@post.id}"}>
         <.rich_text id={"post-body-#{@post.id}"} doc={@post.body} />
       </.collapsible>
+
+      <.attachment_list
+        :if={!@editing}
+        id={"post-files-#{@post.id}"}
+        files={Enum.map(@post.attachments, & &1.file)}
+        tenant={@ui.current_scope}
+        class="mt-3"
+      />
 
       <section
         :if={@post.reply_count > 0 or @can_answer or !@post.replies_enabled}
@@ -1081,6 +1171,7 @@ defmodule AmautaWeb.CourseFeed do
             label={gettext("Edit reply")}
             mentions={@ui.mentions}
           />
+          <.attach_field context={:edit_reply} ui={@ui} />
           <div class="flex gap-2">
             <.button size="sm" phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
             <.button
@@ -1117,6 +1208,14 @@ defmodule AmautaWeb.CourseFeed do
             <.rich_text id={"reply-body-#{@reply.id}"} doc={@reply.body} />
           </.collapsible>
         </div>
+
+        <.attachment_list
+          :if={@show_body and not @editing}
+          id={"reply-files-#{@reply.id}"}
+          files={Enum.map(@reply.attachments, & &1.file)}
+          tenant={@ui.current_scope}
+          class="mt-1"
+        />
 
         <div :if={!@editing} class="flex flex-wrap items-center gap-x-3 ps-3 text-xs text-ink-muted">
           <time datetime={DateTime.to_iso8601(@reply.inserted_at)}>
@@ -1198,6 +1297,39 @@ defmodule AmautaWeb.CourseFeed do
     """
   end
 
+  attr :context, :atom, required: true
+  attr :ui, :map, required: true
+
+  # Adjuntos de un formulario (RF-TAB-005): los ya subidos, para quitarlos,
+  # y el botón para sumar más (hasta el máximo).
+  defp attach_field(assigns) do
+    files = assigns.ui.files[assigns.context]
+    assigns = assign(assigns, files: files, room: length(files) < Feed.max_attachments())
+
+    ~H"""
+    <div :if={@ui.can_attach} class="mb-3 grid gap-2">
+      <.attachment_list
+        id={"feed-files-#{@context}"}
+        files={@files}
+        tenant={@ui.current_scope}
+        remove={"remove_file:#{@context}"}
+        target={@ui.myself}
+      />
+      <.live_component
+        :if={@room}
+        module={AmautaWeb.Components.DirectUpload}
+        id={"feed-upload-#{String.replace(to_string(@context), "_", "-")}"}
+        current_scope={@ui.current_scope}
+        purpose="feed_attachment"
+        owner_id={@ui.course.id}
+        variant="button"
+        label={gettext("Attach file")}
+        hint={gettext("Up to %{count} files per post.", count: Feed.max_attachments())}
+      />
+    </div>
+    """
+  end
+
   attr :post, :map, required: true
   attr :ui, :map, required: true
 
@@ -1216,6 +1348,7 @@ defmodule AmautaWeb.CourseFeed do
         placeholder={gettext("Write a reply. Use «@» to mention someone.")}
         mentions={@ui.mentions}
       />
+      <.attach_field context={:reply} ui={@ui} />
       <div class="flex gap-2">
         <.button size="sm" icon="paper-plane-tilt" phx-disable-with={gettext("Sending...")}>
           {gettext("Reply")}

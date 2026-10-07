@@ -41,6 +41,9 @@ defmodule Amauta.Files.Detect do
   @ole_family ~w(doc xls ppt)
   @text_family ~w(txt csv md)
 
+  @doc "Tipos que se reconocen."
+  def known_types, do: @by_extension |> Map.values() |> Enum.uniq() |> Enum.sort()
+
   @doc "Tipo esperado por la extensión del nombre, o `nil` si no se conoce."
   def by_extension(filename), do: Map.get(@by_extension, extension(filename))
 

@@ -341,6 +341,183 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Archivos adjuntos con vista previa integrada (RF-TAB-005): las imágenes
+  como miniaturas; imágenes, PDF y videos se abren en un diálogo sin salir
+  de la página; el audio se escucha ahí mismo; el resto se descarga. Con
+  `remove`, cada archivo tiene un botón para quitarlo (mientras se escribe).
+
+      <.attachment_list id="post-1-files" files={@files} tenant={@current_scope} />
+  """
+  attr :id, :string, required: true
+  attr :files, :list, required: true, doc: "archivos (`Amauta.Files.StoredFile`)"
+  attr :tenant, :any, required: true, doc: "scope o institución, para las URLs"
+  attr :remove, :string, default: nil, doc: "evento para quitar un archivo (recibe `id`)"
+  attr :target, :any, default: nil
+  attr :class, :any, default: nil
+
+  def attachment_list(assigns) do
+    {images, others} = Enum.split_with(assigns.files, &(preview_kind(&1) == :image))
+    assigns = assign(assigns, images: images, others: others)
+
+    ~H"""
+    <div :if={@files != []} id={@id} phx-hook=".AttachmentPreview" class={["grid gap-2", @class]}>
+      <ul :if={@images != []} class="flex flex-wrap gap-2" aria-label={gettext("Images")}>
+        <li :for={file <- @images} class="flex items-start gap-1">
+          <button
+            type="button"
+            data-preview="image"
+            data-src={AmautaWeb.Paths.file(@tenant, file.id)}
+            data-title={file.filename}
+            class="block size-24 overflow-hidden rounded-control border border-line bg-surface-sunken focus-visible:outline-2 focus-visible:outline-primary sm:size-28"
+            aria-label={gettext("View %{name}", name: file.filename)}
+          >
+            <img
+              src={AmautaWeb.Paths.file(@tenant, file.id)}
+              alt=""
+              loading="lazy"
+              class="size-full object-cover"
+            />
+          </button>
+          <.attachment_remove :if={@remove} file={file} remove={@remove} target={@target} />
+        </li>
+      </ul>
+
+      <ul :if={@others != []} class="grid gap-2" aria-label={gettext("Files")}>
+        <li
+          :for={file <- @others}
+          class="flex min-h-14 items-center gap-3 rounded-control border border-line bg-surface px-3 py-2"
+        >
+          <.icon name={file_icon(file)} class="size-6 shrink-0 text-ink-muted" />
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold">{file.filename}</p>
+            <p class="text-xs text-ink-muted">{AmautaWeb.Format.bytes(file.size)}</p>
+            <audio
+              :if={preview_kind(file) == :audio}
+              controls
+              preload="none"
+              src={AmautaWeb.Paths.file(@tenant, file.id)}
+              class="mt-1 w-full"
+            />
+          </div>
+          <button
+            :if={preview_kind(file) in [:pdf, :video]}
+            type="button"
+            data-preview={preview_kind(file)}
+            data-src={AmautaWeb.Paths.file(@tenant, file.id)}
+            data-title={file.filename}
+            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
+            aria-label={gettext("View %{name}", name: file.filename)}
+          >
+            <.icon name="eye" class="size-5" />
+          </button>
+          <a
+            href={AmautaWeb.Paths.file_download(@tenant, file.id)}
+            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
+            aria-label={gettext("Download %{name}", name: file.filename)}
+          >
+            <.icon name="download-simple" class="size-5" />
+          </a>
+          <.attachment_remove :if={@remove} file={file} remove={@remove} target={@target} />
+        </li>
+      </ul>
+
+      <dialog
+        data-preview-dialog
+        aria-label={gettext("Preview")}
+        class="m-auto max-h-screen w-full max-w-4xl rounded-panel border border-line bg-surface p-0 text-ink shadow-lg backdrop:bg-ink/60"
+      >
+        <div class="flex items-center gap-2 border-b border-line px-4 py-2">
+          <p data-preview-title class="min-w-0 flex-1 truncate text-sm font-semibold"></p>
+          <button
+            type="button"
+            data-preview-close
+            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control hover:bg-surface-sunken"
+            aria-label={gettext("Close")}
+          >
+            <.icon name="x" class="size-5" />
+          </button>
+        </div>
+        <div data-preview-body class="grid aspect-video w-full place-items-center bg-surface-sunken">
+        </div>
+      </dialog>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".AttachmentPreview">
+      // Vista previa en un diálogo nativo: atrapa el foco y se cierra con Esc.
+      export default {
+        mounted() {
+          this.el.addEventListener("click", (e) => {
+            const trigger = e.target.closest("[data-preview]")
+            if (trigger) this.open(trigger)
+            if (e.target.closest("[data-preview-close]")) this.dialog().close()
+          })
+        },
+        dialog() {
+          return this.el.querySelector("[data-preview-dialog]")
+        },
+        open(trigger) {
+          const dialog = this.dialog()
+          const body = dialog.querySelector("[data-preview-body]")
+          const {preview: kind, src, title} = trigger.dataset
+          dialog.querySelector("[data-preview-title]").textContent = title
+          const tag = kind === "image" ? "img" : kind === "video" ? "video" : "iframe"
+          const media = document.createElement(tag)
+          media.className = "size-full object-contain"
+          if (kind === "image") media.alt = title
+          if (kind === "video") media.controls = true
+          if (kind === "pdf") media.title = title
+          media.src = src
+          body.replaceChildren(media)
+          dialog.addEventListener("close", () => body.replaceChildren(), {once: true})
+          dialog.showModal()
+        }
+      }
+    </script>
+    """
+  end
+
+  attr :file, :map, required: true
+  attr :remove, :string, required: true
+  attr :target, :any, default: nil
+
+  defp attachment_remove(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={@remove}
+      phx-value-id={@file.id}
+      phx-target={@target}
+      class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-cochinilla-deep"
+      aria-label={gettext("Remove %{name}", name: @file.filename)}
+    >
+      <.icon name="x" class="size-5" />
+    </button>
+    """
+  end
+
+  defp preview_kind(%{content_type: "image/" <> _}), do: :image
+  defp preview_kind(%{content_type: "application/pdf"}), do: :pdf
+  defp preview_kind(%{content_type: "video/" <> _}), do: :video
+  defp preview_kind(%{content_type: "audio/" <> _}), do: :audio
+  defp preview_kind(_file), do: :file
+
+  defp file_icon(%{content_type: "application/pdf"}), do: "file-pdf"
+  defp file_icon(%{content_type: "video/" <> _}), do: "file-video"
+  defp file_icon(%{content_type: "audio/" <> _}), do: "file-audio"
+  defp file_icon(%{content_type: "application/zip"}), do: "file-zip"
+  defp file_icon(%{content_type: "text/" <> _}), do: "file-text"
+
+  defp file_icon(%{content_type: type}) when is_binary(type) do
+    cond do
+      type =~ ~r/word|opendocument.text/ -> "file-doc"
+      type =~ ~r/sheet|excel/ -> "file-xls"
+      type =~ ~r/presentation|powerpoint/ -> "file-ppt"
+      true -> "file"
+    end
+  end
+
+  defp file_icon(_file), do: "file"
+
+  @doc """
   Muestra contenido enriquecido ya depurado (`Amauta.RichText`): el HTML se
   genera en el servidor y el navegador completa fórmulas y código.
 
