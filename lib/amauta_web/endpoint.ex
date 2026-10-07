@@ -22,11 +22,17 @@ defmodule AmautaWeb.Endpoint do
 
   # Sin recargador de código al conectar: el pedido HTTP de la página ya lo
   # pasó, y repetirlo demoraba cada conexión en desarrollo (por el bind
-  # mount, ~1 s). Los cambios de código recargan la página (live_reload).
+  # mount, ~1,5 s). Los cambios de código recargan la página (live_reload).
+  # Es una opción de cada transporte: a nivel del socket se ignora.
   socket "/live", Phoenix.LiveView.Socket,
-    code_reloader: false,
-    websocket: [connect_info: [:user_agent, session: @session_options]],
-    longpoll: [connect_info: [:user_agent, session: @session_options]]
+    websocket: [
+      code_reloader: false,
+      connect_info: [:user_agent, session: @session_options]
+    ],
+    longpoll: [
+      code_reloader: false,
+      connect_info: [:user_agent, session: @session_options]
+    ]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
