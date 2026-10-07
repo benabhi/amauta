@@ -27,8 +27,12 @@ import topbar from "../vendor/topbar"
 import {RichTextEditor, RichContent} from "./rich_text/hooks"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+// El servidor decide si hay respaldo de long-poll (vacío: sin respaldo, como
+// en desarrollo). Sin respaldo, Phoenix tampoco usa el que haya quedado
+// recordado en la sesión del navegador.
+const fallbackMs = Number(document.querySelector("meta[name='longpoll-fallback-ms']")?.content) || undefined
 const liveSocket = new LiveSocket("/live", Socket, {
-  longPollFallbackMs: 2500,
+  longPollFallbackMs: fallbackMs,
   // Esperar antes de dar la conexión por perdida: evita que el aviso de
   // desconexión parpadee al recargar (en desarrollo cada pedido tarda) o en
   // cortes de un segundo en el celular.
