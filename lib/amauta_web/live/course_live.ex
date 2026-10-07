@@ -609,7 +609,13 @@ defmodule AmautaWeb.CourseLive do
         section_filter={@section_filter}
         post_id={if @live_action == :post, do: @post_id}
       />
-      <.content :if={@live_action == :content} current_scope={@current_scope} />
+      <.live_component
+        :if={@live_action == :content}
+        module={AmautaWeb.CourseContent}
+        id="course-content"
+        current_scope={@current_scope}
+        course={@course}
+      />
       <.people :if={@live_action == :people} {people_assigns(assigns)} />
       <.grades :if={@live_action == :grades} />
       <.settings
@@ -636,20 +642,6 @@ defmodule AmautaWeb.CourseLive do
       {:people, "users", gettext("People")},
       {:grades, "clipboard-text", gettext("Grades")}
     ] ++ if(can_settings, do: [{:settings, "gear", gettext("Settings")}], else: [])
-  end
-
-  attr :current_scope, :map, required: true
-
-  defp content(assigns) do
-    ~H"""
-    <.empty_state icon="book-open" title={gettext("There is no content yet")}>
-      {gettext_term(
-        @current_scope,
-        :unit,
-        "Content is organized in %{terms}, with pages, materials and assignments."
-      )}
-    </.empty_state>
-    """
   end
 
   defp tab_params(nil), do: %{}

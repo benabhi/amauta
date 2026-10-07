@@ -119,6 +119,9 @@ defmodule AmautaWeb.Router do
       live "/c/:slug", CourseLive, :feed
       live "/c/:slug/posts/:post_id", CourseLive, :post
       live "/c/:slug/content", CourseLive, :content
+      live "/c/:slug/content/new", ContentItemLive, :new
+      live "/c/:slug/content/:item_id", ContentItemLive, :show
+      live "/c/:slug/content/:item_id/edit", ContentItemLive, :edit
       live "/c/:slug/people", CourseLive, :people
       live "/c/:slug/grades", CourseLive, :grades
       live "/c/:slug/settings", CourseLive, :settings

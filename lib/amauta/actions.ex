@@ -62,7 +62,15 @@ defmodule Amauta.Actions do
     Amauta.Feed.Actions.SetRepliesEnabled,
     Amauta.Feed.Actions.PinPost,
     Amauta.Feed.Actions.ReorderPinned,
-    Amauta.Feed.Actions.MuteMember
+    Amauta.Feed.Actions.MuteMember,
+    Amauta.Content.Actions.CreateUnit,
+    Amauta.Content.Actions.UpdateUnit,
+    Amauta.Content.Actions.DeleteUnit,
+    Amauta.Content.Actions.MoveUnit,
+    Amauta.Content.Actions.CreateItem,
+    Amauta.Content.Actions.UpdateItem,
+    Amauta.Content.Actions.DeleteItem,
+    Amauta.Content.Actions.MoveItem
   ]
 
   @doc "Todas las acciones."
