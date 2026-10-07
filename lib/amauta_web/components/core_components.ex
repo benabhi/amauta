@@ -120,6 +120,152 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Editor de bloques (RF-CON-003) para un campo de formulario de tipo
+  `Amauta.RichText.Document`. Al estilo Notion: se escribe y con «/» se
+  elige el bloque (títulos, listas, cita, recuadro, código, fórmula, video,
+  separador). El documento viaja como JSON en un input oculto y el servidor
+  lo depura al guardar. El editor (Tiptap) se carga bajo demanda.
+
+      <.rich_text_editor field={@form[:description]} label="Descripción" />
+  """
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :label, :string, required: true
+  attr :placeholder, :string, default: nil
+
+  def rich_text_editor(assigns) do
+    %{field: field} = assigns
+
+    value =
+      case field.value do
+        doc when is_map(doc) -> Jason.encode!(doc)
+        json when is_binary(json) -> json
+        _ -> ""
+      end
+
+    assigns =
+      assign(assigns,
+        id: "#{field.id}-editor",
+        value: value,
+        errors: Enum.map(field.errors, &translate_error/1),
+        commands: Jason.encode!(rich_text_commands()),
+        labels:
+          Jason.encode!(%{
+            slash: gettext("Blocks"),
+            math: gettext("LaTeX formula"),
+            video: gettext("Video"),
+            videoUrl: gettext("Video address"),
+            videoHint: gettext("Paste a YouTube or Vimeo link and press Enter."),
+            videoInvalid: gettext("That link is not from YouTube or Vimeo.")
+          })
+      )
+
+    ~H"""
+    <div class="mb-4">
+      <span id={"#{@id}-label"} class="mb-1 block text-sm font-semibold">{@label}</span>
+      <div
+        id={@id}
+        phx-hook="RichTextEditor"
+        phx-update="ignore"
+        data-commands={@commands}
+        data-labels={@labels}
+        data-labelledby={"#{@id}-label"}
+        data-placeholder={@placeholder || gettext("Write, or type «/» to add a block…")}
+        class="rounded-control border border-line bg-surface focus-within:border-primary"
+      >
+        <input type="hidden" name={@field.name} value={@value} data-editor-input />
+        <div
+          role="toolbar"
+          aria-label={gettext("Text format")}
+          class="flex flex-wrap items-center gap-0.5 border-b border-line p-1"
+        >
+          <.icon_button
+            :for={
+              {command, mark, icon, label} <- [
+                {"bold", "bold", "text-b", gettext("Bold")},
+                {"italic", "italic", "text-italic", gettext("Italic")},
+                {"strike", "strike", "text-strikethrough", gettext("Strikethrough")},
+                {"code", "code", "code", gettext("Inline code")},
+                {"link", "link", "link", gettext("Link")}
+              ]
+            }
+            type="button"
+            icon={icon}
+            label={label}
+            size="sm"
+            data-command={command}
+            data-mark={mark}
+            aria-pressed="false"
+          />
+          <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
+          <.icon_button
+            type="button"
+            icon="arrow-counter-clockwise"
+            label={gettext("Undo")}
+            size="sm"
+            data-command="undo"
+          />
+          <.icon_button
+            type="button"
+            icon="arrow-clockwise"
+            label={gettext("Redo")}
+            size="sm"
+            data-command="redo"
+          />
+        </div>
+        <div data-link-panel hidden class="border-b border-line p-2">
+          <input
+            data-link-input
+            type="url"
+            placeholder="https://…"
+            aria-label={gettext("Link address (Enter to apply, empty to remove)")}
+            class="w-full rounded-control border border-line bg-surface px-3 py-1.5 text-sm"
+          />
+        </div>
+        <div data-editor-content></div>
+      </div>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
+  defp rich_text_commands do
+    [
+      {"paragraph", gettext("Text")},
+      {"heading2", gettext("Title")},
+      {"heading3", gettext("Subtitle")},
+      {"heading4", gettext("Small title")},
+      {"bulletList", gettext("Bulleted list")},
+      {"orderedList", gettext("Numbered list")},
+      {"quote", gettext("Quote")},
+      {"callout", gettext("Highlighted box")},
+      {"calloutWarning", gettext("Warning box")},
+      {"code", gettext("Code")},
+      {"math", gettext("Formula (LaTeX)")},
+      {"video", gettext("Video (YouTube or Vimeo)")},
+      {"divider", gettext("Divider")}
+    ]
+    |> Enum.map(fn {id, label} -> %{id: id, label: label} end)
+  end
+
+  @doc """
+  Muestra contenido enriquecido ya depurado (`Amauta.RichText`): el HTML se
+  genera en el servidor y el navegador completa fórmulas y código.
+
+      <.rich_text id="pathway-description" doc={@pathway.description} />
+  """
+  attr :id, :string, required: true
+  attr :doc, :map, default: nil
+  attr :class, :any, default: nil
+
+  def rich_text(assigns) do
+    ~H"""
+    <div :if={@doc} id={@id} phx-hook="RichContent" class={["rich-text", @class]}>
+      {Amauta.RichText.to_html(@doc)}
+    </div>
+    """
+  end
+
+  @doc """
   Botón para copiar un texto al portapapeles (por ejemplo, un código de
   inscripción). Al copiar muestra un tilde por dos segundos y lo anuncia a
   los lectores de pantalla. El comportamiento está en `assets/js/app.js`

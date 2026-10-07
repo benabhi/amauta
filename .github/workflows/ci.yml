@@ -112,6 +112,7 @@ jobs:
 
       - name: Assets
         run: |
+          npm ci --prefix assets --no-audit --no-fund
           mix esbuild.install --if-missing
           mix tailwind.install --if-missing
           mix esbuild amauta

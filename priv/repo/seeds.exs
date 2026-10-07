@@ -91,7 +91,10 @@ for {slug, name, short_name} <- institutions do
              Pathways.create(institution, %{
                name: "Lic. en Sistemas",
                code: "LSI",
-               description: "Trayecto de ejemplo para probar etapas y responsables."
+               description:
+                 Amauta.RichText.from_text(
+                   "Trayecto de ejemplo para probar etapas y responsables."
+                 )
              }) do
         for name <- ["1.er año", "2.º año", "3.er año"],
             do: {:ok, _} = Pathways.add_stage(institution, pathway, %{name: name})
