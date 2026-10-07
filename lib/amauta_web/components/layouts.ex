@@ -1,0 +1,320 @@
+defmodule AmautaWeb.Layouts do
+  @moduledoc """
+  Layouts de la aplicación: el raíz (`root.html.heex`) y el de las
+  pantallas (`app/1`), con la barra superior de la institución.
+  """
+  use AmautaWeb, :html
+
+  alias Amauta.Accounts.User
+  alias AmautaWeb.Paths
+
+  embed_templates "layouts/*"
+
+  @doc """
+  Layout de las pantallas: barra superior con la institución, el selector de
+  tema y el menú de la persona, y el contenido centrado.
+
+      <Layouts.app flash={@flash} current_scope={@current_scope}>
+        <h1>Contenido</h1>
+      </Layouts.app>
+  """
+  attr :flash, :map, required: true
+  attr :current_scope, :map, default: nil, doc: "el Amauta.Scope de la pantalla"
+  attr :width, :string, default: "md", values: ~w(sm md lg), doc: "ancho del contenido"
+  attr :active, :atom, default: nil, doc: "sección activa de la navegación"
+
+  attr :palette, :boolean,
+    default: true,
+    doc:
+      "paleta de comandos; `false` en páginas que no son LiveView (un LiveComponent necesita una)"
+
+  slot :inner_block, required: true
+
+  def app(assigns) do
+    ~H"""
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-surface focus:px-3 focus:py-2"
+    >
+      {gettext("Skip to content")}
+    </a>
+
+    <header class="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur">
+      <div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        <.brand current_scope={@current_scope} />
+        <.institution_nav
+          :if={@current_scope && @current_scope.user}
+          current_scope={@current_scope}
+          active={@active}
+        />
+        <div class="ms-auto flex items-center gap-2">
+          <button
+            :if={@palette && @current_scope && @current_scope.user}
+            type="button"
+            phx-click={JS.dispatch("amauta:palette-open")}
+            class="flex min-h-11 items-center gap-2 rounded-control text-sm text-ink-muted hover:text-ink max-lg:px-2.5 lg:w-52 lg:border lg:border-line lg:bg-surface lg:px-3"
+            aria-label={gettext("Search or go to…")}
+          >
+            <.icon name="magnifying-glass" class="size-5 lg:size-4" />
+            <span class="hidden flex-1 text-start lg:inline">{gettext("Search…")}</span>
+            <span class="hidden lg:inline"><.kbd>Ctrl K</.kbd></span>
+          </button>
+          <.theme_toggle :if={!(@current_scope && @current_scope.user)} />
+          <.user_menu :if={@current_scope && @current_scope.user} current_scope={@current_scope} />
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="px-4 py-10 sm:px-6">
+      <div class={["mx-auto", content_width(@width)]}>
+        {render_slot(@inner_block)}
+      </div>
+    </main>
+
+    <.live_component
+      :if={@palette && @current_scope && @current_scope.user}
+      module={AmautaWeb.Components.CommandPalette}
+      id="command-palette"
+      current_scope={@current_scope}
+    />
+
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc """
+  Layout de la administración de la instancia (`/admin`), para el personal
+  de plataforma.
+  """
+  attr :flash, :map, required: true
+  attr :current_staff, :map, required: true
+  attr :active, :atom, default: :institutions, values: [:institutions, :dashboard]
+  slot :inner_block, required: true
+
+  def admin(assigns) do
+    ~H"""
+    <header class="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur">
+      <div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        <.link navigate={~p"/admin"} class="flex items-center gap-2.5 rounded-control">
+          <span class="flex size-8 items-center justify-center rounded-control bg-airampo-soft text-airampo-deep">
+            <.icon name="gear" class="size-5" />
+          </span>
+          <span class="font-display text-lg font-semibold">{gettext("Administration")}</span>
+        </.link>
+        <nav class="ms-4 hidden items-center gap-1 sm:flex" aria-label={gettext("Administration")}>
+          <.link
+            navigate={~p"/admin"}
+            class={[
+              "rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken",
+              @active == :institutions && "bg-surface-sunken font-semibold"
+            ]}
+          >
+            {gettext("Institutions")}
+          </.link>
+          <.link
+            href={~p"/admin/dashboard"}
+            class="rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken"
+          >
+            {gettext("Telemetry")}
+          </.link>
+        </nav>
+        <div class="ms-auto flex items-center gap-2">
+          <.theme_toggle />
+          <.avatar name={@current_staff.name} size="sm" />
+          <.link
+            href={~p"/admin/log-out"}
+            method="delete"
+            class="flex size-9 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
+            aria-label={gettext("Log out")}
+            title={gettext("Log out")}
+          >
+            <.icon name="sign-out" class="size-5" />
+          </.link>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="px-4 py-10 sm:px-6">
+      <div class="mx-auto max-w-5xl">{render_slot(@inner_block)}</div>
+    </main>
+
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  attr :current_scope, :map, required: true
+  attr :active, :atom, default: nil
+
+  # Navegación de la institución: solo las secciones que la persona puede ver.
+  defp institution_nav(assigns) do
+    assigns = assign(assigns, :items, nav_items(assigns.current_scope))
+
+    ~H"""
+    <nav class="ms-2 hidden items-center gap-1 md:flex" aria-label={gettext("Main")}>
+      <.link
+        :for={{key, label, path} <- @items}
+        navigate={path}
+        aria-current={@active == key && "page"}
+        class={[
+          "rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken",
+          @active == key && "bg-surface-sunken font-semibold"
+        ]}
+      >
+        {label}
+      </.link>
+    </nav>
+    """
+  end
+
+  defp nav_items(scope) do
+    [
+      {:home, gettext("Home"), Paths.home(scope), nil},
+      {:courses, Amauta.Terminology.title(scope, :course, 2), Paths.courses(scope), nil},
+      {:pathways, Amauta.Terminology.title(scope, :pathway, 2), Paths.pathways(scope), nil},
+      {:people, gettext("People"), Paths.people(scope), "institution.users.view"},
+      {:periods, Amauta.Terminology.title(scope, :period, 2), Paths.periods(scope),
+       "institution.periods.manage"}
+    ]
+    |> Enum.filter(fn {_key, _label, _path, permission} ->
+      is_nil(permission) or Amauta.Authorization.can?(scope, permission)
+    end)
+    |> Enum.map(fn {key, label, path, _permission} -> {key, label, path} end)
+  end
+
+  defp content_width("sm"), do: "max-w-sm"
+  defp content_width("md"), do: "max-w-3xl"
+  defp content_width("lg"), do: "max-w-6xl"
+
+  attr :current_scope, :map, default: nil
+
+  defp brand(assigns) do
+    ~H"""
+    <.link
+      href={if @current_scope, do: Paths.home(@current_scope), else: "/"}
+      class="flex min-w-0 items-center gap-2.5 rounded-control"
+    >
+      <span class="flex size-8 shrink-0 items-center justify-center rounded-control bg-anil-soft text-anil-deep">
+        <.icon name="graduation-cap" class="size-5" />
+      </span>
+      <span class="truncate font-display text-lg font-semibold">
+        {if @current_scope,
+          do: @current_scope.institution.short_name || @current_scope.institution.name,
+          else: "Amauta"}
+      </span>
+    </.link>
+    """
+  end
+
+  attr :current_scope, :map, required: true
+
+  defp user_menu(assigns) do
+    ~H"""
+    <.dropdown id="user-menu" label={gettext("Account menu")}>
+      <:trigger>
+        <.avatar
+          name={User.display_name(@current_scope.user)}
+          src={Paths.avatar(@current_scope, @current_scope.user)}
+          size="sm"
+        />
+        <.icon name="caret-down" class="size-3.5 text-ink-muted" />
+      </:trigger>
+      <div class="border-b border-line px-3 pt-1 pb-3">
+        <p class="truncate font-semibold">{User.display_name(@current_scope.user)}</p>
+        <p class="truncate text-sm text-ink-muted">{@current_scope.user.email}</p>
+      </div>
+      <div class="py-1">
+        <.dropdown_item navigate={Paths.settings(@current_scope)} icon="gear">
+          {gettext("Account settings")}
+        </.dropdown_item>
+      </div>
+      <div class="flex items-center justify-between gap-3 border-t border-line px-3 py-2">
+        <span class="text-sm text-ink-muted">{gettext("Theme")}</span>
+        <.theme_toggle />
+      </div>
+      <div class="border-t border-line pt-1">
+        <.dropdown_item href={Paths.log_out(@current_scope)} method="delete" icon="sign-out">
+          {gettext("Log out")}
+        </.dropdown_item>
+      </div>
+    </.dropdown>
+    """
+  end
+
+  @doc "Avisos flash y de conexión."
+  attr :flash, :map, required: true
+  attr :id, :string, default: "flash-group"
+
+  def flash_group(assigns) do
+    ~H"""
+    <div id={@id} aria-live="polite">
+      <.flash kind={:info} flash={@flash} />
+      <.flash kind={:error} flash={@flash} />
+
+      <.flash
+        id="client-error"
+        kind={:error}
+        title={gettext("We can't find the internet")}
+        phx-disconnected={
+          show(".phx-client-error #client-error")
+          |> JS.remove_attribute("hidden", to: ".phx-client-error #client-error")
+        }
+        phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
+        hidden
+      >
+        {gettext("Attempting to reconnect")}
+      </.flash>
+
+      <.flash
+        id="server-error"
+        kind={:error}
+        title={gettext("Something went wrong!")}
+        phx-disconnected={
+          show(".phx-server-error #server-error")
+          |> JS.remove_attribute("hidden", to: ".phx-server-error #server-error")
+        }
+        phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
+        hidden
+      >
+        {gettext("Attempting to reconnect")}
+      </.flash>
+    </div>
+    """
+  end
+
+  @doc """
+  Selector de tema: sistema, claro u oscuro. El script de `root.html.heex`
+  lo aplica y lo recuerda en el navegador.
+  """
+  def theme_toggle(assigns) do
+    ~H"""
+    <div
+      class="relative flex items-center rounded-full border border-line bg-surface-sunken p-0.5"
+      role="group"
+      aria-label={gettext("Color theme")}
+    >
+      <div class={[
+        "absolute h-7 w-7 rounded-full bg-surface shadow-sm transition-[inset-inline-start] duration-base ease-standard",
+        "start-0.5 [[data-theme-source=user][data-theme=light]_&]:start-[calc(0.125rem+1.75rem)]",
+        "[[data-theme-source=user][data-theme=dark]_&]:start-[calc(0.125rem+3.5rem)]"
+      ]} />
+      <button
+        :for={
+          {theme, icon, label} <- [
+            {"system", "desktop", gettext("System theme")},
+            {"light", "sun", gettext("Light theme")},
+            {"dark", "moon", gettext("Dark theme")}
+          ]
+        }
+        type="button"
+        class="relative flex size-7 cursor-pointer items-center justify-center rounded-full text-ink-muted hover:text-ink"
+        phx-click={JS.dispatch("phx:set-theme")}
+        data-phx-theme={theme}
+        aria-label={label}
+        title={label}
+      >
+        <.icon name={icon} class="size-4" />
+      </button>
+    </div>
+    """
+  end
+end

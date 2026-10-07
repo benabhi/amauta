@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Comandos estandarizados del entorno de desarrollo (RNF-DEV-006).
+# Equivalente en PowerShell: bin\dev.ps1
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# En Linux, el contenedor usa el UID y GID del host (RNF-DEV-010).
+if [ "$(uname -s)" = "Linux" ]; then
+  export UID
+  GID="$(id -g)"
+  export GID
+fi
+
+# Ejecuta en el contenedor de la app: usa el que está corriendo o uno efímero.
+in_app() {
+  if [ -n "$(docker compose ps --status running --quiet app 2>/dev/null)" ]; then
+    docker compose exec app "$@"
+  else
+    docker compose run --rm app "$@"
+  fi
+}
+
+usage() {
+  cat <<'EOF'
+Uso: bin/dev <comando> [argumentos]
+
+  up          Levanta todo el entorno en segundo plano
+  down        Detiene el entorno (los datos se conservan)
+  logs        Muestra los logs (por defecto, de la app) en vivo
+  iex         Consola IEx conectada al nodo en ejecución
+  shell       Bash dentro del contenedor de la app
+  mix …       Ejecuta una tarea de mix
+  test …      Ejecuta los tests
+  migrate     Aplica las migraciones pendientes
+  seed        Carga los datos de ejemplo
+  reset       Borra y recrea la base con migraciones y datos de ejemplo
+  format      Formatea el código
+  lint        Verifica formato y advertencias de compilación
+  precommit   Lo que corre antes de cada commit
+  ci          Los mismos pasos que la integración continua, en MIX_ENV=test
+  destroy     Detiene el entorno y BORRA sus volúmenes (base, archivos, deps)
+EOF
+}
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+  up)        docker compose up -d --build "$@"
+             echo "App: http://localhost:4000 · Mailpit: http://localhost:8025" ;;
+  down)      docker compose down "$@" ;;
+  logs)      docker compose logs -f "${@:-app}" ;;
+  iex)       docker compose exec app iex --sname "console$$" \
+               --cookie "${ERLANG_COOKIE:-amauta-dev}" --remsh amauta@app ;;
+  shell)     in_app bash ;;
+  mix)       in_app mix "$@" ;;
+  test)      in_app mix test "$@" ;;
+  migrate)   in_app mix ecto.migrate ;;
+  seed)      in_app mix run priv/repo/seeds.exs ;;
+  reset)     in_app mix ecto.reset ;;
+  format)    in_app mix format ;;
+  lint)      in_app mix do format --check-formatted + compile --warnings-as-errors --force ;;
+  precommit) in_app mix precommit ;;
+  ci)        docker compose exec -e MIX_ENV=test app bash -c "mix deps.unlock --check-unused && mix compile --warnings-as-errors && mix format --check-formatted && mix gettext.extract --check-up-to-date && mix amauta.gettext.check && mix test --warnings-as-errors" ;;
+  destroy)   docker compose down --volumes ;;
+  help|-h|--help) usage ;;
+  *)         echo "Comando desconocido: $cmd" >&2; usage; exit 1 ;;
+esac

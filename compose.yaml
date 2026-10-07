@@ -1,0 +1,111 @@
+# Entorno de desarrollo de Amauta (RNF-DEV-001).
+# Levantar todo: `bin/dev up` (bash) o `bin\dev.ps1 up` (PowerShell).
+# Todas las credenciales de este archivo son solo para desarrollo.
+name: amauta
+
+x-s3-env: &s3-env
+  S3_BUCKET: amauta-dev
+  S3_ACCESS_KEY_ID: GK0123456789abcdef01234567
+  S3_SECRET_ACCESS_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/dev/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: amauta-dev
+    hostname: app
+    # En Linux, bin/dev exporta UID y GID del host para no dejar archivos de
+    # root en el bind mount (RNF-DEV-010). En Windows y macOS el montaje no
+    # tiene dueños reales y se corre como root: si no, Mix no puede fijar la
+    # fecha de los archivos que recompila por dependencia.
+    user: "${UID:-0}:${GID:-0}"
+    ports:
+      - "4000:4000"
+    environment:
+      <<: *s3-env
+      DATABASE_HOST: db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      SMTP_HOST: mail
+      SMTP_PORT: "1025"
+      S3_ENDPOINT: http://storage:3900
+      S3_PUBLIC_ENDPOINT: http://localhost:3900
+      S3_REGION: garage
+      ERLANG_COOKIE: amauta-dev
+    volumes:
+      # Código del host (RNF-DEV-002).
+      - .:/app
+      # Artefactos fuera del bind mount (RNF-DEV-003).
+      - deps:/app/deps
+      - build:/app/_build
+      - node_modules:/app/assets/node_modules
+      - mix:/home/dev/.mix
+      - hex:/home/dev/.hex
+      - cache:/home/dev/.cache
+    depends_on:
+      db:
+        condition: service_healthy
+      storage-init:
+        condition: service_completed_successfully
+      mail:
+        condition: service_started
+    stdin_open: true
+    tty: true
+
+  db:
+    image: postgres:18.6-trixie
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  storage:
+    image: dxflrs/garage:v2.4.1
+    ports:
+      - "3900:3900"
+      - "3903:3903"
+    volumes:
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+
+  storage-init:
+    build: docker/garage
+    image: amauta-storage-init
+    environment:
+      <<: *s3-env
+      GARAGE_HOST: storage
+      GARAGE_ADMIN_TOKEN: amauta-dev-admin-token
+      CORS_ORIGIN: http://localhost:4000
+    depends_on:
+      - storage
+    restart: "no"
+
+  mail:
+    image: axllent/mailpit:v1.31.4
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  deps:
+  build:
+  node_modules:
+  mix:
+  hex:
+  cache:
+  pgdata:
+  garage-meta:
+  garage-data:

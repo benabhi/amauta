@@ -1,0 +1,162 @@
+#  "msgid"s in this file come from POT (.pot) files.
+# #
+# # Do not add, change, or remove "msgid"s manually here as
+# # they're tied to the ones in the corresponding POT file
+# # (with the same domain).
+# #
+# # Use "mix gettext.extract --merge" or "mix gettext.merge"
+# # to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/amauta/accounts/user_notifier.ex:131
+#, elixir-autogen, elixir-format
+msgid "Confirmation instructions"
+msgstr "Confirmá tu cuenta"
+
+#: lib/amauta/accounts/user_notifier.ex:31
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"You can change your email by visiting the URL below:\n"
+"\n"
+"%{url}\n"
+"\n"
+"If you didn't request this change, please ignore this.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"Para confirmar tu nuevo email, entrá en este enlace:\n"
+"\n"
+"%{url}\n"
+"\n"
+"Si no pediste este cambio, ignorá este mensaje.\n"
+
+#: lib/amauta/accounts/user_notifier.ex:132
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"You can confirm your account by visiting the URL below:\n"
+"\n"
+"%{url}\n"
+"\n"
+"If you were not expecting this email, please ignore it.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"Para confirmar tu cuenta y entrar, usá este enlace:\n"
+"\n"
+"%{url}\n"
+"\n"
+"Si no esperabas este email, ignoralo.\n"
+
+#: lib/amauta/accounts/user_notifier.ex:155
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"You can log into your account by visiting the URL below:\n"
+"\n"
+"%{url}\n"
+"\n"
+"If you didn't request this email, please ignore this.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"Para entrar a tu cuenta, usá este enlace:\n"
+"\n"
+"%{url}\n"
+"\n"
+"Si no lo pediste, ignorá este mensaje.\n"
+
+#: lib/amauta/accounts/user_notifier.ex:154
+#, elixir-autogen, elixir-format
+msgid "Log in instructions"
+msgstr "Tu enlace para entrar"
+
+#: lib/amauta/accounts/user_notifier.ex:30
+#, elixir-autogen, elixir-format
+msgid "Update email instructions"
+msgstr "Confirmá tu nuevo email"
+
+#: lib/amauta/accounts/user_notifier.ex:82
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"Someone just signed in to your account from a new device:\n"
+"\n"
+"%{device}\n"
+"\n"
+"If it was you, you can ignore this message. If it wasn't, change your\n"
+"password right away.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"Alguien acaba de entrar a tu cuenta desde un dispositivo nuevo:\n"
+"\n"
+"%{device}\n"
+"\n"
+"Si fuiste vos, podés ignorar este mensaje. Si no, cambiá tu\n"
+"contraseña cuanto antes.\n"
+
+#: lib/amauta/accounts/user_notifier.ex:107
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"We blocked sign-ins to your account for a few minutes because there\n"
+"were too many failed attempts.\n"
+"\n"
+"If it wasn't you, someone may be trying to guess your password.\n"
+"You can always sign in with a link sent to this email.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"Bloqueamos por unos minutos el acceso a tu cuenta porque hubo\n"
+"demasiados intentos fallidos.\n"
+"\n"
+"Si no fuiste vos, puede que alguien esté intentando adivinar tu contraseña.\n"
+"Siempre podés entrar con un enlace enviado a este email.\n"
+
+#: lib/amauta/accounts/user_notifier.ex:81
+#, elixir-autogen, elixir-format
+msgid "New sign-in to your account"
+msgstr "Nuevo inicio de sesión en tu cuenta"
+
+#: lib/amauta/accounts/user_notifier.ex:106
+#, elixir-autogen, elixir-format
+msgid "Too many failed sign-in attempts"
+msgstr "Demasiados intentos fallidos para entrar"
+
+#: lib/amauta/accounts/user_notifier.ex:54
+#, elixir-autogen, elixir-format
+msgid "You are invited to %{institution}"
+msgstr "Te invitaron a %{institution}"
+
+#: lib/amauta/accounts/user_notifier.ex:55
+#, elixir-autogen, elixir-format
+msgid ""
+"Hi %{name},\n"
+"\n"
+"%{institution} invited you to Amauta, its learning platform.\n"
+"To enter, use the link below:\n"
+"\n"
+"%{url}\n"
+"\n"
+"The link is valid for 7 days. If it expires, ask for a new one from\n"
+"the login page using this email.\n"
+msgstr ""
+"Hola, %{name}:\n"
+"\n"
+"%{institution} te invitó a Amauta, su plataforma educativa.\n"
+"Para entrar, usá este enlace:\n"
+"\n"
+"%{url}\n"
+"\n"
+"El enlace vale por 7 días. Si vence, pedí uno nuevo desde\n"
+"la página de inicio de sesión con este email.\n"
