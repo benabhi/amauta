@@ -22,6 +22,8 @@ defmodule Amauta.Feed do
   alias Amauta.{Authorization, Repo, Scope, Tenancy}
 
   @page 30
+  @reply_window 3
+  @child_window 2
 
   # Fijada y vigente (RF-TAB-006).
   defmacrop pinned(p, now) do
@@ -109,34 +111,41 @@ defmodule Amauta.Feed do
   Publicaciones visibles del curso, de la más reciente a la más vieja, con
   autor y comisión. Con `"section"`, solo las de esa comisión y las del
   curso entero (el filtro del encabezado, RF-COM-003). Las fijadas van
-  aparte (`list_pinned/3`).
+  aparte (`list_pinned/4`).
+
+  Trae de a `page_size/0`. Opciones: `:before`, la última publicación ya
+  mostrada (para traer las anteriores), y `:windows`, cuántas respuestas
+  mostrar (ver `with_replies/3`).
   """
-  def list_posts(%Scope{} = scope, %Course{} = course, filters \\ %{}) do
+  def list_posts(%Scope{} = scope, %Course{} = course, filters \\ %{}, opts \\ []) do
     Post
     |> where([p], p.course_id == ^course.id and p.status == "published")
     |> where([p], not pinned(p, ^DateTime.utc_now()))
     |> visible_to(scope, course)
     |> filter_section(filters["section"])
+    |> before(opts[:before])
     |> order_by([p], desc: p.published_at, desc: p.id)
     |> limit(@page)
-    |> preload(^post_preloads())
+    |> preload([:author, :section])
     |> Repo.all(Tenancy.opts(scope))
+    |> with_replies(scope, opts[:windows] || %{})
   end
 
   @doc """
   Publicaciones fijadas y vigentes que la persona ve (RF-TAB-006), en el
   orden que eligió el equipo docente. Acepta el mismo filtro de comisión
-  que `list_posts/3`.
+  que `list_posts/4`; también acepta `:windows`.
   """
-  def list_pinned(%Scope{} = scope, %Course{} = course, filters \\ %{}) do
+  def list_pinned(%Scope{} = scope, %Course{} = course, filters \\ %{}, opts \\ []) do
     Post
     |> where([p], p.course_id == ^course.id and p.status == "published")
     |> where([p], pinned(p, ^DateTime.utc_now()))
     |> visible_to(scope, course)
     |> filter_section(filters["section"])
     |> order_by([p], asc: p.pin_position, asc: p.pinned_at)
-    |> preload(^post_preloads())
+    |> preload([:author, :section])
     |> Repo.all(Tenancy.opts(scope))
+    |> with_replies(scope, opts[:windows] || %{})
   end
 
   @doc "La publicación está fijada y no venció."
@@ -155,10 +164,112 @@ defmodule Amauta.Feed do
     |> Repo.all(Tenancy.opts(tenant))
   end
 
-  # Autor, comisión y respuestas en orden, con sus autores.
-  defp post_preloads do
-    replies = from(r in Reply, order_by: [r.inserted_at, r.id], preload: :author)
-    [:author, :section, replies: replies]
+  @doc "Cuántas publicaciones trae `list_posts/4` por vez."
+  def page_size, do: @page
+
+  @doc "Cuántas respuestas de primer nivel se muestran por defecto."
+  def reply_window, do: @reply_window
+
+  @doc "Cuántas respuestas anidadas se muestran por defecto."
+  def child_window, do: @child_window
+
+  defp before(query, nil), do: query
+
+  defp before(query, %Post{published_at: at, id: id}),
+    do: where(query, [p], p.published_at < ^at or (p.published_at == ^at and p.id < ^id))
+
+  @doc """
+  Carga las respuestas que se muestran de cada publicación (RF-TAB-004),
+  sin traer hilos enteros: con 3 o con 3000 respuestas, el costo es el
+  mismo. Cada publicación lleva sus conteos (`reply_count`,
+  `top_reply_count`) y en `replies` las últimas de primer nivel, cada una
+  con su `child_count` y sus últimas anidadas en `children`, en orden
+  cronológico.
+
+  `windows` dice cuántas mostrar: por ID de publicación (de primer nivel,
+  por defecto #{@reply_window}) y por ID de respuesta (anidadas, por
+  defecto #{@child_window}). Es lo que agranda «Ver anteriores».
+  """
+  def with_replies(posts, tenant, windows \\ %{})
+  def with_replies([], _tenant, _windows), do: []
+
+  def with_replies(posts, tenant, windows) do
+    opts = Tenancy.opts(tenant)
+    ids = Enum.map(posts, & &1.id)
+
+    counts =
+      from(r in Reply,
+        where: r.post_id in ^ids,
+        group_by: r.post_id,
+        select: {r.post_id, {count(r.id), filter(count(r.id), is_nil(r.parent_id))}}
+      )
+      |> Repo.all(opts)
+      |> Map.new()
+
+    tops = latest(ids, :post_id, windows, @reply_window, opts)
+    top_ids = Enum.map(tops, & &1.id)
+
+    child_counts =
+      from(r in Reply,
+        where: r.parent_id in ^top_ids,
+        group_by: r.parent_id,
+        select: {r.parent_id, count(r.id)}
+      )
+      |> Repo.all(opts)
+      |> Map.new()
+
+    children =
+      top_ids |> latest(:parent_id, windows, @child_window, opts) |> Enum.group_by(& &1.parent_id)
+
+    tops =
+      tops
+      |> Enum.map(fn reply ->
+        %{
+          reply
+          | child_count: Map.get(child_counts, reply.id, 0),
+            children: Map.get(children, reply.id, [])
+        }
+      end)
+      |> Enum.group_by(& &1.post_id)
+
+    Enum.map(posts, fn post ->
+      {total, top} = Map.get(counts, post.id, {0, 0})
+      %{post | reply_count: total, top_reply_count: top, replies: Map.get(tops, post.id, [])}
+    end)
+  end
+
+  # Las últimas `n` respuestas de cada padre (publicación o respuesta), con
+  # su autor y en orden cronológico. Una consulta por cada tamaño de ventana
+  # distinto: casi siempre, una sola.
+  defp latest([], _parent, _windows, _default, _opts), do: []
+
+  defp latest(parent_ids, parent, windows, default, opts) do
+    parent_ids
+    |> Enum.group_by(&Map.get(windows, &1, default))
+    |> Enum.flat_map(fn {n, ids} ->
+      ranked =
+        from(r in Reply,
+          where: field(r, ^parent) in ^ids,
+          where: ^if(parent == :post_id, do: dynamic([r], is_nil(r.parent_id)), else: true),
+          select: %{
+            id: r.id,
+            rank:
+              over(row_number(),
+                partition_by: field(r, ^parent),
+                order_by: [desc: r.inserted_at, desc: r.id]
+              )
+          }
+        )
+
+      from(r in Reply,
+        join: x in subquery(ranked),
+        on: x.id == r.id,
+        where: x.rank <= ^n,
+        order_by: [asc: r.inserted_at, asc: r.id],
+        preload: :author
+      )
+      |> Repo.all(opts)
+    end)
   end
 
   defp visible_to(query, scope, course) do
@@ -193,15 +304,19 @@ defmodule Amauta.Feed do
     end
   end
 
-  @doc "Publicación visible por ID, con autor y comisión, o `nil`."
-  def get_visible(%Scope{} = scope, %Course{} = course, id) do
+  @doc """
+  Publicación visible por ID, con autor, comisión y las respuestas que se
+  muestran (opción `:windows`, ver `with_replies/3`), o `nil`.
+  """
+  def get_visible(%Scope{} = scope, %Course{} = course, id, opts \\ []) do
     with {:ok, id} <- Ecto.UUID.cast(id),
          %Post{} = post <-
            Post
            |> where([p], p.id == ^id and p.course_id == ^course.id and p.status == "published")
            |> visible_to(scope, course)
-           |> preload(^post_preloads())
+           |> preload([:author, :section])
            |> Repo.one(Tenancy.opts(scope)) do
+      [post] = with_replies([post], scope, opts[:windows] || %{})
       post
     else
       _ -> nil

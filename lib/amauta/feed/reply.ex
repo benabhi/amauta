@@ -17,6 +17,8 @@ defmodule Amauta.Feed.Reply do
     field :edited_at, :utc_datetime_usec
     field :hidden_at, :utc_datetime_usec
     field :hidden_by_id, Ecto.UUID
+    # Cuántas anidadas tiene; las que se muestran están en `children`.
+    field :child_count, :integer, virtual: true, default: 0
 
     belongs_to :post, Post
     belongs_to :parent, __MODULE__

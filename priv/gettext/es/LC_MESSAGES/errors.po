@@ -147,3 +147,13 @@ msgstr "tiene que ser posterior al inicio"
 #, elixir-autogen, elixir-format
 msgid "only lowercase letters, digits and hyphens"
 msgstr "solo minúsculas, dígitos y guiones"
+
+#: lib/amauta_web/error_messages.ex:23
+#, elixir-autogen, elixir-format
+msgid "must be in the future"
+msgstr "tiene que ser una fecha futura"
+
+#: lib/amauta_web/error_messages.ex:22
+#, elixir-autogen, elixir-format
+msgid "write something first"
+msgstr "primero escribí algo"

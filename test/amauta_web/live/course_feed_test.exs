@@ -198,7 +198,7 @@ defmodule AmautaWeb.CourseFeedTest do
       post = publish(teacher, course, "Aviso")
       {:ok, view, _html} = open(conn, teacher, course)
 
-      view |> element(~s(#replies-#{post.id} [phx-click="toggle_replies"])) |> render_click()
+      view |> element(~s(#post-menu-#{post.id} [phx-click="toggle_replies"])) |> render_click()
       _ = render(view)
 
       assert has_element?(view, "#replies-#{post.id}", "Replies are closed")
@@ -365,5 +365,94 @@ defmodule AmautaWeb.CourseFeedTest do
       refute has_element?(view, ~s([phx-click="move_pin"]))
       refute has_element?(view, "[data-drag-handle]")
     end
+  end
+
+  describe "hilos y tableros largos" do
+    test "muestra las últimas respuestas y trae las anteriores a pedido", %{
+      conn: conn,
+      course: course
+    } do
+      teacher = member(course, "teacher")
+      scope = Amauta.Scope.for_user(institution(), teacher)
+      post = publish(teacher, course, "Consultas")
+
+      for i <- 1..25 do
+        {:ok, _} =
+          Actions.run(Amauta.Feed.Actions.ReplyToPost, scope, %{
+            "post_id" => post.id,
+            "body" => body("Respuesta #{i}")
+          })
+      end
+
+      {:ok, view, _html} = open(conn, teacher, course)
+      replies = "#replies-#{post.id} > ul > li"
+
+      assert view |> element("#replies-#{post.id}") |> render() =~ "25 replies"
+
+      assert count(view, replies) == 3
+
+      assert has_element?(
+               view,
+               ~s(#replies-#{post.id} [phx-click="more_replies"]),
+               "22 earlier replies"
+             )
+
+      view |> element(~s(#replies-#{post.id} [phx-click="more_replies"])) |> render_click()
+
+      assert count(view, replies) == 23
+
+      assert has_element?(
+               view,
+               ~s(#replies-#{post.id} [phx-click="more_replies"]),
+               "2 earlier replies"
+             )
+    end
+
+    test "la respuesta propia se suma sin desplazar otra", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      scope = Amauta.Scope.for_user(institution(), teacher)
+      post = publish(teacher, course, "Consultas")
+
+      for i <- 1..3 do
+        {:ok, _} =
+          Actions.run(Amauta.Feed.Actions.ReplyToPost, scope, %{
+            "post_id" => post.id,
+            "body" => body("Vieja #{i}")
+          })
+      end
+
+      {:ok, view, _html} = open(conn, member(course, "student"), course)
+      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+
+      view
+      |> form("#reply-form-#{post.id}")
+      |> render_submit(%{reply: %{body: body("La mía")}})
+
+      assert has_element?(view, "#replies-#{post.id}", "Vieja 1")
+      assert has_element?(view, "#replies-#{post.id}", "La mía")
+    end
+
+    test "trae las publicaciones anteriores al llegar al final", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      for i <- 1..(Feed.page_size() + 2), do: publish(teacher, course, "Aviso #{i}")
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      assert has_element?(view, ~s(#feed-posts[phx-viewport-bottom="more_posts"]))
+
+      view |> element("#feed-more-posts") |> render_click()
+
+      assert has_element?(view, "#post-body-" <> first_post_id(course, teacher))
+      refute has_element?(view, "#feed-more-posts")
+    end
+  end
+
+  defp count(view, selector),
+    do: view |> render() |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.count()
+
+  defp first_post_id(course, user) do
+    scope = Amauta.Scope.for_user(institution(), user)
+    posts = Feed.list_posts(scope, course)
+    [oldest | _] = Feed.list_posts(scope, course, %{}, before: List.last(posts)) |> Enum.reverse()
+    oldest.id
   end
 end
