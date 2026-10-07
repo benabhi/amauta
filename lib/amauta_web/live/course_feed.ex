@@ -212,13 +212,15 @@ defmodule AmautaWeb.CourseFeed do
     section =
       (draft && draft.section_id) || default_target(targets, socket.assigns.section_filter)
 
+    files = if draft, do: Feed.attached_files(scope, draft), else: []
+
     socket
     |> assign(
       targets: targets,
-      has_draft: draft != nil,
+      has_draft: draft != nil and draft_content?(draft.body, files),
       form: to_form(%{"body" => draft && draft.body, "section_id" => section}, as: "post")
     )
-    |> put_files(:composer, if(draft, do: Feed.attached_files(scope, draft), else: []))
+    |> put_files(:composer, files)
   end
 
   # Por defecto, el curso entero; si no se puede, la comisión del filtro o
@@ -277,8 +279,7 @@ defmodule AmautaWeb.CourseFeed do
 
   @impl true
   def handle_event("draft", %{"post" => params}, socket) do
-    {:noreply,
-     socket |> assign(form: to_form(params, as: "post"), has_draft: true) |> save_draft()}
+    {:noreply, socket |> assign(form: to_form(params, as: "post")) |> save_draft()}
   end
 
   def handle_event("open_composer", _params, socket),
@@ -642,8 +643,21 @@ defmodule AmautaWeb.CourseFeed do
       })
 
     Actions.run(SaveDraft, socket.assigns.current_scope, params)
-    socket
+    assign(socket, has_draft: draft_content?(params["body"], socket.assigns.files.composer))
   end
+
+  # Si el borrador tiene algo: texto o adjuntos. Un borrador vacío (se abrió
+  # el editor y no se escribió nada) no cuenta.
+  defp draft_content?(_body, [_ | _]), do: true
+
+  defp draft_content?(body, []) when is_binary(body) do
+    case Jason.decode(body) do
+      {:ok, doc} -> draft_content?(doc, [])
+      {:error, _} -> String.trim(body) != ""
+    end
+  end
+
+  defp draft_content?(doc, []), do: not Amauta.RichText.blank?(doc)
 
   # Agranda la ventana de respuestas: las anidadas de `parent` o, sin él,
   # las de primer nivel de la publicación.
@@ -682,7 +696,7 @@ defmodule AmautaWeb.CourseFeed do
         type="button"
         phx-click="open_composer"
         phx-target={@myself}
-        class="flex min-h-16 w-full items-center gap-3 rounded-card border border-line bg-surface px-4 text-start text-ink-muted shadow-sm transition-colors duration-fast hover:border-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
+        class="group flex min-h-14 w-full items-center gap-3 rounded-full border border-dashed border-line bg-surface-sunken ps-2 pe-2 text-start text-ink-muted transition-colors duration-fast hover:border-primary hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
       >
         <.avatar
           name={User.display_name(@current_scope.user)}
@@ -694,7 +708,10 @@ defmodule AmautaWeb.CourseFeed do
             do: gettext("Continue your draft…"),
             else: gettext_term(@current_scope, :course, "Share something with the %{term}…")}
         </span>
-        <.icon name="pencil-simple" class="size-5 shrink-0" />
+        <span class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary transition-opacity duration-fast group-hover:opacity-90">
+          <.icon name="pencil-simple" class="size-4" />
+          <span class="hidden sm:inline">{gettext("New post")}</span>
+        </span>
       </button>
 
       <.card :if={@form && @composer_open} id="feed-composer-card">

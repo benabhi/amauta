@@ -61,6 +61,21 @@ defmodule AmautaWeb.CourseFeedTest do
     refute has_element?(view, "#feed-composer [data-editor-input][value*=Bienvenidos]")
   end
 
+  test "abrir y cerrar el editor sin escribir no deja borrador", %{conn: conn, course: course} do
+    teacher = member(course, "teacher")
+    conn = log_in_user(conn, teacher)
+    {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+
+    view |> element("#feed-composer-open") |> render_click()
+    view |> form("#feed-composer") |> render_change(%{post: %{body: ""}})
+    view |> element(~s(#feed-composer [phx-click="close_composer"])) |> render_click()
+
+    refute has_element?(view, "#feed-composer-open", "Continue your draft")
+
+    {:ok, view, _html} = live(conn, Paths.course(institution(), course))
+    refute has_element?(view, "#feed-composer-open", "Continue your draft")
+  end
+
   test "el borrador se guarda al escribir y vuelve al recargar", %{conn: conn, course: course} do
     teacher = member(course, "teacher")
     conn = log_in_user(conn, teacher)
