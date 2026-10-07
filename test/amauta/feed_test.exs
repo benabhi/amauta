@@ -1,5 +1,5 @@
 defmodule Amauta.FeedTest do
-  @moduledoc "Tablón: publicar, borradores, destinatarios, visibilidad y permisos (RF-TAB-001 a 003, 007 y 008)."
+  @moduledoc "Tablón: publicar, borradores, destinatarios, respuestas, moderación, visibilidad y permisos (RF-TAB-001 a 004, 007 y 008)."
   use Amauta.DataCase, async: true
 
   import Amauta.AccountsFixtures
@@ -8,7 +8,19 @@ defmodule Amauta.FeedTest do
   alias Amauta.{Actions, Audit, Enrollments, Feed, Scope}
   alias Amauta.Courses.Actions.{CreateCourse, PublishCourse, UpdateCourseSettings}
   alias Amauta.Enrollments.Actions.CreateSection
-  alias Amauta.Feed.Actions.{DeletePost, PublishPost, SaveDraft, UpdatePost}
+
+  alias Amauta.Feed.Actions.{
+    DeletePost,
+    DeleteReply,
+    HideReply,
+    MuteMember,
+    PublishPost,
+    ReplyToPost,
+    SaveDraft,
+    SetRepliesEnabled,
+    UpdatePost,
+    UpdateReply
+  }
 
   setup do
     admin = member_scope("institution_admin")
@@ -196,6 +208,193 @@ defmodule Amauta.FeedTest do
       {:ok, _} = publish(member(course, "teacher"), course, "Hola")
       b = Amauta.Fixtures.institution_fixture("inst_test_b")
       assert [] = Amauta.Repo.all(Amauta.Feed.Post, Amauta.Tenancy.opts(b))
+    end
+  end
+
+  defp reply(scope, post, text, parent \\ nil) do
+    Actions.run(ReplyToPost, scope, %{
+      "post_id" => post.id,
+      "parent_id" => parent && parent.id,
+      "body" => body(text)
+    })
+  end
+
+  defp reply_texts(scope, course, post) do
+    scope
+    |> Feed.get_visible(course, post.id)
+    |> Map.fetch!(:replies)
+    |> Enum.map(&Amauta.RichText.to_text(&1.body))
+  end
+
+  describe "respuestas" do
+    test "un estudiante responde, se audita y se avisa en tiempo real", %{course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      {:ok, post} = publish(teacher, course, "¿Dudas del TP?")
+      Phoenix.PubSub.subscribe(Amauta.PubSub, Feed.topic(course))
+
+      assert {:ok, r} = reply(student, post, "Sí, el punto 2")
+      assert r.author_id == student.user.id
+      assert_received {:feed, :updated, %{id: id}}
+      assert id == post.id
+      assert reply_texts(teacher, course, post) == ["Sí, el punto 2"]
+      assert "feed.reply.create" in Enum.map(Audit.list_events(student), & &1.action)
+    end
+
+    test "un solo nivel de anidación", %{course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      {:ok, post} = publish(teacher, course, "Consultas")
+      {:ok, top} = reply(student, post, "Primera")
+      {:ok, child} = reply(teacher, post, "Respuesta", top)
+      {:ok, grandchild} = reply(student, post, "Otra", child)
+
+      assert child.parent_id == top.id
+      assert grandchild.parent_id == top.id
+    end
+
+    test "la respuesta padre tiene que ser de la misma publicación", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, one} = publish(teacher, course, "Uno")
+      {:ok, two} = publish(teacher, course, "Dos")
+      {:ok, r} = reply(teacher, one, "En uno")
+
+      assert {:error, :not_found} = reply(teacher, two, "Cruzada", r)
+    end
+
+    test "no se responde vacío", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Hola")
+
+      assert {:error, changeset} =
+               Actions.run(ReplyToPost, teacher, %{"post_id" => post.id, "body" => ""})
+
+      assert %{body: ["write something first"]} = errors_on(changeset)
+    end
+
+    test "no se responde a lo que no se ve", %{course: course, a: a, b: b} do
+      teacher = member(course, "teacher")
+      {:ok, for_b} = publish(teacher, course, "Para B", b)
+      assert {:error, :not_found} = reply(member(course, "student", a), for_b, "Hola")
+    end
+
+    test "con los comentarios del curso desactivados no se responde", ctx do
+      %{admin: admin, course: course} = ctx
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Hola")
+
+      {:ok, _} =
+        Actions.run(UpdateCourseSettings, admin, %{
+          "course_id" => course.id,
+          "settings" => %{"comments_enabled" => false}
+        })
+
+      course = Amauta.Courses.get(admin, course.id)
+      refute Feed.can_reply?(teacher, course)
+      assert {:error, :forbidden} = reply(member(course, "student"), post, "Hola")
+    end
+
+    test "el autor o quien modera cierra las respuestas", %{course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      {:ok, post} = publish(teacher, course, "Aviso")
+
+      params = %{"post_id" => post.id, "enabled" => false}
+      assert {:error, :forbidden} = Actions.run(SetRepliesEnabled, student, params)
+      assert {:ok, %{replies_enabled: false}} = Actions.run(SetRepliesEnabled, teacher, params)
+      assert {:error, :forbidden} = reply(student, post, "Hola")
+
+      lead = member(course, "course_lead")
+
+      assert {:ok, %{replies_enabled: true}} =
+               Actions.run(SetRepliesEnabled, lead, %{params | "enabled" => true})
+
+      assert {:ok, _} = reply(student, post, "Hola")
+    end
+
+    test "editar la propia deja la marca; la ajena, no", %{course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      {:ok, post} = publish(teacher, course, "Consultas")
+      {:ok, r} = reply(student, post, "Primera")
+
+      params = %{"reply_id" => r.id, "body" => body("Corregida")}
+      assert {:error, :forbidden} = Actions.run(UpdateReply, teacher, params)
+      assert {:ok, %{edited_at: %DateTime{}}} = Actions.run(UpdateReply, student, params)
+      assert reply_texts(teacher, course, post) == ["Corregida"]
+    end
+
+    test "elimina su autor o quien modera; al borrar la de primer nivel caen las anidadas", ctx do
+      %{course: course} = ctx
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      other = member(course, "student")
+      {:ok, post} = publish(teacher, course, "Consultas")
+      {:ok, top} = reply(student, post, "Primera")
+      {:ok, _} = reply(other, post, "Anidada", top)
+      {:ok, own} = reply(other, post, "Propia")
+
+      assert {:error, :forbidden} = Actions.run(DeleteReply, other, %{"reply_id" => top.id})
+      assert {:ok, _} = Actions.run(DeleteReply, other, %{"reply_id" => own.id})
+      assert {:ok, _} = Actions.run(DeleteReply, teacher, %{"reply_id" => top.id})
+      assert reply_texts(teacher, course, post) == []
+    end
+  end
+
+  describe "moderación" do
+    test "quien modera oculta y vuelve a mostrar una respuesta", %{course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      {:ok, post} = publish(teacher, course, "Consultas")
+      {:ok, r} = reply(student, post, "Fuera de tema")
+
+      params = %{"reply_id" => r.id, "hidden" => true}
+      assert {:error, :forbidden} = Actions.run(HideReply, student, params)
+      assert {:ok, %{hidden_at: %DateTime{}}} = Actions.run(HideReply, teacher, params)
+
+      # Ocultar no borra: sigue en la base, con su contenido.
+      assert reply_texts(teacher, course, post) == ["Fuera de tema"]
+
+      assert {:ok, %{hidden_at: nil}} =
+               Actions.run(HideReply, teacher, %{params | "hidden" => false})
+    end
+
+    test "silenciar impide publicar y responder, pero no leer", ctx do
+      %{admin: admin, course: course} = ctx
+
+      {:ok, _} =
+        Actions.run(UpdateCourseSettings, admin, %{
+          "course_id" => course.id,
+          "settings" => %{"feed_posting" => "everyone"}
+        })
+
+      course = Amauta.Courses.get(admin, course.id)
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      {:ok, post} = publish(teacher, course, "Consultas")
+
+      params = %{"course_id" => course.id, "user_id" => student.user.id, "muted" => true}
+      assert {:error, :forbidden} = Actions.run(MuteMember, member(course, "student"), params)
+      assert {:ok, _} = Actions.run(MuteMember, teacher, params)
+      # Silenciar dos veces no falla.
+      assert {:ok, _} = Actions.run(MuteMember, teacher, params)
+
+      assert Feed.muted?(student, course)
+      assert {:error, :forbidden} = reply(student, post, "Hola")
+      assert {:error, :forbidden} = publish(student, course, "Hola")
+      assert texts(student, course) == ["Consultas"]
+
+      assert {:ok, _} = Actions.run(MuteMember, teacher, %{params | "muted" => false})
+      assert {:ok, _} = reply(student, post, "Hola")
+    end
+
+    test "no se silencia a quien modera ni a uno mismo", %{course: course} do
+      teacher = member(course, "teacher")
+      lead = member(course, "course_lead")
+      mute = &%{"course_id" => course.id, "user_id" => &1.user.id, "muted" => true}
+
+      assert {:error, :forbidden} = Actions.run(MuteMember, teacher, mute.(lead))
+      assert {:error, :forbidden} = Actions.run(MuteMember, teacher, mute.(teacher))
     end
   end
 end

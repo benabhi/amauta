@@ -18,7 +18,7 @@ defmodule Amauta.Feed do
 
   alias Amauta.Courses.Course
   alias Amauta.Enrollments
-  alias Amauta.Feed.Post
+  alias Amauta.Feed.{Mute, Post, Reply}
   alias Amauta.{Authorization, Repo, Scope, Tenancy}
 
   @page 30
@@ -29,14 +29,48 @@ defmodule Amauta.Feed do
   def sees_all?(%Scope{} = scope, %Course{} = course),
     do: Authorization.can?(scope, "course.feed.moderate", course)
 
-  @doc "Puede publicar en el tablón del curso."
+  @doc "Puede publicar en el tablón del curso (y no está silenciada)."
   def can_post?(%Scope{} = scope, %Course{status: status} = course) when status != "archived" do
-    Enrollments.can_in_course?(scope, "course.feed.post", course) or
-      (course.settings.feed_posting == "everyone" and
-         Enrollments.can_in_course?(scope, "course.feed.reply", course))
+    not muted?(scope, course) and
+      (Enrollments.can_in_course?(scope, "course.feed.post", course) or
+         (course.settings.feed_posting == "everyone" and
+            Enrollments.can_in_course?(scope, "course.feed.reply", course)))
   end
 
   def can_post?(_scope, _course), do: false
+
+  @doc """
+  Puede responder en el curso (RF-TAB-004): el curso tiene los comentarios
+  activados, la persona no está silenciada y tiene el permiso de responder.
+  Que la publicación los acepte se verifica aparte (`replies_open?/1`).
+  """
+  def can_reply?(%Scope{} = scope, %Course{status: status} = course) when status != "archived" do
+    course.settings.comments_enabled and not muted?(scope, course) and
+      Enrollments.can_in_course?(scope, "course.feed.reply", course)
+  end
+
+  def can_reply?(_scope, _course), do: false
+
+  @doc "La publicación acepta respuestas."
+  def replies_open?(%Post{replies_enabled: enabled}), do: enabled
+
+  @doc "La persona del scope está silenciada en el tablón del curso."
+  def muted?(%Scope{user: nil}, _course), do: false
+  def muted?(%Scope{user: user} = scope, course), do: muted?(scope, course, user.id)
+
+  def muted?(tenant, %Course{id: course_id}, user_id) do
+    Repo.exists?(
+      from(m in Mute, where: m.course_id == ^course_id and m.user_id == ^user_id),
+      Tenancy.opts(tenant)
+    )
+  end
+
+  @doc "IDs de las personas silenciadas en el tablón del curso."
+  def muted_ids(tenant, %Course{id: course_id}) do
+    from(m in Mute, where: m.course_id == ^course_id, select: m.user_id)
+    |> Repo.all(Tenancy.opts(tenant))
+    |> MapSet.new()
+  end
 
   @doc "Puede moderar (ocultar o eliminar lo de otras personas)."
   def can_moderate?(%Scope{} = scope, %Course{} = course),
@@ -75,8 +109,14 @@ defmodule Amauta.Feed do
     |> filter_section(filters["section"])
     |> order_by([p], desc: p.published_at, desc: p.id)
     |> limit(@page)
-    |> preload([:author, :section])
+    |> preload(^post_preloads())
     |> Repo.all(Tenancy.opts(scope))
+  end
+
+  # Autor, comisión y respuestas en orden, con sus autores.
+  defp post_preloads do
+    replies = from(r in Reply, order_by: [r.inserted_at, r.id], preload: :author)
+    [:author, :section, replies: replies]
   end
 
   defp visible_to(query, scope, course) do
@@ -118,7 +158,7 @@ defmodule Amauta.Feed do
            Post
            |> where([p], p.id == ^id and p.course_id == ^course.id and p.status == "published")
            |> visible_to(scope, course)
-           |> preload([:author, :section])
+           |> preload(^post_preloads())
            |> Repo.one(Tenancy.opts(scope)) do
       post
     else
@@ -130,6 +170,14 @@ defmodule Amauta.Feed do
   def get(tenant, id) do
     case Ecto.UUID.cast(id) do
       {:ok, id} -> Post |> Repo.get(id, Tenancy.opts(tenant)) |> Repo.preload(:course)
+      :error -> nil
+    end
+  end
+
+  @doc "Respuesta por ID, con su publicación y el curso, o `nil`."
+  def get_reply(tenant, id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} -> Reply |> Repo.get(id, Tenancy.opts(tenant)) |> Repo.preload(post: :course)
       :error -> nil
     end
   end

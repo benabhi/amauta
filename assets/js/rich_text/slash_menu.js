@@ -27,14 +27,15 @@ export const runCommand = (editor, id) => {
   }
 }
 
-const menu = () => {
+// Lista desplegable con teclado, compartida por el menú «/» y las menciones.
+export const menu = (prefix = "rich-slash") => () => {
   let root, list, items, active, command
 
   const render = () => {
     list.replaceChildren(
       ...items.map((item, index) => {
         const option = document.createElement("li")
-        option.id = `rich-slash-${item.id}`
+        option.id = `${prefix}-${item.id}`
         option.role = "option"
         option.className = "rich-slash-item"
         option.setAttribute("aria-selected", String(index === active))
@@ -114,7 +115,7 @@ export const SlashMenu = (commands) =>
             editor.chain().focus().deleteRange(range).run()
             runCommand(editor, props.id)
           },
-          render: menu,
+          render: menu(),
         }),
       ]
     },

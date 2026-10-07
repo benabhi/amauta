@@ -212,3 +212,286 @@ defmodule Amauta.Feed.Actions.DeletePost do
     :ok
   end
 end
+
+defmodule Amauta.Feed.Actions.ReplyToPost do
+  @moduledoc """
+  Responde a una publicación o a otra respuesta (RF-TAB-004). Un solo nivel
+  de anidación: si se responde a una respuesta anidada, la nueva cuelga de
+  la misma respuesta de primer nivel.
+  """
+  use Amauta.Action,
+    name: "feed.reply.create",
+    description: "Responde en el tablón.",
+    params: [
+      post_id: {Ecto.UUID, required: true},
+      parent_id: Ecto.UUID,
+      body: :string
+    ]
+
+  alias Amauta.Feed
+  alias Amauta.Feed.Reply
+  alias Amauta.{Repo, Tenancy}
+
+  @impl true
+  def authorize(scope, %{post_id: id}) do
+    with %{course: course} = post <- Feed.get(scope, id) || {:error, :not_found},
+         %{} <- Feed.get_visible(scope, course, id) || {:error, :not_found},
+         true <-
+           (Feed.can_reply?(scope, course) and Feed.replies_open?(post)) || {:error, :forbidden} do
+      :ok
+    end
+  end
+
+  @impl true
+  def run(scope, %{post_id: id} = input) do
+    with {:ok, parent_id} <- parent(scope, id, input[:parent_id]),
+         {:ok, reply} <-
+           %Reply{post_id: id, author_id: scope.user.id, parent_id: parent_id}
+           |> Reply.create_changeset(%{body: input[:body]})
+           |> Repo.insert(Tenancy.opts(scope)) do
+      {:ok, Repo.preload(reply, post: :course)}
+    end
+  end
+
+  # La respuesta padre tiene que ser de la misma publicación; se aplana a
+  # un solo nivel.
+  defp parent(_scope, _post_id, nil), do: {:ok, nil}
+
+  defp parent(scope, post_id, parent_id) do
+    case Feed.get_reply(scope, parent_id) do
+      %{post_id: ^post_id, parent_id: nil, id: id} -> {:ok, id}
+      %{post_id: ^post_id, parent_id: top} -> {:ok, top}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @impl true
+  def audit(_scope, _input, reply), do: {reply, %{post_id: reply.post_id}}
+
+  @impl true
+  def after_commit(_scope, _input, reply) do
+    Feed.broadcast(reply.post.course, :updated, reply.post)
+    :ok
+  end
+end
+
+defmodule Amauta.Feed.Actions.UpdateReply do
+  @moduledoc "Edita una respuesta propia; queda la marca de editada."
+  use Amauta.Action,
+    name: "feed.reply.update",
+    description: "Edita una respuesta propia del tablón.",
+    params: [reply_id: {Ecto.UUID, required: true}, body: {:string, required: true}]
+
+  alias Amauta.Feed
+  alias Amauta.Feed.Reply
+  alias Amauta.{Repo, Tenancy}
+
+  @impl true
+  def authorize(%{user: %{id: user_id}} = scope, %{reply_id: id}) do
+    case Feed.get_reply(scope, id) do
+      nil -> {:error, :not_found}
+      %{post: %{course: %{status: "archived"}}} -> {:error, :archived}
+      %{author_id: ^user_id} -> :ok
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{reply_id: id, body: body}) do
+    reply = Feed.get_reply(scope, id)
+
+    with {:ok, updated} <-
+           reply |> Reply.edit_changeset(%{body: body}) |> Repo.update(Tenancy.opts(scope)) do
+      {:ok, %{updated | post: reply.post}}
+    end
+  end
+
+  @impl true
+  def audit(_scope, _input, reply), do: {reply, %{post_id: reply.post_id}}
+
+  @impl true
+  def after_commit(_scope, _input, reply) do
+    Feed.broadcast(reply.post.course, :updated, reply.post)
+    :ok
+  end
+end
+
+defmodule Amauta.Feed.Actions.DeleteReply do
+  @moduledoc "Elimina una respuesta: la propia, o cualquiera si modera (RF-TAB-007)."
+  use Amauta.Action,
+    name: "feed.reply.delete",
+    description: "Elimina una respuesta del tablón.",
+    params: [reply_id: {Ecto.UUID, required: true}]
+
+  alias Amauta.Feed
+  alias Amauta.{Repo, Tenancy}
+
+  @impl true
+  def authorize(%{user: %{id: user_id}} = scope, %{reply_id: id}) do
+    case Feed.get_reply(scope, id) do
+      nil ->
+        {:error, :not_found}
+
+      %{author_id: ^user_id} ->
+        :ok
+
+      reply ->
+        if Feed.can_moderate?(scope, reply.post.course), do: :ok, else: {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{reply_id: id}) do
+    reply = Feed.get_reply(scope, id)
+    with {:ok, _} <- Repo.delete(reply, Tenancy.opts(scope)), do: {:ok, reply}
+  end
+
+  @impl true
+  def audit(_scope, _input, reply),
+    do: {reply, %{post_id: reply.post_id, author_id: reply.author_id}}
+
+  @impl true
+  def after_commit(_scope, _input, reply) do
+    Feed.broadcast(reply.post.course, :updated, reply.post)
+    :ok
+  end
+end
+
+defmodule Amauta.Feed.Actions.HideReply do
+  @moduledoc """
+  Oculta o vuelve a mostrar una respuesta (moderación, RF-TAB-007). Oculta,
+  el resto ve que hay una respuesta oculta; el contenido no se borra.
+  """
+  use Amauta.Action,
+    name: "feed.reply.hide",
+    description: "Oculta o muestra una respuesta del tablón.",
+    params: [reply_id: {Ecto.UUID, required: true}, hidden: {:boolean, required: true}]
+
+  alias Amauta.Feed
+  alias Amauta.{Repo, Tenancy}
+
+  @impl true
+  def authorize(scope, %{reply_id: id}) do
+    case Feed.get_reply(scope, id) do
+      nil ->
+        {:error, :not_found}
+
+      reply ->
+        if Feed.can_moderate?(scope, reply.post.course), do: :ok, else: {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{reply_id: id, hidden: hidden}) do
+    reply = Feed.get_reply(scope, id)
+
+    changes =
+      if hidden,
+        do: [hidden_at: DateTime.utc_now(), hidden_by_id: scope.user.id],
+        else: [hidden_at: nil, hidden_by_id: nil]
+
+    with {:ok, updated} <-
+           reply |> Ecto.Changeset.change(changes) |> Repo.update(Tenancy.opts(scope)) do
+      {:ok, %{updated | post: reply.post}}
+    end
+  end
+
+  @impl true
+  def audit(_scope, %{hidden: hidden}, reply),
+    do: {reply, %{post_id: reply.post_id, hidden: hidden}}
+
+  @impl true
+  def after_commit(_scope, _input, reply) do
+    Feed.broadcast(reply.post.course, :updated, reply.post)
+    :ok
+  end
+end
+
+defmodule Amauta.Feed.Actions.SetRepliesEnabled do
+  @moduledoc "Abre o cierra las respuestas de una publicación (RF-TAB-004): su autor o quien modera."
+  use Amauta.Action,
+    name: "feed.post.set_replies",
+    description: "Abre o cierra las respuestas de una publicación.",
+    params: [post_id: {Ecto.UUID, required: true}, enabled: {:boolean, required: true}]
+
+  alias Amauta.Feed
+  alias Amauta.{Repo, Tenancy}
+
+  @impl true
+  def authorize(%{user: %{id: user_id}} = scope, %{post_id: id}) do
+    case Feed.get(scope, id) do
+      nil -> {:error, :not_found}
+      %{author_id: ^user_id} -> :ok
+      post -> if Feed.can_moderate?(scope, post.course), do: :ok, else: {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{post_id: id, enabled: enabled}) do
+    post = Feed.get(scope, id)
+
+    with {:ok, updated} <-
+           post
+           |> Ecto.Changeset.change(replies_enabled: enabled)
+           |> Repo.update(Tenancy.opts(scope)) do
+      {:ok, %{updated | course: post.course}}
+    end
+  end
+
+  @impl true
+  def after_commit(_scope, _input, post) do
+    Feed.broadcast(post.course, :updated, post)
+    :ok
+  end
+end
+
+defmodule Amauta.Feed.Actions.MuteMember do
+  @moduledoc """
+  Silencia (o deja de silenciar) a una persona en el tablón del curso
+  (RF-TAB-007): no puede publicar ni responder ahí. No se puede silenciar a
+  quien también modera, ni a uno mismo.
+  """
+  use Amauta.Action,
+    name: "feed.member.mute",
+    description: "Silencia a una persona en el tablón del curso.",
+    params: [
+      course_id: {Ecto.UUID, required: true},
+      user_id: {Ecto.UUID, required: true},
+      muted: {:boolean, required: true}
+    ]
+
+  import Ecto.Query
+
+  alias Amauta.Feed.Mute
+  alias Amauta.{Accounts, Courses, Feed, Repo, Scope, Tenancy}
+
+  @impl true
+  def authorize(%{user: %{id: id}}, %{user_id: id}), do: {:error, :forbidden}
+
+  def authorize(scope, %{course_id: course_id, user_id: user_id}) do
+    with %{} = course <- Courses.get(scope, course_id) || {:error, :not_found},
+         true <- Feed.can_moderate?(scope, course) || {:error, :forbidden},
+         %{} = user <-
+           Repo.get(Accounts.User, user_id, Tenancy.opts(scope)) || {:error, :not_found} do
+      if Feed.can_moderate?(Scope.for_user(scope.institution, user), course),
+        do: {:error, :forbidden},
+        else: :ok
+    end
+  end
+
+  @impl true
+  def run(scope, %{course_id: course_id, user_id: user_id, muted: true}) do
+    %Mute{course_id: course_id, user_id: user_id, muted_by_id: scope.user.id}
+    |> Repo.insert(Keyword.merge(Tenancy.opts(scope), on_conflict: :nothing))
+  end
+
+  def run(scope, %{course_id: course_id, user_id: user_id, muted: false}) do
+    from(m in Mute, where: m.course_id == ^course_id and m.user_id == ^user_id)
+    |> Repo.delete_all(Tenancy.opts(scope))
+
+    {:ok, %{course_id: course_id, user_id: user_id}}
+  end
+
+  @impl true
+  def audit(_scope, input, _result), do: {nil, input}
+end

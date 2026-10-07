@@ -204,6 +204,19 @@ defmodule Amauta.RichText do
       %{"type" => "hardBreak"}, stats ->
         {[%{"type" => "hardBreak"}], %{stats | nodes: stats.nodes + 1}}
 
+      %{"type" => "mention", "attrs" => %{"id" => id, "label" => label}}, stats
+      when is_binary(id) and is_binary(label) ->
+        case Ecto.UUID.cast(id) do
+          {:ok, id} ->
+            label = label |> String.trim() |> String.slice(0, 120)
+
+            {[%{"type" => "mention", "attrs" => %{"id" => id, "label" => label}}],
+             %{stats | nodes: stats.nodes + 1}}
+
+          :error ->
+            {[], stats}
+        end
+
       _other, stats ->
         {[], stats}
     end)
@@ -322,6 +335,9 @@ defmodule Amauta.RichText do
   defp html(%{"type" => "horizontalRule"}), do: "<hr>"
   defp html(%{"type" => "hardBreak"}), do: "<br>"
 
+  defp html(%{"type" => "mention", "attrs" => %{"id" => id, "label" => label}}),
+    do: [~s(<span class="rich-mention" data-user-id="), id, ~s(">@), escape(label), "</span>"]
+
   defp html(%{"type" => "text", "text" => text} = node),
     do: node |> Map.get("marks", []) |> Enum.reduce(escape(text), &wrap_mark/2)
 
@@ -348,6 +364,22 @@ defmodule Amauta.RichText do
 
   defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
+  ## Menciones
+
+  @doc "IDs de las personas mencionadas en el documento (sin repetir)."
+  def mentions(nil), do: []
+
+  def mentions(doc) do
+    doc |> collect_mentions([]) |> Enum.reverse() |> Enum.uniq()
+  end
+
+  defp collect_mentions(%{"type" => "mention", "attrs" => %{"id" => id}}, acc), do: [id | acc]
+
+  defp collect_mentions(%{"content" => content}, acc) when is_list(content),
+    do: Enum.reduce(content, acc, &collect_mentions/2)
+
+  defp collect_mentions(_node, acc), do: acc
+
   ## Texto plano
 
   @doc "Texto plano del documento, con un salto de línea entre bloques."
@@ -361,6 +393,7 @@ defmodule Amauta.RichText do
 
   defp text(%{"type" => "text", "text" => text}), do: text
   defp text(%{"type" => "hardBreak"}), do: "\n"
+  defp text(%{"type" => "mention", "attrs" => %{"label" => label}}), do: "@" <> label
   defp text(%{"type" => "mathBlock", "attrs" => %{"latex" => latex}}), do: latex
 
   defp text(%{"type" => type, "content" => content}) when type in ~w(paragraph heading codeBlock),

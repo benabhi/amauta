@@ -17,10 +17,12 @@ defmodule Amauta.Feed.Post do
     field :status, :string, default: "draft"
     field :published_at, :utc_datetime_usec
     field :edited_at, :utc_datetime_usec
+    field :replies_enabled, :boolean, default: true
 
     belongs_to :course, Course
     belongs_to :author, User
     belongs_to :section, Section
+    has_many :replies, Amauta.Feed.Reply
 
     timestamps()
   end
