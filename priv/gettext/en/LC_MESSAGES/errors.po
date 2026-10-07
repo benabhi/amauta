@@ -157,3 +157,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "only lowercase letters, digits and hyphens"
 msgstr ""
+
+#: lib/amauta_web/error_messages.ex:23
+#, elixir-autogen, elixir-format
+msgid "must be in the future"
+msgstr ""
+
+#: lib/amauta_web/error_messages.ex:22
+#, elixir-autogen, elixir-format
+msgid "write something first"
+msgstr ""

@@ -32,6 +32,9 @@ defmodule AmautaWeb.CourseFeed do
 
   alias AmautaWeb.{Format, Paths}
 
+  # De a cuántas respuestas más trae «Ver anteriores».
+  @more 20
+
   @impl true
   def mount(socket) do
     {:ok,
@@ -44,7 +47,12 @@ defmodule AmautaWeb.CourseFeed do
        reply_form: nil,
        reply_key: 0,
        editing_reply: nil,
-       edit_reply_form: nil
+       edit_reply_form: nil,
+       # Cuántas respuestas mostrar, por publicación o respuesta, cuando
+       # alguien pidió ver más (`Amauta.Feed.with_replies/3`).
+       windows: %{},
+       cursor: nil,
+       more_posts: false
      )}
   end
 
@@ -94,12 +102,28 @@ defmodule AmautaWeb.CourseFeed do
   defp load_posts(socket) do
     %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
     filters = %{"section" => filter}
-    posts = Feed.list_posts(scope, course, filters)
-    pinned = Feed.list_pinned(scope, course, filters)
+    windows = socket.assigns.windows
+    posts = Feed.list_posts(scope, course, filters, windows: windows)
+    pinned = Feed.list_pinned(scope, course, filters, windows: windows)
 
     socket
     |> assign(pinned: pinned, empty: posts == [] and pinned == [])
+    |> assign_page(posts)
     |> stream(:posts, posts, reset: true)
+  end
+
+  # Dónde sigue el tablón: la última publicación traída, y si puede haber más.
+  defp assign_page(socket, posts) do
+    assign(socket,
+      cursor: List.last(posts) || socket.assigns.cursor,
+      more_posts: length(posts) == Feed.page_size()
+    )
+  end
+
+  # Publicación visible con las respuestas que se están mostrando.
+  defp visible(socket, id) do
+    %{current_scope: scope, course: course, windows: windows} = socket.assigns
+    Feed.get_visible(scope, course, id, windows: windows)
   end
 
   # Dibuja de nuevo una publicación donde esté: entre las fijadas o en el
@@ -158,9 +182,9 @@ defmodule AmautaWeb.CourseFeed do
   defp apply_event(socket, :pinned, _post), do: load_posts(socket)
 
   defp apply_event(socket, event, post) do
-    %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
+    %{current_scope: scope, section_filter: filter} = socket.assigns
 
-    case Feed.get_visible(scope, course, post.id) do
+    case visible(socket, post.id) do
       nil ->
         socket
 
@@ -212,7 +236,7 @@ defmodule AmautaWeb.CourseFeed do
   end
 
   def handle_event("edit", %{"id" => id}, socket) do
-    case Feed.get_visible(socket.assigns.current_scope, socket.assigns.course, id) do
+    case visible(socket, id) do
       nil ->
         {:noreply, socket}
 
@@ -225,12 +249,7 @@ defmodule AmautaWeb.CourseFeed do
   end
 
   def handle_event("cancel_edit", _params, socket) do
-    post =
-      Feed.get_visible(
-        socket.assigns.current_scope,
-        socket.assigns.course,
-        socket.assigns.editing
-      )
+    post = visible(socket, socket.assigns.editing)
 
     socket = assign(socket, editing: nil, edit_form: nil)
     {:noreply, if(post, do: put_post(socket, post), else: socket)}
@@ -253,6 +272,31 @@ defmodule AmautaWeb.CourseFeed do
       {:ok, _post} -> {:noreply, socket}
       {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
     end
+  end
+
+  ## Hilos y publicaciones largos
+
+  # «Ver anteriores»: de a `@more` respuestas más, de primer nivel o
+  # anidadas (`parent`).
+  def handle_event("more_replies", %{"post" => post_id} = params, socket) do
+    parent = blank_to_nil(params["parent"])
+    {:noreply, socket |> widen(parent, post_id, @more) |> refresh_post(post_id)}
+  end
+
+  # Publicaciones anteriores, al llegar al final del tablón (o con el botón).
+  def handle_event("more_posts", _params, %{assigns: %{more_posts: false}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("more_posts", _params, socket) do
+    %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
+
+    posts =
+      Feed.list_posts(scope, course, %{"section" => filter},
+        before: socket.assigns.cursor,
+        windows: socket.assigns.windows
+      )
+
+    {:noreply, socket |> assign_page(posts) |> stream(:posts, posts)}
   end
 
   ## Fijadas (RF-TAB-006)
@@ -337,8 +381,13 @@ defmodule AmautaWeb.CourseFeed do
     params = %{"post_id" => post_id, "parent_id" => parent_id, "body" => body}
 
     case Actions.run(ReplyToPost, socket.assigns.current_scope, params) do
-      {:ok, _reply} ->
-        {:noreply, socket |> assign(replying: nil, reply_form: nil) |> refresh_post(post_id)}
+      {:ok, reply} ->
+        # La propia se suma a lo que se ve, sin desplazar otra respuesta.
+        {:noreply,
+         socket
+         |> assign(replying: nil, reply_form: nil)
+         |> widen(reply.parent_id, post_id, 1)
+         |> refresh_post(post_id)}
 
       {:error, %Ecto.Changeset{}} ->
         {:noreply, put_flash_message(socket, gettext("Write something first."))}
@@ -455,9 +504,18 @@ defmodule AmautaWeb.CourseFeed do
     end
   end
 
+  # Agranda la ventana de respuestas: las anidadas de `parent` o, sin él,
+  # las de primer nivel de la publicación.
+  defp widen(socket, parent, post_id, count) do
+    {key, default} =
+      if parent, do: {parent, Feed.child_window()}, else: {post_id, Feed.reply_window()}
+
+    update(socket, :windows, &Map.update(&1, key, default + count, fn n -> n + count end))
+  end
+
   # Vuelve a dibujar una publicación (cambió el estado de sus respuestas).
   defp refresh_post(socket, post_id) do
-    case Feed.get_visible(socket.assigns.current_scope, socket.assigns.course, post_id) do
+    case visible(socket, post_id) do
       nil -> socket
       post -> put_post(socket, post)
     end
@@ -516,10 +574,9 @@ defmodule AmautaWeb.CourseFeed do
         <button
           type="button"
           data-new-posts
-          hidden
           data-one={gettext("1 new post")}
           data-other={gettext("%{count} new posts", count: "%{count}")}
-          class="sticky top-16 z-30 mx-auto mb-2 flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-md"
+          class="sticky top-16 z-30 mx-auto mb-2 hidden min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-md"
         >
           <.icon name="arrow-up" class="size-4" /> <span data-new-posts-text></span>
         </button>
@@ -562,11 +619,31 @@ defmodule AmautaWeb.CourseFeed do
           </ol>
         </section>
 
-        <ol id="feed-posts" phx-update="stream" class="grid gap-4" aria-label={gettext("Feed")}>
+        <ol
+          id="feed-posts"
+          phx-update="stream"
+          phx-viewport-bottom={@more_posts && "more_posts"}
+          phx-target={@myself}
+          class="grid gap-4"
+          aria-label={gettext("Feed")}
+        >
           <li :for={{dom_id, post} <- @streams.posts} id={dom_id} data-post-id={post.id}>
             <.post post={post} ui={ui(assigns)} />
           </li>
         </ol>
+
+        <div :if={@more_posts} class="mt-4 flex justify-center">
+          <.button
+            id="feed-more-posts"
+            type="button"
+            variant="ghost"
+            phx-click="more_posts"
+            phx-target={@myself}
+            phx-disable-with={gettext("Loading...")}
+          >
+            {gettext("View earlier posts")}
+          </.button>
+        </div>
       </div>
 
       <script :type={Phoenix.LiveView.ColocatedHook} name=".PinZone">
@@ -628,7 +705,7 @@ defmodule AmautaWeb.CourseFeed do
               this.count += 1
               const b = this.button
               this.text.textContent = this.count === 1 ? b.dataset.one : b.dataset.other.replace("%{count}", this.count)
-              this.js().show(b)
+              this.js().show(b, {display: "flex"})
             })
             this.button.addEventListener("click", () => {
               this.count = 0
@@ -679,16 +756,13 @@ defmodule AmautaWeb.CourseFeed do
   defp post(assigns) do
     %{post: post, ui: ui} = assigns
     user_id = ui.current_scope.user.id
-    replies = Enum.group_by(post.replies, & &1.parent_id)
 
     assigns =
       assign(assigns,
         mine: post.author_id == user_id,
         author: post.author,
         editing: ui.editing == post.id,
-        top_replies: Map.get(replies, nil, []),
-        children: replies,
-        replies_count: length(post.replies),
+        hidden: post.top_reply_count - length(post.replies),
         can_toggle: post.author_id == user_id or ui.can_moderate,
         can_answer: ui.can_reply and post.replies_enabled
       )
@@ -760,6 +834,16 @@ defmodule AmautaWeb.CourseFeed do
           >
             {if @pin, do: gettext("Unpin"), else: gettext("Pin to the top")}
           </.dropdown_item>
+          <.dropdown_item
+            :if={@can_toggle}
+            icon={if @post.replies_enabled, do: "lock", else: "chats-circle"}
+            phx-click="toggle_replies"
+            phx-value-post={@post.id}
+            phx-value-enabled={to_string(!@post.replies_enabled)}
+            phx-target={@ui.myself}
+          >
+            {if @post.replies_enabled, do: gettext("Close replies"), else: gettext("Open replies")}
+          </.dropdown_item>
           <.mute_item :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
           <.dropdown_item
             icon="trash"
@@ -796,65 +880,65 @@ defmodule AmautaWeb.CourseFeed do
         </div>
       </.form>
 
-      <.rich_text :if={!@editing} id={"post-body-#{@post.id}"} doc={@post.body} />
+      <.collapsible :if={!@editing} id={"post-text-#{@post.id}"}>
+        <.rich_text id={"post-body-#{@post.id}"} doc={@post.body} />
+      </.collapsible>
 
       <section
+        :if={@post.reply_count > 0 or @can_answer or !@post.replies_enabled}
         id={"replies-#{@post.id}"}
-        class="mt-4 border-t border-line pt-3"
+        class="mt-4 grid gap-3 border-t border-line pt-3"
         aria-label={gettext("Replies")}
       >
-        <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-ink-muted">
-          <span>{ngettext("%{count} reply", "%{count} replies", @replies_count)}</span>
-          <span :if={!@post.replies_enabled}>· {gettext("Replies are closed")}</span>
-          <.button
-            :if={@can_toggle}
-            type="button"
-            variant="ghost"
-            size="sm"
-            phx-click="toggle_replies"
-            phx-value-post={@post.id}
-            phx-value-enabled={to_string(!@post.replies_enabled)}
-            phx-target={@ui.myself}
-            class="ms-auto"
-          >
-            {if @post.replies_enabled, do: gettext("Close replies"), else: gettext("Open replies")}
-          </.button>
-        </div>
+        <p
+          :if={@post.reply_count > 0 or !@post.replies_enabled}
+          class="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted"
+        >
+          <span :if={@post.reply_count > 0}>
+            {ngettext("%{count} reply", "%{count} replies", @post.reply_count)}
+          </span>
+          <span :if={!@post.replies_enabled} class="inline-flex items-center gap-1">
+            <.icon name="lock" class="size-3.5" /> {gettext("Replies are closed")}
+          </span>
+        </p>
 
-        <ul :if={@top_replies != []} class="mt-2 grid gap-3">
-          <li :for={reply <- @top_replies} id={"reply-#{reply.id}"}>
+        <.more_replies count={@hidden} post={@post} ui={@ui} />
+
+        <ul :if={@post.replies != []} class="grid gap-3">
+          <li :for={reply <- @post.replies} id={"reply-#{reply.id}"}>
             <.reply reply={reply} post={@post} ui={@ui} can_answer={@can_answer} />
-            <ul
-              :if={Map.has_key?(@children, reply.id)}
-              class="mt-3 grid gap-3 border-s-2 border-line ps-4"
+            <div
+              :if={reply.child_count > 0 or @ui.replying == {@post.id, reply.id}}
+              class="ms-9 mt-2 grid gap-3"
             >
-              <li :for={child <- @children[reply.id]} id={"reply-#{child.id}"}>
-                <.reply reply={child} post={@post} ui={@ui} can_answer={@can_answer} />
-              </li>
-            </ul>
-            <.reply_form
-              :if={@ui.replying == {@post.id, reply.id}}
-              post={@post}
-              ui={@ui}
-            />
+              <.more_replies
+                count={reply.child_count - length(reply.children)}
+                post={@post}
+                parent={reply}
+                ui={@ui}
+              />
+              <ul :if={reply.children != []} class="grid gap-3">
+                <li :for={child <- reply.children} id={"reply-#{child.id}"}>
+                  <.reply reply={child} post={@post} ui={@ui} can_answer={@can_answer} />
+                </li>
+              </ul>
+              <.reply_form :if={@ui.replying == {@post.id, reply.id}} post={@post} ui={@ui} />
+            </div>
           </li>
         </ul>
 
         <.reply_form :if={@ui.replying == {@post.id, nil}} post={@post} ui={@ui} />
 
-        <.button
+        <button
           :if={@can_answer and @ui.replying == nil}
           type="button"
-          variant="ghost"
-          size="sm"
-          icon="chats-circle"
           phx-click="reply"
           phx-value-post={@post.id}
           phx-target={@ui.myself}
-          class="mt-2"
+          class="flex min-h-11 w-full items-center gap-2 rounded-full bg-surface-sunken px-4 text-start text-sm text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
         >
-          {gettext("Reply")}
-        </.button>
+          <.icon name="chats-circle" class="size-4" /> {gettext("Write a reply…")}
+        </button>
       </section>
     </article>
     """
@@ -956,6 +1040,8 @@ defmodule AmautaWeb.CourseFeed do
   attr :ui, :map, required: true
   attr :can_answer, :boolean, required: true
 
+  # Una respuesta: el contenido en una burbuja y, debajo y fuera de ella, la
+  # fecha y las acciones, para que no se confundan con el texto.
   defp reply(assigns) do
     %{reply: reply, ui: ui} = assigns
     mine = reply.author_id == ui.current_scope.user.id
@@ -967,11 +1053,14 @@ defmodule AmautaWeb.CourseFeed do
         editing: ui.editing_reply == reply.id,
         hidden: not is_nil(reply.hidden_at),
         # El contenido oculto lo ven su autor y quien modera.
-        show_body: is_nil(reply.hidden_at) or mine or ui.can_moderate
+        show_body: is_nil(reply.hidden_at) or mine or ui.can_moderate,
+        has_menu: mine or ui.can_moderate,
+        # Las anidadas cuelgan siempre de la de primer nivel.
+        thread: reply.parent_id || reply.id
       )
 
     ~H"""
-    <div class="flex items-start gap-3">
+    <div class="flex items-start gap-2">
       <.avatar
         :if={@author}
         name={User.display_name(@author)}
@@ -979,21 +1068,6 @@ defmodule AmautaWeb.CourseFeed do
         size="sm"
       />
       <div class="min-w-0 flex-1">
-        <p class="flex flex-wrap items-center gap-x-2 text-sm">
-          <span class="font-semibold">
-            {(@author && User.display_name(@author)) || gettext("Former member")}
-          </span>
-          <time class="text-ink-muted" datetime={DateTime.to_iso8601(@reply.inserted_at)}>
-            {Format.datetime(@reply.inserted_at, @ui.timezone, :short)}
-          </time>
-          <span :if={@reply.edited_at} class="text-ink-muted">· {gettext("edited")}</span>
-          <.badge :if={@hidden} family="nogal">{gettext("hidden")}</.badge>
-        </p>
-
-        <p :if={!@show_body} class="text-sm italic text-ink-muted">
-          {gettext("This reply was hidden by the teaching team.")}
-        </p>
-
         <.form
           :if={@editing}
           for={@ui.edit_reply_form}
@@ -1022,60 +1096,105 @@ defmodule AmautaWeb.CourseFeed do
           </div>
         </.form>
 
-        <.rich_text
-          :if={@show_body and not @editing}
-          id={"reply-body-#{@reply.id}"}
-          doc={@reply.body}
-          class="text-sm"
-        />
+        <div
+          :if={!@editing}
+          class={[
+            "inline-block max-w-full rounded-card px-3 py-2",
+            if(@hidden, do: "border border-dashed border-line", else: "bg-surface-sunken")
+          ]}
+        >
+          <p class="flex flex-wrap items-center gap-x-2 text-sm font-semibold">
+            {(@author && User.display_name(@author)) || gettext("Former member")}
+            <.badge :if={@author && MapSet.member?(@ui.muted, @author.id)} family="nogal">
+              {gettext("muted")}
+            </.badge>
+            <.badge :if={@hidden} family="nogal">{gettext("hidden")}</.badge>
+          </p>
+          <p :if={!@show_body} class="text-sm italic text-ink-muted">
+            {gettext("This reply was hidden by the teaching team.")}
+          </p>
+          <.collapsible :if={@show_body} id={"reply-text-#{@reply.id}"}>
+            <.rich_text id={"reply-body-#{@reply.id}"} doc={@reply.body} />
+          </.collapsible>
+        </div>
 
-        <div :if={not @editing} class="mt-1 flex flex-wrap gap-1">
-          <.button
+        <div :if={!@editing} class="flex flex-wrap items-center gap-x-3 ps-3 text-xs text-ink-muted">
+          <time datetime={DateTime.to_iso8601(@reply.inserted_at)}>
+            {Format.datetime(@reply.inserted_at, @ui.timezone, :short)}
+          </time>
+          <span :if={@reply.edited_at}>{gettext("edited")}</span>
+          <button
             :if={@can_answer and @ui.replying == nil}
             type="button"
-            variant="ghost"
-            size="sm"
             phx-click="reply"
             phx-value-post={@post.id}
-            phx-value-parent={@reply.id}
+            phx-value-parent={@thread}
             phx-target={@ui.myself}
+            class="-my-3 inline-flex min-h-11 items-center font-semibold hover:text-ink"
           >
             {gettext("Reply")}
-          </.button>
-          <.icon_button
-            :if={@mine}
-            icon="pencil-simple"
-            label={gettext("Edit reply")}
-            size="sm"
-            phx-click="edit_reply"
-            phx-value-id={@reply.id}
-            phx-value-post={@post.id}
-            phx-target={@ui.myself}
-          />
-          <.icon_button
-            :if={@ui.can_moderate}
-            icon={if @hidden, do: "eye", else: "eye-slash"}
-            label={if @hidden, do: gettext("Show reply"), else: gettext("Hide reply")}
-            size="sm"
-            phx-click="hide_reply"
-            phx-value-id={@reply.id}
-            phx-value-hidden={to_string(!@hidden)}
-            phx-target={@ui.myself}
-          />
-          <.icon_button
-            :if={@mine or @ui.can_moderate}
-            icon="trash"
-            label={gettext("Delete reply")}
-            size="sm"
-            phx-click="delete_reply"
-            phx-value-id={@reply.id}
-            phx-target={@ui.myself}
-            data-confirm={gettext("Delete this reply?")}
-          />
-          <.mute_button :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
+          </button>
+          <div :if={@has_menu} class="-my-3">
+            <.dropdown id={"reply-menu-#{@reply.id}"} label={gettext("Reply options")}>
+              <:trigger><.icon name="dots-three" class="size-4" /></:trigger>
+              <.dropdown_item
+                :if={@mine}
+                icon="pencil-simple"
+                phx-click="edit_reply"
+                phx-value-id={@reply.id}
+                phx-value-post={@post.id}
+                phx-target={@ui.myself}
+              >
+                {gettext("Edit reply")}
+              </.dropdown_item>
+              <.dropdown_item
+                :if={@ui.can_moderate}
+                icon={if @hidden, do: "eye", else: "eye-slash"}
+                phx-click="hide_reply"
+                phx-value-id={@reply.id}
+                phx-value-hidden={to_string(!@hidden)}
+                phx-target={@ui.myself}
+              >
+                {if @hidden, do: gettext("Show reply"), else: gettext("Hide reply")}
+              </.dropdown_item>
+              <.mute_item :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
+              <.dropdown_item
+                icon="trash"
+                phx-click="delete_reply"
+                phx-value-id={@reply.id}
+                phx-target={@ui.myself}
+                data-confirm={gettext("Delete this reply?")}
+              >
+                {gettext("Delete reply")}
+              </.dropdown_item>
+            </.dropdown>
+          </div>
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr :count, :integer, required: true
+  attr :post, :map, required: true
+  attr :parent, :map, default: nil
+  attr :ui, :map, required: true
+
+  # «Ver anteriores»: las respuestas que no se muestran de un hilo largo.
+  defp more_replies(assigns) do
+    ~H"""
+    <button
+      :if={@count > 0}
+      type="button"
+      phx-click="more_replies"
+      phx-value-post={@post.id}
+      phx-value-parent={@parent && @parent.id}
+      phx-target={@ui.myself}
+      class="inline-flex min-h-11 items-center gap-2 justify-self-start text-sm font-semibold text-ink-muted hover:text-ink"
+    >
+      <.icon name="chats-circle" class="size-4" />
+      {ngettext("View %{count} earlier reply", "View %{count} earlier replies", @count)}
+    </button>
     """
   end
 
@@ -1089,7 +1208,6 @@ defmodule AmautaWeb.CourseFeed do
       id={"reply-form-#{@post.id}"}
       phx-submit="send_reply"
       phx-target={@ui.myself}
-      class="mt-3"
     >
       <.rich_text_editor
         id={"reply-editor-#{@post.id}-#{@ui.reply_key}"}
@@ -1113,39 +1231,6 @@ defmodule AmautaWeb.CourseFeed do
         </.button>
       </div>
     </.form>
-    """
-  end
-
-  attr :user, :map, required: true
-  attr :post, :map, required: true
-  attr :ui, :map, required: true
-
-  # Silenciar a alguien en el tablón (RF-TAB-007), para quien modera.
-  defp mute_button(assigns) do
-    assigns = assign(assigns, muted: MapSet.member?(assigns.ui.muted, assigns.user.id))
-
-    ~H"""
-    <.icon_button
-      :if={@ui.can_moderate}
-      icon={if @muted, do: "user", else: "lock"}
-      label={
-        if @muted,
-          do: gettext("Let %{name} post again", name: User.display_name(@user)),
-          else: gettext("Mute %{name} in this feed", name: User.display_name(@user))
-      }
-      size="sm"
-      phx-click="mute"
-      phx-value-user={@user.id}
-      phx-value-muted={to_string(!@muted)}
-      phx-value-post={@post.id}
-      phx-target={@ui.myself}
-      data-confirm={
-        !@muted &&
-          gettext("Mute %{name}? They will be able to read, but not post or reply here.",
-            name: User.display_name(@user)
-          )
-      }
-    />
     """
   end
 end

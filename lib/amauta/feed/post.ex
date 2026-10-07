@@ -26,6 +26,10 @@ defmodule Amauta.Feed.Post do
     field :pin_position, :integer
     field :pin_expires_at, :utc_datetime_usec
     field :pinned_by_id, Ecto.UUID
+    # Cuántas respuestas tiene en total y cuántas de primer nivel; las que
+    # se muestran están en `replies` (ver `Amauta.Feed.with_replies/3`).
+    field :reply_count, :integer, virtual: true, default: 0
+    field :top_reply_count, :integer, virtual: true, default: 0
 
     belongs_to :course, Course
     belongs_to :author, User

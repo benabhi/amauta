@@ -267,6 +267,80 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Contenido largo recortado a una altura máxima, con un desvanecido abajo y
+  «Ver más» para desplegarlo. El botón aparece solo si el contenido de
+  verdad no entra (lo mide el navegador, también cuando cargan imágenes o
+  fórmulas).
+
+      <.collapsible id="post-text-1"><.rich_text id="post-1" doc={@doc} /></.collapsible>
+  """
+  attr :id, :string, required: true
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def collapsible(assigns) do
+    ~H"""
+    <div id={@id} phx-hook=".Collapsible" class={["group/collapse", @class]}>
+      <div
+        id={"#{@id}-body"}
+        data-collapse-body
+        class="max-h-96 overflow-hidden group-data-overflow/collapse:mask-b-from-60% group-data-expanded/collapse:max-h-none"
+      >
+        {render_slot(@inner_block)}
+      </div>
+      <button
+        type="button"
+        data-collapse-toggle
+        aria-expanded="false"
+        aria-controls={"#{@id}-body"}
+        class="mt-1 hidden min-h-11 group-data-overflow/collapse:inline-flex group-data-expanded/collapse:inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+      >
+        <span class="group-data-expanded/collapse:hidden">{gettext("Show more")}</span>
+        <span class="hidden group-data-expanded/collapse:inline">{gettext("Show less")}</span>
+      </button>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".Collapsible">
+      // Mide si el contenido desborda; `this.js()` mantiene los atributos
+      // aunque la vista se vuelva a dibujar.
+      export default {
+        mounted() {
+          this.body = this.el.querySelector("[data-collapse-body]")
+          this.button = this.el.querySelector("[data-collapse-toggle]")
+          this.button.addEventListener("click", () => this.toggle())
+          this.observer = new ResizeObserver(() => this.measure())
+          for (const child of this.body.children) this.observer.observe(child)
+          this.measure()
+        },
+        updated() { this.measure() },
+        destroyed() { this.observer.disconnect() },
+        measure() {
+          if (this.expanded) return
+          const js = this.js()
+          // El botón se muestra por CSS cuando hay `data-overflow`.
+          if (this.body.scrollHeight > this.body.clientHeight + 1) js.setAttribute(this.el, "data-overflow", "")
+          else js.removeAttribute(this.el, "data-overflow")
+        },
+        toggle() {
+          const js = this.js()
+          const open = !this.expanded
+          this.expanded = open
+          js.setAttribute(this.button, "aria-expanded", String(open))
+          // Desplegado no hay desvanecido; el botón sigue para «Ver menos».
+          if (open) {
+            js.removeAttribute(this.el, "data-overflow")
+            js.setAttribute(this.el, "data-expanded", "")
+          } else {
+            js.removeAttribute(this.el, "data-expanded")
+            js.setAttribute(this.el, "data-overflow", "")
+            this.el.scrollIntoView({block: "nearest"})
+          }
+        }
+      }
+    </script>
+    """
+  end
+
+  @doc """
   Muestra contenido enriquecido ya depurado (`Amauta.RichText`): el HTML se
   genera en el servidor y el navegador completa fórmulas y código.
 

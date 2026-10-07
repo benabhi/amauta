@@ -493,4 +493,122 @@ defmodule Amauta.FeedTest do
       assert {:error, :archived} = pin(teacher, post)
     end
   end
+
+  # Muchas respuestas de una vez, con fechas crecientes (sin pasar por la
+  # acción: acá importa el volumen, no el flujo).
+  defp bulk_replies(scope, post, count, parent \\ nil) do
+    author = scope.user.id
+    start = DateTime.utc_now()
+
+    rows =
+      for i <- 1..count do
+        at = DateTime.add(start, i, :second)
+
+        %{
+          id: Ecto.UUID.generate(),
+          post_id: post.id,
+          parent_id: parent && parent.id,
+          author_id: author,
+          body: %{
+            "type" => "doc",
+            "content" => [
+              %{"type" => "paragraph", "content" => [%{"type" => "text", "text" => "R#{i}"}]}
+            ]
+          },
+          inserted_at: at,
+          updated_at: at
+        }
+      end
+
+    Amauta.Repo.insert_all(Amauta.Feed.Reply, rows, Amauta.Tenancy.opts(scope))
+  end
+
+  # Consultas que hace `fun` en este proceso.
+  defp count_queries(fun) do
+    ref = make_ref()
+    me = self()
+
+    :telemetry.attach(
+      inspect(ref),
+      [:amauta, :repo, :query],
+      fn _event, _measure, _meta, _ -> if self() == me, do: send(me, {ref, :query}) end,
+      nil
+    )
+
+    fun.()
+    :telemetry.detach(inspect(ref))
+    count_messages(ref, 0)
+  end
+
+  defp count_messages(ref, n) do
+    receive do
+      {^ref, :query} -> count_messages(ref, n + 1)
+    after
+      0 -> n
+    end
+  end
+
+  describe "hilos largos" do
+    test "se muestran las últimas respuestas, con los conteos del hilo completo", %{
+      course: course
+    } do
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Consultas")
+      bulk_replies(teacher, post, 200)
+
+      shown = Feed.get_visible(teacher, course, post.id)
+      assert shown.reply_count == 200 and shown.top_reply_count == 200
+      assert Enum.map(shown.replies, &Amauta.RichText.to_text(&1.body)) == ~w(R198 R199 R200)
+
+      # «Ver anteriores» agranda la ventana.
+      wider = Feed.get_visible(teacher, course, post.id, windows: %{post.id => 23})
+      assert length(wider.replies) == 23
+      assert List.last(wider.replies).body == List.last(shown.replies).body
+    end
+
+    test "las anidadas también: las últimas y cuántas hay", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Consultas")
+      {:ok, top} = reply(teacher, post, "Primera")
+      bulk_replies(teacher, post, 50, top)
+
+      [shown] = Feed.get_visible(teacher, course, post.id).replies
+      assert shown.child_count == 50
+      assert Enum.map(shown.children, &Amauta.RichText.to_text(&1.body)) == ~w(R49 R50)
+
+      [wider] = Feed.get_visible(teacher, course, post.id, windows: %{top.id => 22}).replies
+      assert length(wider.children) == 22
+      assert Feed.get_visible(teacher, course, post.id).reply_count == 51
+    end
+
+    test "cargar el tablón cuesta lo mismo con 3 o con 300 respuestas", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, small} = publish(teacher, course, "Chico")
+      bulk_replies(teacher, small, 3)
+      small_cost = count_queries(fn -> Feed.list_posts(teacher, course) end)
+
+      {:ok, big} = publish(teacher, course, "Grande")
+      {:ok, top} = reply(teacher, big, "Hilo")
+      bulk_replies(teacher, big, 300)
+      bulk_replies(teacher, big, 100, top)
+
+      assert count_queries(fn -> Feed.list_posts(teacher, course) end) == small_cost
+
+      [big_shown, _small] = Feed.list_posts(teacher, course)
+      assert length(big_shown.replies) == 3
+    end
+
+    test "las publicaciones se traen de a una página, con cursor", %{course: course} do
+      teacher = member(course, "teacher")
+      total = Feed.page_size() + 5
+      for i <- 1..total, do: {:ok, _} = publish(teacher, course, "P#{i}")
+
+      first = Feed.list_posts(teacher, course)
+      assert length(first) == Feed.page_size()
+
+      rest = Feed.list_posts(teacher, course, %{}, before: List.last(first))
+      assert length(rest) == 5
+      assert MapSet.disjoint?(MapSet.new(first, & &1.id), MapSet.new(rest, & &1.id))
+    end
+  end
 end
