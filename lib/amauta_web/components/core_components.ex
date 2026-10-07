@@ -472,7 +472,8 @@ defmodule AmautaWeb.CoreComponents do
 
   @doc """
   Avatar con iniciales (o foto). El color sale del nombre, así cada persona
-  conserva el suyo.
+  conserva el suyo. La foto va encima de las iniciales: si no carga, quedan
+  las iniciales (y no el texto alternativo cortado).
   """
   attr :name, :string, required: true
   attr :src, :string, default: nil
@@ -486,16 +487,16 @@ defmodule AmautaWeb.CoreComponents do
     ~H"""
     <span
       class={[
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
         avatar_size(@size),
         family_classes(@family),
         @class
       ]}
       title={@name}
     >
-      <img :if={@src} src={@src} alt={@name} class="size-full object-cover" />
-      <span :if={!@src} aria-hidden="true">{@initials}</span>
-      <span :if={!@src} class="sr-only">{@name}</span>
+      <span aria-hidden="true">{@initials}</span>
+      <span class="sr-only">{@name}</span>
+      <img :if={@src} src={@src} alt="" class="absolute inset-0 size-full object-cover" />
     </span>
     """
   end

@@ -25,6 +25,11 @@ defmodule Storybook.Components.Avatar do
               attributes: %{name: name}
             }
           end
+      },
+      %Variation{
+        id: :broken_photo,
+        description: "Foto que no carga: quedan las iniciales",
+        attributes: %{name: "Carla Administración", src: "/no-existe.png", size: "md"}
       }
     ]
   end
