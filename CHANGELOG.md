@@ -2,6 +2,12 @@
 
 Todos los cambios relevantes de Amauta. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones, [Versionado Semántico](https://semver.org/lang/es/). Mientras la versión sea 0.x, cada versión menor cierra un hito del MVP (`docs/MVP.md`).
 
+## [0.2.1] · 2026-10-07
+
+### Corregido
+
+- El estado vacío de las calificaciones del curso se veía sin ícono.
+
 ## [0.2.0] · 2026-10-07
 
 Cierra **H2 · El aula**. Criterio de cierre verificado en desarrollo: una docente arma una unidad con una página y publica un aviso para la Comisión A. Sus 5 estudiantes reciben las dos notificaciones y el estudiantado de las otras comisiones, solo la de la página; los emails salen por la cola, uno por persona, agrupados.
@@ -73,5 +79,6 @@ Cierra **H0 · Fundaciones** y **H1 · Estructura**. Criterio de cierre de H1 ve
 - El aviso de desconexión ya no parpadea al recargar la página.
 - Después de volver a autenticarse para entrar a Ajustes, se vuelve a Ajustes y no al inicio.
 
+[0.2.1]: https://github.com/benabhi/amauta/releases/tag/v0.2.1
 [0.2.0]: https://github.com/benabhi/amauta/releases/tag/v0.2.0
 [0.1.0]: https://github.com/benabhi/amauta/releases/tag/v0.1.0
