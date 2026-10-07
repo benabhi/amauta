@@ -309,9 +309,12 @@ defmodule AmautaWeb.PathwayLive do
         </.form>
       </.card>
 
-      <p :if={@pathway.description && !@form} class="mb-8 max-w-prose whitespace-pre-line">
-        {@pathway.description}
-      </p>
+      <.rich_text
+        :if={!@form}
+        id="pathway-description"
+        doc={@pathway.description}
+        class="mb-8 max-w-prose"
+      />
 
       <div class="grid gap-6 lg:grid-cols-3">
         <.card class="lg:col-span-2">
@@ -549,7 +552,7 @@ defmodule AmautaWeb.PathwayLive do
         gettext("Optional: it is generated from the name. Lowercase letters, digits and hyphens.")
       }
     />
-    <.input field={@form[:description]} type="textarea" label={gettext("Description")} />
+    <.rich_text_editor field={@form[:description]} label={gettext("Description")} />
     """
   end
 

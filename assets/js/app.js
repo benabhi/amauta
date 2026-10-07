@@ -24,6 +24,7 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/amauta"
 import topbar from "../vendor/topbar"
+import {RichTextEditor, RichContent} from "./rich_text/hooks"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
@@ -33,7 +34,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
   // cortes de un segundo en el celular.
   disconnectedTimeout: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, RichTextEditor, RichContent},
 })
 
 // Show progress bar on live navigation and form submits

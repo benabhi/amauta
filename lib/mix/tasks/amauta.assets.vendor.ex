@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Amauta.Assets.Vendor do
   @shortdoc "Copia las fuentes y arma el sprite de íconos del sistema de diseño"
   @moduledoc """
-  Toma las fuentes (Fontsource) y los íconos (Phosphor) de
+  Toma las fuentes (Fontsource), los íconos (Phosphor) y KaTeX de
   `assets/node_modules` y deja en `priv/static` solo lo necesario: las
   fuentes recortadas a latín y latín extendido, con su licencia, y un sprite
   SVG con los íconos de `assets/icons.exs`.
@@ -28,6 +28,22 @@ defmodule Mix.Tasks.Amauta.Assets.Vendor do
   def run(_args) do
     for {package, family} <- @fonts, do: copy_font(package, family)
     build_sprite()
+    copy_katex()
+  end
+
+  # KaTeX (fórmulas del contenido enriquecido): su hoja de estilos y sus
+  # fuentes en woff2. La hoja la carga el navegador solo si hay fórmulas.
+  defp copy_katex do
+    source = Path.join([@node_modules, "katex", "dist"])
+    target = "priv/static/vendor/katex"
+    File.rm_rf!(target)
+    File.mkdir_p!(Path.join(target, "fonts"))
+    File.cp!(Path.join(source, "katex.min.css"), Path.join(target, "katex.min.css"))
+
+    fonts = Path.wildcard(Path.join([source, "fonts", "*.woff2"]))
+    for font <- fonts, do: File.cp!(font, Path.join([target, "fonts", Path.basename(font)]))
+
+    Mix.shell().info("katex: hoja de estilos y #{length(fonts)} fuentes")
   end
 
   defp copy_font(package, family) do

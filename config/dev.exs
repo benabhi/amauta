@@ -27,6 +27,7 @@ config :amauta, AmautaWeb.Endpoint,
   secret_key_base: "6Q7KReo4Dvp2SXVARgLUXmWQ0PJjjMo3jUn3WhbI+wmVzhYuv6L3+Jbpw+/TKP4b",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:amauta, ~w(--sourcemap=inline --watch)]},
+    esbuild_storybook: {Esbuild, :install_and_run, [:storybook, ~w(--sourcemap=inline --watch)]},
     # --poll: los eventos de archivos no cruzan el bind mount desde Windows (RNF-DEV-004).
     tailwind: {Tailwind, :install_and_run, [:amauta, ~w(--watch --poll)]}
   ]
