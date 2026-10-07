@@ -14,8 +14,8 @@ El ERS deja abierta la elección entre los contextos de Phoenix con Ecto y Ash F
 
 Se construyó **la misma porción vertical** con cada enfoque, en ramas descartables:
 
-- `spike/ecto`: contextos de Phoenix 1.8 con *scopes* y Ecto. Notas en `docs/spike/ecto.md` de esa rama.
-- `spike/ash`: Ash 3 con AshPostgres, AshPhoenix y AshJsonApi. Notas en `docs/spike/ash.md` de esa rama.
+- `spike/ecto`: contextos de Phoenix 1.8 con *scopes* y Ecto. Notas en `docs/spike/ecto.md` (hoy en el tag `archive/spike-ecto`).
+- `spike/ash`: Ash 3 con AshPostgres, AshPhoenix y AshJsonApi. Notas en `docs/spike/ash.md` (hoy en el tag `archive/spike-ash`).
 
 La porción incluye:
 
@@ -68,5 +68,5 @@ Motivos, en orden de peso:
 ## Consecuencias
 
 - `spike/ecto` es la base de la capa de acciones, la tenancy, los permisos y el constructor de URLs de H0. Se rehace con calidad de producción (no se fusiona la rama tal cual).
-- `spike/ash` queda archivada como referencia.
+- Las dos ramas del spike se archivaron como tags (`archive/spike-ecto` y `archive/spike-ash`) y se borraron: gitflow no tiene ramas `spike/`, y el código sigue disponible para consultarlo (`git checkout archive/spike-ash`).
 - Pendientes que el spike dejó a la vista: `search_path` vacío para el usuario de la base, generación de OpenAPI desde las acciones, y medir el rendimiento con un build de producción en la prueba de carga de H3.
