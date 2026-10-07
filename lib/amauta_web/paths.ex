@@ -16,6 +16,9 @@ defmodule AmautaWeb.Paths do
   def home(tenant), do: ~p"/#{slug(tenant)}"
   def log_in(tenant), do: ~p"/#{slug(tenant)}/log-in"
   def log_in(tenant, token), do: ~p"/#{slug(tenant)}/log-in/#{token}"
+
+  @doc "Inicio de sesión que, al entrar, vuelve a `path` (una ruta de la institución)."
+  def log_in_return(tenant, path), do: ~p"/#{slug(tenant)}/log-in?#{%{return_to: path}}"
   def log_out(tenant), do: ~p"/#{slug(tenant)}/log-out"
   def settings(tenant), do: ~p"/#{slug(tenant)}/settings"
   def confirm_email(tenant, token), do: ~p"/#{slug(tenant)}/settings/confirm-email/#{token}"
