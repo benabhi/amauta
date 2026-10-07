@@ -47,7 +47,10 @@ defmodule Amauta.Actions do
     Amauta.Enrollments.Actions.EndEnrollment,
     Amauta.Enrollments.Actions.ImportEnrollments,
     Amauta.Enrollments.Actions.EnrollInPathway,
-    Amauta.Enrollments.Actions.JoinWithCode
+    Amauta.Enrollments.Actions.JoinWithCode,
+    Amauta.Files.Actions.StartUpload,
+    Amauta.Files.Actions.CompleteUpload,
+    Amauta.Files.Actions.RemoveAvatar
   ]
 
   @doc "Todas las acciones."

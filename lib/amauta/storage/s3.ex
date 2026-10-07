@@ -81,6 +81,69 @@ defmodule Amauta.Storage.S3 do
     end
   end
 
+  @impl true
+  def start_multipart(key, opts) do
+    content_type = Keyword.get(opts, :content_type, "application/octet-stream")
+
+    case bucket()
+         |> S3.initiate_multipart_upload(key, content_type: content_type)
+         |> ExAws.request() do
+      {:ok, %{body: %{upload_id: upload_id}}} -> {:ok, upload_id}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl true
+  def presign_part(key, upload_id, part_number, opts) do
+    S3.presigned_url(public_config(), :put, bucket(), key,
+      expires_in: Keyword.fetch!(opts, :expires_in),
+      query_params: [{"partNumber", Integer.to_string(part_number)}, {"uploadId", upload_id}]
+    )
+  end
+
+  @impl true
+  def list_parts(key, upload_id) do
+    case bucket() |> S3.list_parts(key, upload_id) |> ExAws.request() do
+      {:ok, %{body: %{parts: parts}}} ->
+        {:ok,
+         for part <- parts do
+           %{
+             part_number: String.to_integer(part.part_number),
+             etag: part.etag,
+             size: String.to_integer(part.size)
+           }
+         end}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @impl true
+  def complete_multipart(key, upload_id, parts) do
+    case bucket() |> S3.complete_multipart_upload(key, upload_id, parts) |> ExAws.request() do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl true
+  def abort_multipart(key, upload_id) do
+    case bucket() |> S3.abort_multipart_upload(key, upload_id) |> ExAws.request() do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl true
+  def get_head_bytes(key, length) do
+    case bucket() |> S3.get_object(key, range: "bytes=0-#{length - 1}") |> ExAws.request() do
+      {:ok, %{body: body}} -> {:ok, body}
+      {:error, {:http_error, 404, _}} -> {:error, :not_found}
+      {:error, {:http_error, 416, _}} -> {:ok, ""}
+    end
+  end
+
   defp bucket, do: Keyword.fetch!(Amauta.Storage.config(), :bucket)
 
   defp public_config do

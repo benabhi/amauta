@@ -17,6 +17,7 @@ defmodule Amauta.Accounts.User do
     field :preferred_name, :string
     field :timezone, :string
     field :invited_at, :utc_datetime
+    field :avatar_file_id, Ecto.UUID
 
     timestamps()
   end

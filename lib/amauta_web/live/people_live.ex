@@ -227,7 +227,11 @@ defmodule AmautaWeb.PeopleLive do
       <.table :if={@page.entries != []} id="people" rows={@page.entries} row_id={&"person-#{&1.id}"}>
         <:col :let={user} label={gettext("Name")}>
           <div class="flex items-center gap-3">
-            <.avatar name={User.display_name(user)} size="sm" />
+            <.avatar
+              name={User.display_name(user)}
+              src={Paths.avatar(@current_scope, user)}
+              size="sm"
+            />
             <div class="min-w-0">
               <p class="font-semibold">{User.display_name(user)}</p>
               <p class="truncate text-ink-muted">{user.email}</p>

@@ -191,7 +191,11 @@ defmodule AmautaWeb.Layouts do
         class="flex items-center gap-2 rounded-control px-2 py-1 hover:bg-surface-sunken"
         title={gettext("Settings")}
       >
-        <.avatar name={User.display_name(@current_scope.user)} size="sm" />
+        <.avatar
+          name={User.display_name(@current_scope.user)}
+          src={Paths.avatar(@current_scope, @current_scope.user)}
+          size="sm"
+        />
         <span class="hidden text-sm sm:inline">{@current_scope.user.first_name}</span>
       </.link>
       <.link

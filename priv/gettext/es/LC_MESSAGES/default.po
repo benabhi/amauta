@@ -11,12 +11,12 @@ msgstr ""
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/amauta_web/live/user_live/settings.ex:135
+#: lib/amauta_web/live/user_live/settings.ex:172
 #, elixir-autogen, elixir-format
 msgid "A link to confirm your email change has been sent to the new address."
 msgstr "Te mandamos un enlace a la nueva dirección para confirmar el cambio de email."
 
-#: lib/amauta_web/live/user_live/settings.ex:15
+#: lib/amauta_web/live/user_live/settings.ex:18
 #, elixir-autogen, elixir-format
 msgid "Account Settings"
 msgstr "Ajustes de la cuenta"
@@ -26,18 +26,18 @@ msgstr "Ajustes de la cuenta"
 msgid "Actions"
 msgstr "Acciones"
 
-#: lib/amauta_web/components/layouts.ex:231
-#: lib/amauta_web/components/layouts.ex:245
+#: lib/amauta_web/components/layouts.ex:235
+#: lib/amauta_web/components/layouts.ex:249
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Intentando reconectar"
 
-#: lib/amauta_web/live/user_live/settings.ex:36
+#: lib/amauta_web/live/user_live/settings.ex:73
 #, elixir-autogen, elixir-format
 msgid "Change Email"
 msgstr "Cambiar el email"
 
-#: lib/amauta_web/live/user_live/settings.ex:36
+#: lib/amauta_web/live/user_live/settings.ex:73
 #, elixir-autogen, elixir-format
 msgid "Changing..."
 msgstr "Cambiando…"
@@ -52,7 +52,7 @@ msgstr "Confirmar y entrar solo esta vez"
 msgid "Confirm and stay logged in"
 msgstr "Confirmar y mantener la sesión iniciada"
 
-#: lib/amauta_web/live/user_live/settings.ex:69
+#: lib/amauta_web/live/user_live/settings.ex:106
 #, elixir-autogen, elixir-format
 msgid "Confirm new password"
 msgstr "Repetí la nueva contraseña"
@@ -70,18 +70,18 @@ msgstr "Confirmando…"
 #: lib/amauta_web/live/setup_live.ex:69
 #: lib/amauta_web/live/user_live/login.ex:37
 #: lib/amauta_web/live/user_live/login.ex:62
-#: lib/amauta_web/live/user_live/settings.ex:21
-#: lib/amauta_web/live/user_live/settings.ex:31
+#: lib/amauta_web/live/user_live/settings.ex:58
+#: lib/amauta_web/live/user_live/settings.ex:68
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "Email"
 
-#: lib/amauta_web/live/user_live/settings.ex:91
+#: lib/amauta_web/live/user_live/settings.ex:128
 #, elixir-autogen, elixir-format
 msgid "Email change link is invalid or it has expired."
 msgstr "El enlace para cambiar el email no es válido o ya venció."
 
-#: lib/amauta_web/live/user_live/settings.ex:88
+#: lib/amauta_web/live/user_live/settings.ex:125
 #, elixir-autogen, elixir-format
 msgid "Email changed successfully."
 msgstr "Cambiaste tu email."
@@ -141,8 +141,8 @@ msgstr "Entrar solo esta vez"
 
 #: lib/amauta_web/components/layouts.ex:104
 #: lib/amauta_web/components/layouts.ex:105
-#: lib/amauta_web/components/layouts.ex:201
-#: lib/amauta_web/components/layouts.ex:202
+#: lib/amauta_web/components/layouts.ex:205
+#: lib/amauta_web/components/layouts.ex:206
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Salir"
@@ -164,12 +164,12 @@ msgstr "Entrando…"
 msgid "Magic link is invalid or it has expired."
 msgstr "El enlace no es válido o ya venció."
 
-#: lib/amauta_web/live/user_live/settings.ex:16
+#: lib/amauta_web/live/user_live/settings.ex:19
 #, elixir-autogen, elixir-format
 msgid "Manage your account email address and password settings"
 msgstr "Cambiá el email y la contraseña de tu cuenta"
 
-#: lib/amauta_web/live/user_live/settings.ex:61
+#: lib/amauta_web/live/user_live/settings.ex:98
 #, elixir-autogen, elixir-format
 msgid "New password"
 msgstr "Nueva contraseña"
@@ -177,7 +177,7 @@ msgstr "Nueva contraseña"
 #: lib/amauta_web/controllers/admin/session_controller.ex:69
 #: lib/amauta_web/live/setup_live.ex:76
 #: lib/amauta_web/live/user_live/login.ex:70
-#: lib/amauta_web/live/user_live/settings.ex:41
+#: lib/amauta_web/live/user_live/settings.ex:78
 #, elixir-autogen, elixir-format
 msgid "Password"
 msgstr "Contraseña"
@@ -187,33 +187,33 @@ msgstr "Contraseña"
 msgid "Password updated successfully!"
 msgstr "Cambiaste tu contraseña."
 
-#: lib/amauta_web/live/user_live/settings.ex:73
+#: lib/amauta_web/live/user_live/settings.ex:110
 #, elixir-autogen, elixir-format
 msgid "Save Password"
 msgstr "Guardar la contraseña"
 
 #: lib/amauta_web/live/admin/institution_live.ex:183
-#: lib/amauta_web/live/course_live.ex:750
-#: lib/amauta_web/live/course_live.ex:950
-#: lib/amauta_web/live/course_live.ex:993
+#: lib/amauta_web/live/course_live.ex:755
+#: lib/amauta_web/live/course_live.ex:959
+#: lib/amauta_web/live/course_live.ex:1002
 #: lib/amauta_web/live/courses_live.ex:144
 #: lib/amauta_web/live/pathway_live.ex:304
 #: lib/amauta_web/live/pathways_live.ex:91
 #: lib/amauta_web/live/people_live.ex:186
 #: lib/amauta_web/live/periods_live.ex:137
-#: lib/amauta_web/live/user_live/settings.ex:73
+#: lib/amauta_web/live/user_live/settings.ex:110
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr "Guardando…"
 
 #: lib/amauta_web/components/layouts.ex:192
-#: lib/amauta_web/live/course_live.ex:528
-#: lib/amauta_web/live/course_live.ex:955
+#: lib/amauta_web/live/course_live.ex:529
+#: lib/amauta_web/live/course_live.ex:964
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Ajustes"
 
-#: lib/amauta_web/components/layouts.ex:237
+#: lib/amauta_web/components/layouts.ex:241
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "¡Algo salió mal!"
@@ -233,7 +233,7 @@ msgstr "Si preferís usar una contraseña, podés crearla en los ajustes de tu c
 msgid "User confirmed successfully."
 msgstr "Confirmaste tu cuenta."
 
-#: lib/amauta_web/components/layouts.ex:223
+#: lib/amauta_web/components/layouts.ex:227
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "No encontramos la conexión a internet"
@@ -280,17 +280,17 @@ msgstr "o"
 msgid "An open source learning platform. Enter through your institution's address."
 msgstr "Una plataforma educativa de código abierto. Entrá desde la dirección de tu institución."
 
-#: lib/amauta_web/components/layouts.ex:260
+#: lib/amauta_web/components/layouts.ex:264
 #, elixir-autogen, elixir-format
 msgid "Color theme"
 msgstr "Tema de color"
 
-#: lib/amauta_web/components/layouts.ex:272
+#: lib/amauta_web/components/layouts.ex:276
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr "Tema oscuro"
 
-#: lib/amauta_web/components/layouts.ex:271
+#: lib/amauta_web/components/layouts.ex:275
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr "Tema claro"
@@ -300,7 +300,7 @@ msgstr "Tema claro"
 msgid "Skip to content"
 msgstr "Ir al contenido"
 
-#: lib/amauta_web/components/layouts.ex:270
+#: lib/amauta_web/components/layouts.ex:274
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr "Tema del sistema"
@@ -350,7 +350,7 @@ msgid "A suspended institution keeps all its data, but nobody can log in."
 msgstr "Una institución suspendida conserva todos sus datos, pero nadie puede entrar."
 
 #: lib/amauta_web/live/admin/institutions_live.ex:133
-#: lib/amauta_web/live/people_live.ex:333
+#: lib/amauta_web/live/people_live.ex:337
 #, elixir-autogen, elixir-format
 msgid "Active"
 msgstr "Activa"
@@ -385,7 +385,7 @@ msgid "At least 12 characters."
 msgstr "Al menos 12 caracteres."
 
 #: lib/amauta_web/live/admin/institutions_live.ex:84
-#: lib/amauta_web/live/course_live.ex:752
+#: lib/amauta_web/live/course_live.ex:757
 #: lib/amauta_web/live/courses_live.ex:146
 #: lib/amauta_web/live/pathway_live.ex:306
 #: lib/amauta_web/live/pathway_live.ex:424
@@ -450,7 +450,7 @@ msgid "Database ready."
 msgstr "La base está lista."
 
 #: lib/amauta_web/live/admin/institution_live.ex:176
-#: lib/amauta_web/live/course_live.ex:939
+#: lib/amauta_web/live/course_live.ex:948
 #, elixir-autogen, elixir-format
 msgid "Details"
 msgstr "Datos"
@@ -498,12 +498,12 @@ msgstr "Minúsculas, números y guiones: va en la dirección web."
 #: lib/amauta_web/live/admin/institution_live.ex:178
 #: lib/amauta_web/live/admin/institutions_live.ex:72
 #: lib/amauta_web/live/admin/institutions_live.ex:108
-#: lib/amauta_web/live/course_live.ex:738
-#: lib/amauta_web/live/course_live.ex:810
-#: lib/amauta_web/live/course_live.ex:1070
+#: lib/amauta_web/live/course_live.ex:743
+#: lib/amauta_web/live/course_live.ex:815
+#: lib/amauta_web/live/course_live.ex:1079
 #: lib/amauta_web/live/pathway_live.ex:334
 #: lib/amauta_web/live/pathway_live.ex:409
-#: lib/amauta_web/live/pathway_live.ex:530
+#: lib/amauta_web/live/pathway_live.ex:538
 #: lib/amauta_web/live/people_live.ex:228
 #: lib/amauta_web/live/periods_live.ex:122
 #: lib/amauta_web/live/periods_live.ex:154
@@ -544,9 +544,9 @@ msgid "Retry"
 msgstr "Reintentar"
 
 #: lib/amauta_web/live/admin/institution_live.ex:183
-#: lib/amauta_web/live/course_live.ex:750
-#: lib/amauta_web/live/course_live.ex:950
-#: lib/amauta_web/live/course_live.ex:993
+#: lib/amauta_web/live/course_live.ex:755
+#: lib/amauta_web/live/course_live.ex:959
+#: lib/amauta_web/live/course_live.ex:1002
 #: lib/amauta_web/live/pathway_live.ex:304
 #: lib/amauta_web/live/people_live.ex:186
 #: lib/amauta_web/live/periods_live.ex:137
@@ -562,11 +562,11 @@ msgstr "Nombre corto"
 
 #: lib/amauta_web/live/admin/institution_live.ex:188
 #: lib/amauta_web/live/admin/institutions_live.ex:114
-#: lib/amauta_web/live/course_live.ex:903
+#: lib/amauta_web/live/course_live.ex:912
 #: lib/amauta_web/live/courses_live.ex:186
 #: lib/amauta_web/live/pathways_live.ex:128
 #: lib/amauta_web/live/people_live.ex:218
-#: lib/amauta_web/live/people_live.ex:244
+#: lib/amauta_web/live/people_live.ex:248
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr "Estado"
@@ -582,8 +582,8 @@ msgid "Suspend institution"
 msgstr "Suspender la institución"
 
 #: lib/amauta_web/live/admin/institutions_live.ex:136
-#: lib/amauta_web/live/course_live.ex:822
-#: lib/amauta_web/live/people_live.ex:334
+#: lib/amauta_web/live/course_live.ex:831
+#: lib/amauta_web/live/people_live.ex:338
 #, elixir-autogen, elixir-format
 msgid "Suspended"
 msgstr "Suspendida"
@@ -712,7 +712,7 @@ msgstr "Agregar persona"
 msgid "All statuses"
 msgstr "Todos los estados"
 
-#: lib/amauta_web/live/people_live.ex:335
+#: lib/amauta_web/live/people_live.ex:339
 #, elixir-autogen, elixir-format
 msgid "Archived"
 msgstr "Archivada"
@@ -750,10 +750,10 @@ msgstr "Elegí las columnas de nombre, apellido y email para simular."
 msgid "Download the error report"
 msgstr "Descargar el reporte de errores"
 
-#: lib/amauta_web/live/course_live.ex:703
+#: lib/amauta_web/live/course_live.ex:708
 #: lib/amauta_web/live/pathway_live.ex:265
 #: lib/amauta_web/live/pathway_live.ex:300
-#: lib/amauta_web/live/people_live.ex:250
+#: lib/amauta_web/live/people_live.ex:254
 #: lib/amauta_web/live/periods_live.ex:172
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -781,7 +781,7 @@ msgid_plural "Import %{count} people"
 msgstr[0] "Importar %{count} persona"
 msgstr[1] "Importar %{count} personas"
 
-#: lib/amauta_web/live/course_live.ex:671
+#: lib/amauta_web/live/course_live.ex:676
 #: lib/amauta_web/live/people_live.ex:152
 #, elixir-autogen, elixir-format
 msgid "Import CSV"
@@ -809,7 +809,7 @@ msgstr "Importar personas"
 msgid "Importing..."
 msgstr "Importando…"
 
-#: lib/amauta_web/live/people_live.ex:332
+#: lib/amauta_web/live/people_live.ex:336
 #, elixir-autogen, elixir-format
 msgid "Invitation pending"
 msgstr "Invitación pendiente"
@@ -829,7 +829,7 @@ msgstr "Principal"
 msgid "New person"
 msgstr "Nueva persona"
 
-#: lib/amauta_web/live/people_live.ex:312
+#: lib/amauta_web/live/people_live.ex:316
 #, elixir-autogen, elixir-format
 msgid "Next"
 msgstr "Siguiente"
@@ -849,18 +849,18 @@ msgstr "No hay nadie"
 msgid "Optional: how the person wants to be called."
 msgstr "Opcional: cómo quiere que la llamen."
 
-#: lib/amauta_web/live/people_live.ex:301
+#: lib/amauta_web/live/people_live.ex:305
 #, elixir-autogen, elixir-format
 msgid "Page %{page} of %{pages}"
 msgstr "Página %{page} de %{pages}"
 
-#: lib/amauta_web/live/people_live.ex:289
+#: lib/amauta_web/live/people_live.ex:293
 #, elixir-autogen, elixir-format
 msgid "Pagination"
 msgstr "Paginación"
 
 #: lib/amauta_web/components/layouts.ex:150
-#: lib/amauta_web/live/course_live.ex:526
+#: lib/amauta_web/live/course_live.ex:527
 #: lib/amauta_web/live/people_live.ex:31
 #: lib/amauta_web/live/people_live.ex:134
 #, elixir-autogen, elixir-format
@@ -888,13 +888,13 @@ msgstr "Suspendiste a la persona."
 msgid "Preferred name"
 msgstr "Nombre preferido"
 
-#: lib/amauta_web/live/people_live.ex:298
+#: lib/amauta_web/live/people_live.ex:302
 #, elixir-autogen, elixir-format
 msgid "Previous"
 msgstr "Anterior"
 
-#: lib/amauta_web/live/course_live.ex:857
-#: lib/amauta_web/live/people_live.ex:278
+#: lib/amauta_web/live/course_live.ex:866
+#: lib/amauta_web/live/people_live.ex:282
 #, elixir-autogen, elixir-format
 msgid "Reactivate"
 msgstr "Reactivar"
@@ -905,7 +905,7 @@ msgstr "Reactivar"
 msgid "Read file"
 msgstr "Leer el archivo"
 
-#: lib/amauta_web/live/people_live.ex:237
+#: lib/amauta_web/live/people_live.ex:241
 #, elixir-autogen, elixir-format
 msgid "Roles"
 msgstr "Roles"
@@ -921,7 +921,7 @@ msgstr "Fila %{line}"
 msgid "Rows with errors are skipped. You can fix them and import the file again."
 msgstr "Las filas con errores no se importan. Podés corregirlas e importar el archivo de nuevo."
 
-#: lib/amauta_web/live/course_live.ex:621
+#: lib/amauta_web/live/course_live.ex:622
 #: lib/amauta_web/live/courses_live.ex:166
 #: lib/amauta_web/live/pathways_live.ex:113
 #: lib/amauta_web/live/people_live.ex:208
@@ -929,9 +929,9 @@ msgstr "Las filas con errores no se importan. Podés corregirlas e importar el a
 msgid "Search"
 msgstr "Buscar"
 
-#: lib/amauta_web/live/course_live.ex:620
+#: lib/amauta_web/live/course_live.ex:621
 #: lib/amauta_web/live/pathway_enroll_live.ex:158
-#: lib/amauta_web/live/pathway_live.ex:468
+#: lib/amauta_web/live/pathway_live.ex:472
 #: lib/amauta_web/live/people_live.ex:206
 #, elixir-autogen, elixir-format
 msgid "Search by name or email"
@@ -943,7 +943,7 @@ msgstr "Buscar por nombre o email"
 msgid "See people"
 msgstr "Ver personas"
 
-#: lib/amauta_web/live/people_live.ex:257
+#: lib/amauta_web/live/people_live.ex:261
 #, elixir-autogen, elixir-format
 msgid "Send invitation again"
 msgstr "Reenviar la invitación"
@@ -958,13 +958,13 @@ msgstr "Enviar ahora la invitación por email"
 msgid "Send the invitations by email"
 msgstr "Enviar las invitaciones por email"
 
-#: lib/amauta_web/live/course_live.ex:849
-#: lib/amauta_web/live/people_live.ex:265
+#: lib/amauta_web/live/course_live.ex:858
+#: lib/amauta_web/live/people_live.ex:269
 #, elixir-autogen, elixir-format
 msgid "Suspend"
 msgstr "Suspender"
 
-#: lib/amauta_web/live/people_live.ex:270
+#: lib/amauta_web/live/people_live.ex:274
 #, elixir-autogen, elixir-format
 msgid "Suspend %{name}? They will not be able to log in."
 msgstr "¿Suspendés a %{name}? No va a poder entrar."
@@ -975,6 +975,7 @@ msgstr "¿Suspendés a %{name}? No va a poder entrar."
 #: lib/amauta_web/live/people_live.ex:125
 #: lib/amauta_web/live/periods_live.ex:78
 #: lib/amauta_web/live/periods_live.ex:93
+#: lib/amauta_web/live/user_live/settings.ex:208
 #, elixir-autogen, elixir-format
 msgid "That could not be done."
 msgstr "No se pudo hacer."
@@ -997,6 +998,7 @@ msgstr "No se pudo subir el archivo."
 msgid "The file has more than 5,000 rows. Split it into smaller files."
 msgstr "El archivo tiene más de 5.000 filas. Dividilo en archivos más chicos."
 
+#: lib/amauta_web/components/direct_upload.ex:92
 #: lib/amauta_web/live/course_import_live.ex:91
 #: lib/amauta_web/live/people_import_live.ex:112
 #, elixir-autogen, elixir-format
@@ -1053,30 +1055,30 @@ msgstr "%{name} es ahora el actual."
 msgid "2027 · 1st semester"
 msgstr "2027 · 1.er cuatrimestre"
 
-#: lib/amauta_web/live/pathway_enroll_live.ex:173
-#: lib/amauta_web/live/pathway_live.ex:484
+#: lib/amauta_web/live/pathway_enroll_live.ex:177
+#: lib/amauta_web/live/pathway_live.ex:492
 #, elixir-autogen, elixir-format
 msgid "Add %{name}"
 msgstr "Agregar a %{name}"
 
-#: lib/amauta_web/live/pathway_live.ex:469
+#: lib/amauta_web/live/pathway_live.ex:473
 #, elixir-autogen, elixir-format
 msgid "Add a coordinator"
 msgstr "Agregar responsable"
 
-#: lib/amauta_web/live/course_live.ex:926
+#: lib/amauta_web/live/course_live.ex:935
 #: lib/amauta_web/live/pathway_live.ex:287
 #, elixir-autogen, elixir-format
 msgid "Archive"
 msgstr "Archivar"
 
-#: lib/amauta_web/live/pathway_live.ex:531
+#: lib/amauta_web/live/pathway_live.ex:539
 #, elixir-autogen, elixir-format
 msgid "Bachelor's degree in Computer Science"
 msgstr "Licenciatura en Sistemas"
 
-#: lib/amauta_web/live/course_live.ex:1075
-#: lib/amauta_web/live/pathway_live.ex:535
+#: lib/amauta_web/live/course_live.ex:1084
+#: lib/amauta_web/live/pathway_live.ex:543
 #, elixir-autogen, elixir-format
 msgid "Code"
 msgstr "Código"
@@ -1101,7 +1103,7 @@ msgstr "Actual"
 msgid "Dates"
 msgstr "Fechas"
 
-#: lib/amauta_web/live/course_live.ex:711
+#: lib/amauta_web/live/course_live.ex:716
 #: lib/amauta_web/live/pathway_live.ex:368
 #, elixir-autogen, elixir-format
 msgid "Delete"
@@ -1112,8 +1114,8 @@ msgstr "Borrar"
 msgid "Delete «%{name}»?"
 msgstr "¿Borrás «%{name}»?"
 
-#: lib/amauta_web/live/course_live.ex:1129
-#: lib/amauta_web/live/pathway_live.ex:544
+#: lib/amauta_web/live/course_live.ex:1138
+#: lib/amauta_web/live/pathway_live.ex:552
 #, elixir-autogen, elixir-format
 msgid "Description"
 msgstr "Descripción"
@@ -1154,19 +1156,19 @@ msgstr "Todavía no tiene responsables."
 msgid "Not archived"
 msgstr "Sin archivar"
 
-#: lib/amauta_web/live/pathway_live.ex:541
+#: lib/amauta_web/live/pathway_live.ex:549
 #, elixir-autogen, elixir-format
 msgid "Optional: it is generated from the name. Lowercase letters, digits and hyphens."
 msgstr "Opcional: se genera a partir del nombre. Minúsculas, dígitos y guiones."
 
-#: lib/amauta_web/live/course_live.ex:911
+#: lib/amauta_web/live/course_live.ex:920
 #: lib/amauta_web/live/pathway_live.ex:272
 #, elixir-autogen, elixir-format
 msgid "Publish"
 msgstr "Publicar"
 
-#: lib/amauta_web/live/pathway_enroll_live.ex:191
-#: lib/amauta_web/live/pathway_live.ex:447
+#: lib/amauta_web/live/pathway_enroll_live.ex:195
+#: lib/amauta_web/live/pathway_live.ex:451
 #, elixir-autogen, elixir-format
 msgid "Remove %{name}"
 msgstr "Quitar a %{name}"
@@ -1177,7 +1179,7 @@ msgstr "Quitar a %{name}"
 msgid "Rename"
 msgstr "Renombrar"
 
-#: lib/amauta_web/live/course_live.ex:933
+#: lib/amauta_web/live/course_live.ex:942
 #: lib/amauta_web/live/pathway_live.ex:294
 #, elixir-autogen, elixir-format
 msgid "Reopen"
@@ -1194,8 +1196,8 @@ msgstr "Buscar por nombre o código"
 msgid "Starts on"
 msgstr "Empieza el"
 
-#: lib/amauta_web/live/course_live.ex:1126
-#: lib/amauta_web/live/pathway_live.ex:539
+#: lib/amauta_web/live/course_live.ex:1135
+#: lib/amauta_web/live/pathway_live.ex:547
 #, elixir-autogen, elixir-format
 msgid "Web address"
 msgstr "Dirección web"
@@ -1224,7 +1226,7 @@ msgctxt "feminine"
 msgid "Name of the new %{term}"
 msgstr "Nombre de la nueva %{term}"
 
-#: lib/amauta_web/live/course_live.ex:765
+#: lib/amauta_web/live/course_live.ex:770
 #: lib/amauta_web/live/courses_live.ex:127
 #: lib/amauta_web/live/courses_live.ex:133
 #: lib/amauta_web/live/pathway_live.ex:391
@@ -1282,7 +1284,7 @@ msgctxt "masculine"
 msgid "Name of the new %{term}"
 msgstr "Nombre del nuevo %{term}"
 
-#: lib/amauta_web/live/course_live.ex:765
+#: lib/amauta_web/live/course_live.ex:770
 #: lib/amauta_web/live/courses_live.ex:127
 #: lib/amauta_web/live/courses_live.ex:133
 #: lib/amauta_web/live/pathway_live.ex:391
@@ -1333,15 +1335,15 @@ msgctxt "masculine"
 msgid "A %{term} groups %{courses} by %{stages}, in order."
 msgstr "Un %{term} agrupa %{courses} por %{stages}, en orden."
 
-#: lib/amauta_web/live/course_live.ex:919
+#: lib/amauta_web/live/course_live.ex:928
 #: lib/amauta_web/live/pathway_live.ex:280
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Archive it? It will become read-only until it is reopened."
 msgstr "¿La archivás? Queda de solo lectura hasta que se reabra."
 
-#: lib/amauta_web/live/course_live.ex:1169
-#: lib/amauta_web/live/pathway_live.ex:564
+#: lib/amauta_web/live/course_live.ex:1178
+#: lib/amauta_web/live/pathway_live.ex:572
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Archived"
@@ -1354,8 +1356,8 @@ msgctxt "feminine"
 msgid "Archived. It is now read-only."
 msgstr "Archivada. Ahora es de solo lectura."
 
-#: lib/amauta_web/live/course_live.ex:1167
-#: lib/amauta_web/live/pathway_live.ex:562
+#: lib/amauta_web/live/course_live.ex:1176
+#: lib/amauta_web/live/pathway_live.ex:570
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Draft"
@@ -1368,8 +1370,8 @@ msgctxt "feminine"
 msgid "It is archived: reopen it to make changes."
 msgstr "Está archivada: reabrila para hacer cambios."
 
-#: lib/amauta_web/live/course_live.ex:1168
-#: lib/amauta_web/live/pathway_live.ex:563
+#: lib/amauta_web/live/course_live.ex:1177
+#: lib/amauta_web/live/pathway_live.ex:571
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Published"
@@ -1389,15 +1391,15 @@ msgctxt "feminine"
 msgid "Reopened."
 msgstr "Reabierta."
 
-#: lib/amauta_web/live/course_live.ex:919
+#: lib/amauta_web/live/course_live.ex:928
 #: lib/amauta_web/live/pathway_live.ex:280
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Archive it? It will become read-only until it is reopened."
 msgstr "¿Lo archivás? Queda de solo lectura hasta que se reabra."
 
-#: lib/amauta_web/live/course_live.ex:1169
-#: lib/amauta_web/live/pathway_live.ex:564
+#: lib/amauta_web/live/course_live.ex:1178
+#: lib/amauta_web/live/pathway_live.ex:572
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Archived"
@@ -1410,8 +1412,8 @@ msgctxt "masculine"
 msgid "Archived. It is now read-only."
 msgstr "Archivado. Ahora es de solo lectura."
 
-#: lib/amauta_web/live/course_live.ex:1167
-#: lib/amauta_web/live/pathway_live.ex:562
+#: lib/amauta_web/live/course_live.ex:1176
+#: lib/amauta_web/live/pathway_live.ex:570
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Draft"
@@ -1424,8 +1426,8 @@ msgctxt "masculine"
 msgid "It is archived: reopen it to make changes."
 msgstr "Está archivado: reabrilo para hacer cambios."
 
-#: lib/amauta_web/live/course_live.ex:1168
-#: lib/amauta_web/live/pathway_live.ex:563
+#: lib/amauta_web/live/course_live.ex:1177
+#: lib/amauta_web/live/pathway_live.ex:571
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Published"
@@ -1445,17 +1447,17 @@ msgctxt "masculine"
 msgid "Reopened."
 msgstr "Reabierto."
 
-#: lib/amauta_web/live/course_live.ex:986
+#: lib/amauta_web/live/course_live.ex:995
 #, elixir-autogen, elixir-format
 msgid "Allow comments on posts"
 msgstr "Permitir comentarios en las publicaciones"
 
-#: lib/amauta_web/live/course_live.ex:991
+#: lib/amauta_web/live/course_live.ex:1000
 #, elixir-autogen, elixir-format
 msgid "Allow joining with the enrollment code"
 msgstr "Permitir sumarse con el código de inscripción"
 
-#: lib/amauta_web/live/course_live.ex:1133
+#: lib/amauta_web/live/course_live.ex:1142
 #, elixir-autogen, elixir-format
 msgid "Book"
 msgstr "Libro"
@@ -1465,139 +1467,139 @@ msgstr "Libro"
 msgid "Breadcrumbs"
 msgstr "Ubicación"
 
-#: lib/amauta_web/live/course_live.ex:1151
+#: lib/amauta_web/live/course_live.ex:1160
 #, elixir-autogen, elixir-format
 msgid "Brown"
 msgstr "Marrón"
 
-#: lib/amauta_web/live/course_live.ex:1135
+#: lib/amauta_web/live/course_live.ex:1144
 #, elixir-autogen, elixir-format
 msgid "Calculator"
 msgstr "Calculadora"
 
-#: lib/amauta_web/live/course_live.ex:1141
+#: lib/amauta_web/live/course_live.ex:1150
 #, elixir-autogen, elixir-format
 msgid "Chart"
 msgstr "Gráfico"
 
-#: lib/amauta_web/live/course_live.ex:1050
+#: lib/amauta_web/live/course_live.ex:1059
 #, elixir-autogen, elixir-format
 msgid "Class"
 msgstr "Clase"
 
-#: lib/amauta_web/live/course_live.ex:1119
+#: lib/amauta_web/live/course_live.ex:1128
 #, elixir-autogen, elixir-format
 msgid "Color"
 msgstr "Color"
 
-#: lib/amauta_web/live/course_live.ex:525
+#: lib/amauta_web/live/course_live.ex:526
 #, elixir-autogen, elixir-format
 msgid "Content"
 msgstr "Contenido"
 
-#: lib/amauta_web/live/course_live.ex:464
-#: lib/amauta_web/live/course_live.ex:998
+#: lib/amauta_web/live/course_live.ex:465
+#: lib/amauta_web/live/course_live.ex:1007
 #: lib/amauta_web/live/join_live.ex:67
 #, elixir-autogen, elixir-format
 msgid "Enrollment code"
 msgstr "Código de inscripción"
 
-#: lib/amauta_web/live/course_live.ex:1033
+#: lib/amauta_web/live/course_live.ex:1042
 #, elixir-autogen, elixir-format
 msgid "Everyone"
 msgstr "Todos"
 
-#: lib/amauta_web/live/course_live.ex:1034
+#: lib/amauta_web/live/course_live.ex:1043
 #, elixir-autogen, elixir-format
 msgid "Everyone, with moderation"
 msgstr "Todos, con moderación"
 
-#: lib/amauta_web/live/course_live.ex:524
+#: lib/amauta_web/live/course_live.ex:525
 #, elixir-autogen, elixir-format
 msgid "Feed"
 msgstr "Tablón"
 
-#: lib/amauta_web/live/course_live.ex:1136
+#: lib/amauta_web/live/course_live.ex:1145
 #, elixir-autogen, elixir-format
 msgid "Flask"
 msgstr "Matraz"
 
-#: lib/amauta_web/live/course_live.ex:1006
+#: lib/amauta_web/live/course_live.ex:1015
 #, elixir-autogen, elixir-format
 msgid "Generate a new code? The current one will stop working."
 msgstr "¿Generás un código nuevo? El actual deja de funcionar."
 
-#: lib/amauta_web/live/course_live.ex:1008
+#: lib/amauta_web/live/course_live.ex:1017
 #, elixir-autogen, elixir-format
 msgid "Generate a new one"
 msgstr "Generar uno nuevo"
 
-#: lib/amauta_web/live/course_live.ex:1137
+#: lib/amauta_web/live/course_live.ex:1146
 #, elixir-autogen, elixir-format
 msgid "Globe"
 msgstr "Globo terráqueo"
 
-#: lib/amauta_web/live/course_live.ex:527
+#: lib/amauta_web/live/course_live.ex:528
 #, elixir-autogen, elixir-format
 msgid "Grades"
 msgstr "Calificaciones"
 
-#: lib/amauta_web/live/course_live.ex:883
+#: lib/amauta_web/live/course_live.ex:892
 #, elixir-autogen, elixir-format
 msgid "Grades appear here when assignments and assessments are graded."
 msgstr "Las notas aparecen acá cuando se califican tareas y evaluaciones."
 
-#: lib/amauta_web/live/course_live.ex:973
+#: lib/amauta_web/live/course_live.ex:982
 #, elixir-autogen, elixir-format
 msgid "Grading scale"
 msgstr "Escala de calificación"
 
-#: lib/amauta_web/live/course_live.ex:1148
+#: lib/amauta_web/live/course_live.ex:1157
 #, elixir-autogen, elixir-format
 msgid "Green"
 msgstr "Verde"
 
-#: lib/amauta_web/live/course_live.ex:1143
+#: lib/amauta_web/live/course_live.ex:1152
 #, elixir-autogen, elixir-format
 msgid "Health"
 msgstr "Salud"
 
-#: lib/amauta_web/live/course_live.ex:1113
+#: lib/amauta_web/live/course_live.ex:1122
 #, elixir-autogen, elixir-format
 msgid "Icon"
 msgstr "Ícono"
 
-#: lib/amauta_web/live/course_live.ex:1146
+#: lib/amauta_web/live/course_live.ex:1155
 #, elixir-autogen, elixir-format
 msgid "Indigo"
 msgstr "Añil"
 
-#: lib/amauta_web/live/course_live.ex:1140
+#: lib/amauta_web/live/course_live.ex:1149
 #, elixir-autogen, elixir-format
 msgid "Languages"
 msgstr "Idiomas"
 
-#: lib/amauta_web/live/course_live.ex:1144
+#: lib/amauta_web/live/course_live.ex:1153
 #, elixir-autogen, elixir-format
 msgid "Leaf"
 msgstr "Hoja"
 
-#: lib/amauta_web/live/course_live.ex:1127
+#: lib/amauta_web/live/course_live.ex:1136
 #, elixir-autogen, elixir-format
 msgid "Lowercase letters, digits and hyphens."
 msgstr "Minúsculas, dígitos y guiones."
 
-#: lib/amauta_web/live/course_live.ex:1051
+#: lib/amauta_web/live/course_live.ex:1060
 #, elixir-autogen, elixir-format
 msgid "Module"
 msgstr "Módulo"
 
-#: lib/amauta_web/live/course_live.ex:1139
+#: lib/amauta_web/live/course_live.ex:1148
 #, elixir-autogen, elixir-format
 msgid "Music"
 msgstr "Música"
 
-#: lib/amauta_web/live/course_live.ex:979
+#: lib/amauta_web/live/course_live.ex:988
 #, elixir-autogen, elixir-format
 msgid "Name of the units"
 msgstr "Nombre de las unidades"
@@ -1607,113 +1609,113 @@ msgstr "Nombre de las unidades"
 msgid "New enrollment code generated."
 msgstr "Se generó un código de inscripción nuevo."
 
-#: lib/amauta_web/live/course_live.ex:771
+#: lib/amauta_web/live/course_live.ex:776
 #, elixir-autogen, elixir-format
 msgid "Nobody assigned yet."
 msgstr "Todavía no hay nadie asignado."
 
-#: lib/amauta_web/live/course_live.ex:787
+#: lib/amauta_web/live/course_live.ex:792
 #, elixir-autogen, elixir-format
 msgid "Nobody enrolled yet."
 msgstr "Todavía no hay estudiantes matriculados."
 
-#: lib/amauta_web/live/course_live.ex:535
+#: lib/amauta_web/live/course_live.ex:536
 #, elixir-autogen, elixir-format
 msgid "Nothing posted yet"
 msgstr "Todavía no hay publicaciones"
 
-#: lib/amauta_web/live/course_live.ex:1040
+#: lib/amauta_web/live/course_live.ex:1049
 #, elixir-autogen, elixir-format
 msgid "Numeric, from 0 to 10"
 msgstr "Numérica, de 0 a 10"
 
-#: lib/amauta_web/live/course_live.ex:1025
+#: lib/amauta_web/live/course_live.ex:1034
 #, elixir-autogen, elixir-format
 msgid "Only its participants"
 msgstr "Solo sus participantes"
 
-#: lib/amauta_web/live/course_live.ex:1032
+#: lib/amauta_web/live/course_live.ex:1041
 #, elixir-autogen, elixir-format
 msgid "Only the teaching team"
 msgstr "Solo el equipo docente"
 
-#: lib/amauta_web/live/course_live.ex:1138
+#: lib/amauta_web/live/course_live.ex:1147
 #, elixir-autogen, elixir-format
 msgid "Palette"
 msgstr "Paleta"
 
-#: lib/amauta_web/live/course_live.ex:1042
+#: lib/amauta_web/live/course_live.ex:1051
 #, elixir-autogen, elixir-format
 msgid "Pass or fail"
 msgstr "Aprobado o desaprobado"
 
-#: lib/amauta_web/live/course_live.ex:1041
+#: lib/amauta_web/live/course_live.ex:1050
 #, elixir-autogen, elixir-format
 msgid "Percentage"
 msgstr "Porcentual"
 
-#: lib/amauta_web/live/course_live.ex:1071
+#: lib/amauta_web/live/course_live.ex:1080
 #, elixir-autogen, elixir-format
 msgid "Programming I"
 msgstr "Programación I"
 
-#: lib/amauta_web/live/course_live.ex:1147
+#: lib/amauta_web/live/course_live.ex:1156
 #, elixir-autogen, elixir-format
 msgid "Purple"
 msgstr "Violeta"
 
-#: lib/amauta_web/live/course_live.ex:1150
+#: lib/amauta_web/live/course_live.ex:1159
 #, elixir-autogen, elixir-format
 msgid "Red"
 msgstr "Rojo"
 
-#: lib/amauta_web/live/course_live.ex:1105
+#: lib/amauta_web/live/course_live.ex:1114
 #, elixir-autogen, elixir-format
 msgid "Required (unmark if it is optional)"
 msgstr "Obligatorio (desmarcalo si es optativo)"
 
-#: lib/amauta_web/live/course_live.ex:1142
+#: lib/amauta_web/live/course_live.ex:1151
 #, elixir-autogen, elixir-format
 msgid "Scales"
 msgstr "Balanza"
 
-#: lib/amauta_web/live/course_live.ex:784
+#: lib/amauta_web/live/course_live.ex:789
 #: lib/amauta_web/live/pathway_enroll_live.ex:157
 #, elixir-autogen, elixir-format
 msgid "Students"
 msgstr "Estudiantes"
 
-#: lib/amauta_web/live/course_live.ex:770
+#: lib/amauta_web/live/course_live.ex:775
 #, elixir-autogen, elixir-format
 msgid "Teaching team"
 msgstr "Equipo docente"
 
-#: lib/amauta_web/live/course_live.ex:882
+#: lib/amauta_web/live/course_live.ex:891
 #, elixir-autogen, elixir-format
 msgid "There are no grades yet"
 msgstr "Todavía no hay calificaciones"
 
-#: lib/amauta_web/live/course_live.ex:549
+#: lib/amauta_web/live/course_live.ex:550
 #, elixir-autogen, elixir-format
 msgid "There is no content yet"
 msgstr "Todavía no hay contenido"
 
-#: lib/amauta_web/live/course_live.ex:1048
+#: lib/amauta_web/live/course_live.ex:1057
 #, elixir-autogen, elixir-format
 msgid "Unit"
 msgstr "Unidad"
 
-#: lib/amauta_web/live/course_live.ex:1049
+#: lib/amauta_web/live/course_live.ex:1058
 #, elixir-autogen, elixir-format
 msgid "Week"
 msgstr "Semana"
 
-#: lib/amauta_web/live/course_live.ex:967
+#: lib/amauta_web/live/course_live.ex:976
 #, elixir-autogen, elixir-format
 msgid "Who can post in the feed"
 msgstr "Quién publica en el tablón"
 
-#: lib/amauta_web/live/course_live.ex:961
+#: lib/amauta_web/live/course_live.ex:970
 #, elixir-autogen, elixir-format
 msgid "Who can see it"
 msgstr "Quién lo ve"
@@ -1723,12 +1725,12 @@ msgstr "Quién lo ve"
 msgid "Without a stage"
 msgstr "Sin etapa"
 
-#: lib/amauta_web/live/course_live.ex:1149
+#: lib/amauta_web/live/course_live.ex:1158
 #, elixir-autogen, elixir-format
 msgid "Yellow"
 msgstr "Amarillo"
 
-#: lib/amauta_web/live/course_live.ex:536
+#: lib/amauta_web/live/course_live.ex:537
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Announcements and conversations of the %{term} will appear here."
@@ -1740,13 +1742,13 @@ msgctxt "feminine"
 msgid "Any %{term}"
 msgstr "Cualquier %{term}"
 
-#: lib/amauta_web/live/course_live.ex:1026
+#: lib/amauta_web/live/course_live.ex:1035
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Anyone in the %{term}"
 msgstr "Cualquier persona de la %{term}"
 
-#: lib/amauta_web/live/course_live.ex:550
+#: lib/amauta_web/live/course_live.ex:551
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Content is organized in %{terms}, with pages, materials and assignments."
@@ -1758,13 +1760,13 @@ msgctxt "feminine"
 msgid "Each %{term} has its feed, content, people and grades."
 msgstr "Cada %{term} tiene su tablón, su contenido, sus personas y sus calificaciones."
 
-#: lib/amauta_web/live/course_live.ex:1012
+#: lib/amauta_web/live/course_live.ex:1021
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Share it so students can join the %{term} on their own."
 msgstr "Compartilo para que los estudiantes se sumen solos a la %{term}."
 
-#: lib/amauta_web/live/course_live.ex:536
+#: lib/amauta_web/live/course_live.ex:537
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Announcements and conversations of the %{term} will appear here."
@@ -1776,13 +1778,13 @@ msgctxt "masculine"
 msgid "Any %{term}"
 msgstr "Cualquier %{term}"
 
-#: lib/amauta_web/live/course_live.ex:1026
+#: lib/amauta_web/live/course_live.ex:1035
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Anyone in the %{term}"
 msgstr "Cualquier persona del %{term}"
 
-#: lib/amauta_web/live/course_live.ex:550
+#: lib/amauta_web/live/course_live.ex:551
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Content is organized in %{terms}, with pages, materials and assignments."
@@ -1794,68 +1796,68 @@ msgctxt "masculine"
 msgid "Each %{term} has its feed, content, people and grades."
 msgstr "Cada %{term} tiene su tablón, su contenido, sus personas y sus calificaciones."
 
-#: lib/amauta_web/live/course_live.ex:1012
+#: lib/amauta_web/live/course_live.ex:1021
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Share it so students can join the %{term} on their own."
 msgstr "Compartilo para que los estudiantes se sumen solos al %{term}."
 
 #: lib/amauta_web/live/course_live.ex:435
-#: lib/amauta_web/live/pathway_live.ex:513
+#: lib/amauta_web/live/pathway_live.ex:521
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Optional"
 msgstr "Optativa"
 
 #: lib/amauta_web/live/course_live.ex:435
-#: lib/amauta_web/live/pathway_live.ex:513
+#: lib/amauta_web/live/pathway_live.ex:521
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Optional"
 msgstr "Optativo"
 
-#: lib/amauta_web/live/course_live.ex:1134
+#: lib/amauta_web/live/course_live.ex:1143
 #, elixir-autogen, elixir-format
 msgid "Programming"
 msgstr "Programación"
 
-#: lib/amauta_web/live/course_live.ex:564
-#: lib/amauta_web/live/course_live.ex:637
-#: lib/amauta_web/live/course_live.ex:838
-#: lib/amauta_web/live/course_live.ex:1098
+#: lib/amauta_web/live/course_live.ex:565
+#: lib/amauta_web/live/course_live.ex:638
+#: lib/amauta_web/live/course_live.ex:847
+#: lib/amauta_web/live/course_live.ex:1107
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "No %{term}"
 msgstr "Sin %{term}"
 
-#: lib/amauta_web/live/course_live.ex:1082
+#: lib/amauta_web/live/course_live.ex:1091
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "None (permanent)"
 msgstr "Ninguna (permanente)"
 
-#: lib/amauta_web/live/course_live.ex:1089
+#: lib/amauta_web/live/course_live.ex:1098
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "None (standalone)"
 msgstr "Ninguna (suelto)"
 
-#: lib/amauta_web/live/course_live.ex:564
-#: lib/amauta_web/live/course_live.ex:637
-#: lib/amauta_web/live/course_live.ex:838
-#: lib/amauta_web/live/course_live.ex:1098
+#: lib/amauta_web/live/course_live.ex:565
+#: lib/amauta_web/live/course_live.ex:638
+#: lib/amauta_web/live/course_live.ex:847
+#: lib/amauta_web/live/course_live.ex:1107
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "No %{term}"
 msgstr "Sin %{term}"
 
-#: lib/amauta_web/live/course_live.ex:1082
+#: lib/amauta_web/live/course_live.ex:1091
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "None (permanent)"
 msgstr "Ninguno (permanente)"
 
-#: lib/amauta_web/live/course_live.ex:1089
+#: lib/amauta_web/live/course_live.ex:1098
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "None (standalone)"
@@ -1912,14 +1914,14 @@ msgstr "Elegí una"
 msgid "Done"
 msgstr "Listo"
 
-#: lib/amauta_web/live/course_live.ex:608
-#: lib/amauta_web/live/course_live.ex:657
+#: lib/amauta_web/live/course_live.ex:609
+#: lib/amauta_web/live/course_live.ex:662
 #, elixir-autogen, elixir-format
 msgid "Enroll"
 msgstr "Matricular"
 
 #: lib/amauta_web/live/course_import_live.ex:189
-#: lib/amauta_web/live/pathway_enroll_live.ex:206
+#: lib/amauta_web/live/pathway_enroll_live.ex:210
 #, elixir-autogen, elixir-format
 msgid "Enroll %{count} person"
 msgid_plural "Enroll %{count} people"
@@ -1945,7 +1947,7 @@ msgid "Enrolled."
 msgstr "Matrícula registrada."
 
 #: lib/amauta_web/live/course_import_live.ex:186
-#: lib/amauta_web/live/pathway_enroll_live.ex:204
+#: lib/amauta_web/live/pathway_enroll_live.ex:208
 #, elixir-autogen, elixir-format
 msgid "Enrolling..."
 msgstr "Matriculando..."
@@ -1967,12 +1969,12 @@ msgstr "Sumarme con un código"
 msgid "Joining..."
 msgstr "Sumándote..."
 
-#: lib/amauta_web/live/course_live.ex:664
+#: lib/amauta_web/live/course_live.ex:669
 #, elixir-autogen, elixir-format
 msgid "Many at once? Use a CSV file."
 msgstr "¿Son muchas personas? Usá un archivo CSV."
 
-#: lib/amauta_web/live/course_live.ex:745
+#: lib/amauta_web/live/course_live.ex:750
 #, elixir-autogen, elixir-format
 msgid "Mon and Wed, 8 to 10"
 msgstr "Lunes y miércoles, de 8 a 10"
@@ -1982,23 +1984,23 @@ msgstr "Lunes y miércoles, de 8 a 10"
 msgid "Only the required ones"
 msgstr "Solo los obligatorios"
 
-#: lib/amauta_web/live/course_live.ex:629
-#: lib/amauta_web/live/course_live.ex:819
+#: lib/amauta_web/live/course_live.ex:630
+#: lib/amauta_web/live/course_live.ex:828
 #, elixir-autogen, elixir-format
 msgid "Role"
 msgstr "Rol"
 
-#: lib/amauta_web/live/course_live.ex:747
+#: lib/amauta_web/live/course_live.ex:752
 #, elixir-autogen, elixir-format
 msgid "Room"
 msgstr "Aula"
 
-#: lib/amauta_web/live/course_live.ex:744
+#: lib/amauta_web/live/course_live.ex:749
 #, elixir-autogen, elixir-format
 msgid "Schedule"
 msgstr "Horario"
 
-#: lib/amauta_web/live/course_live.ex:739
+#: lib/amauta_web/live/course_live.ex:744
 #, elixir-autogen, elixir-format
 msgid "Section A · Morning"
 msgstr "Comisión A · Mañana"
@@ -2018,12 +2020,12 @@ msgstr "No se pudo matricular a esa persona."
 msgid "The file needs an «email» column to know who to enroll."
 msgstr "El archivo necesita una columna «email» para saber a quién matricular."
 
-#: lib/amauta_web/live/course_live.ex:864
+#: lib/amauta_web/live/course_live.ex:873
 #, elixir-autogen, elixir-format
 msgid "Unenroll"
 msgstr "Dar de baja"
 
-#: lib/amauta_web/live/course_live.ex:870
+#: lib/amauta_web/live/course_live.ex:879
 #, elixir-autogen, elixir-format
 msgid "Unenroll %{name}? Their submissions and grades are kept."
 msgstr "¿Das de baja a %{name}? Sus entregas y notas se conservan."
@@ -2068,7 +2070,7 @@ msgstr "el rol no se reconoce"
 msgid "there is no section with that name"
 msgstr "no hay una comisión con ese nombre"
 
-#: lib/amauta_web/live/course_live.ex:483
+#: lib/amauta_web/live/course_live.ex:484
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "All %{terms}"
@@ -2086,7 +2088,7 @@ msgctxt "feminine"
 msgid "Choose at least one person and, if needed, the %{term}."
 msgstr "Elegí al menos una persona y, si hace falta, la %{term}."
 
-#: lib/amauta_web/live/course_live.ex:717
+#: lib/amauta_web/live/course_live.ex:722
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Delete «%{name}»? Its students stay enrolled, without a %{term}."
@@ -2104,7 +2106,7 @@ msgctxt "feminine"
 msgid "One person per row. Columns: email (required), role and %{term} (optional; by default, student and no %{term}). The people must already exist in the institution."
 msgstr "Una persona por fila. Columnas: email (obligatoria), rol y %{term} (opcionales; por defecto, estudiante y sin %{term}). Las personas ya tienen que existir en la institución."
 
-#: lib/amauta_web/live/course_live.ex:681
+#: lib/amauta_web/live/course_live.ex:686
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Split the students into %{terms}, each with its teachers, schedule and room."
@@ -2122,7 +2124,7 @@ msgctxt "feminine"
 msgid "Those of one %{term}"
 msgstr "Los de una %{term}"
 
-#: lib/amauta_web/live/course_live.ex:483
+#: lib/amauta_web/live/course_live.ex:484
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "All %{terms}"
@@ -2140,7 +2142,7 @@ msgctxt "masculine"
 msgid "Choose at least one person and, if needed, the %{term}."
 msgstr "Elegí al menos una persona y, si hace falta, el %{term}."
 
-#: lib/amauta_web/live/course_live.ex:717
+#: lib/amauta_web/live/course_live.ex:722
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Delete «%{name}»? Its students stay enrolled, without a %{term}."
@@ -2158,7 +2160,7 @@ msgctxt "masculine"
 msgid "One person per row. Columns: email (required), role and %{term} (optional; by default, student and no %{term}). The people must already exist in the institution."
 msgstr "Una persona por fila. Columnas: email (obligatoria), rol y %{term} (opcionales; por defecto, estudiante y sin %{term}). Las personas ya tienen que existir en la institución."
 
-#: lib/amauta_web/live/course_live.ex:681
+#: lib/amauta_web/live/course_live.ex:686
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Split the students into %{terms}, each with its teachers, schedule and room."
@@ -2175,3 +2177,78 @@ msgstr "Te lo da el equipo docente de cada %{term}."
 msgctxt "masculine"
 msgid "Those of one %{term}"
 msgstr "Los de un %{term}"
+
+#: lib/amauta_web/components/direct_upload.ex:117
+#, elixir-autogen, elixir-format
+msgid "Choose a file, drag it here or paste it."
+msgstr "Elegí un archivo, arrastralo acá o pegalo."
+
+#: lib/amauta_web/live/user_live/settings.ex:41
+#, elixir-autogen, elixir-format
+msgid "PNG, JPG, GIF or WebP, up to 5 MB."
+msgstr "PNG, JPG, GIF o WebP, hasta 5 MB."
+
+#: lib/amauta_web/live/user_live/settings.ex:24
+#, elixir-autogen, elixir-format
+msgid "Profile photo"
+msgstr "Foto de perfil"
+
+#: lib/amauta_web/live/user_live/settings.ex:219
+#, elixir-autogen, elixir-format
+msgid "Profile photo updated."
+msgstr "Se actualizó tu foto de perfil."
+
+#: lib/amauta_web/live/user_live/settings.ex:53
+#, elixir-autogen, elixir-format
+msgid "Remove photo"
+msgstr "Quitar la foto"
+
+#: lib/amauta_web/components/direct_upload.ex:86
+#, elixir-autogen, elixir-format
+msgid "That type of file is not allowed here."
+msgstr "Acá no se permite ese tipo de archivo."
+
+#: lib/amauta_web/components/direct_upload.ex:89
+#, elixir-autogen, elixir-format
+msgid "The content of the file doesn't match its extension."
+msgstr "El contenido del archivo no coincide con su extensión."
+
+#: lib/amauta_web/components/direct_upload.ex:97
+#, elixir-autogen, elixir-format
+msgid "The file could not be uploaded. Try again."
+msgstr "No se pudo subir el archivo. Probá de nuevo."
+
+#: lib/amauta_web/components/direct_upload.ex:83
+#, elixir-autogen, elixir-format
+msgid "The file is too big (maximum %{size} MB)."
+msgstr "El archivo es demasiado grande (máximo %{size} MB)."
+
+#: lib/amauta_web/components/direct_upload.ex:95
+#, elixir-autogen, elixir-format
+msgid "The upload was interrupted. Choose the file again to continue where it stopped."
+msgstr "La subida se cortó. Elegí de nuevo el archivo para seguir desde donde quedó."
+
+#: lib/amauta_web/live/user_live/settings.ex:40
+#, elixir-autogen, elixir-format
+msgid "Upload a photo"
+msgstr "Subí una foto"
+
+#: lib/amauta_web/components/direct_upload.ex:131
+#, elixir-autogen, elixir-format
+msgid "Upload progress"
+msgstr "Progreso de la subida"
+
+#: lib/amauta_web/components/direct_upload.ex:146
+#, elixir-autogen, elixir-format
+msgid "Uploaded."
+msgstr "Subido."
+
+#: lib/amauta_web/components/direct_upload.ex:124
+#, elixir-autogen, elixir-format
+msgid "Uploading %{name}…"
+msgstr "Subiendo %{name}…"
+
+#: lib/amauta_web/components/direct_upload.ex:91
+#, elixir-autogen, elixir-format
+msgid "We couldn't recognize the type of file."
+msgstr "No pudimos reconocer el tipo de archivo."
