@@ -207,7 +207,7 @@ defmodule AmautaWeb.Components.DirectUpload do
 
             this.input.addEventListener("change", () => {
               const file = this.input.files[0]
-              if (file) this.upload(file)
+              if (file) this.uploadFile(file)
               this.input.value = ""
             })
 
@@ -227,7 +227,7 @@ defmodule AmautaWeb.Components.DirectUpload do
 
             this.drop.addEventListener("drop", (e) => {
               const file = e.dataTransfer?.files?.[0]
-              if (file) this.upload(file)
+              if (file) this.uploadFile(file)
             })
 
             // Pegar desde el portapapeles con el foco en la zona.
@@ -235,7 +235,7 @@ defmodule AmautaWeb.Components.DirectUpload do
               const file = e.clipboardData?.files?.[0]
               if (file) {
                 e.preventDefault()
-                this.upload(file)
+                this.uploadFile(file)
               }
             })
 
@@ -247,7 +247,7 @@ defmodule AmautaWeb.Components.DirectUpload do
             })
           },
 
-          upload(file) {
+          uploadFile(file) {
             const params = {filename: file.name, size: file.size, declared_type: file.type}
             this.stage("preparing", file.name)
 

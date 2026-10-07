@@ -2,6 +2,13 @@
 
 Todos los cambios relevantes de Amauta. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones, [Versionado Semántico](https://semver.org/lang/es/). Mientras la versión sea 0.x, cada versión menor cierra un hito del MVP (`docs/MVP.md`).
 
+## [0.2.2] · 2026-10-07
+
+### Corregido
+
+- Un video incrustado ya no se pierde al publicar si no se apretó Enter: el enlace se toma al pegarlo o al salir del campo, y si no es válido se avisa.
+- La subida directa de archivos ya no pisa el método `upload` de los hooks de LiveView (aviso en la consola).
+
 ## [0.2.1] · 2026-10-07
 
 ### Corregido
@@ -79,6 +86,7 @@ Cierra **H0 · Fundaciones** y **H1 · Estructura**. Criterio de cierre de H1 ve
 - El aviso de desconexión ya no parpadea al recargar la página.
 - Después de volver a autenticarse para entrar a Ajustes, se vuelve a Ajustes y no al inicio.
 
+[0.2.2]: https://github.com/benabhi/amauta/releases/tag/v0.2.2
 [0.2.1]: https://github.com/benabhi/amauta/releases/tag/v0.2.1
 [0.2.0]: https://github.com/benabhi/amauta/releases/tag/v0.2.0
 [0.1.0]: https://github.com/benabhi/amauta/releases/tag/v0.1.0
