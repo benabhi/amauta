@@ -57,6 +57,17 @@ defmodule AmautaWeb.Paths do
   def course(tenant, course, tab, params),
     do: course(tenant, course, tab) <> "?" <> URI.encode_query(params)
 
+  @doc "Un elemento del contenido del curso (página o material)."
+  def course_item(tenant, course, item),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/content/#{item.id}"
+
+  def edit_course_item(tenant, course, item),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/content/#{item.id}/edit"
+
+  @doc "Crear un elemento de ese tipo (`page` o `material`) en una unidad."
+  def new_course_item(tenant, course, unit, kind),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/content/new?#{[unit: unit.id, kind: kind]}"
+
   @doc "Página de una publicación del tablón, con toda su conversación."
   def course_post(tenant, course, post),
     do: ~p"/#{slug(tenant)}/c/#{course.slug}/posts/#{post.id}"

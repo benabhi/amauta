@@ -21,7 +21,10 @@ defmodule Amauta.Files.Purpose do
 
   @purposes %{
     "avatar" => %{types: @images, max_size: 5 * 1024 * 1024, entity: "avatars"},
-    "feed_attachment" => %{types: @documents, max_size: 50 * 1024 * 1024, entity: "feed"}
+    "feed_attachment" => %{types: @documents, max_size: 50 * 1024 * 1024, entity: "feed"},
+    # Materiales del contenido del curso (RF-CON-002): lo mismo que el
+    # tablón, con más margen para videos y presentaciones.
+    "content_material" => %{types: @documents, max_size: 200 * 1024 * 1024, entity: "content"}
   }
 
   @doc "Propósitos conocidos."
@@ -61,6 +64,14 @@ defmodule Amauta.Files.Purpose do
     end
   end
 
+  # Materiales: el dueño es el curso; hay que poder gestionar su contenido.
+  def authorize_upload(scope, "content_material", course_id) do
+    case course_id && Courses.get(scope, course_id) do
+      nil -> {:error, :forbidden}
+      course -> if Amauta.Content.can_manage?(scope, course), do: :ok, else: {:error, :forbidden}
+    end
+  end
+
   @doc """
   Puede ver el archivo: las fotos de perfil, cualquier persona de la
   institución; los adjuntos del tablón, quien ve la publicación.
@@ -72,6 +83,9 @@ defmodule Amauta.Files.Purpose do
   def can_view?(scope, %StoredFile{purpose: "feed_attachment", status: "ready"} = file),
     do: Feed.can_view_attachment?(scope, file)
 
+  def can_view?(scope, %StoredFile{purpose: "content_material", status: "ready"} = file),
+    do: Amauta.Content.can_view_file?(scope, file)
+
   def can_view?(_scope, _file), do: false
 
   @doc """
@@ -80,6 +94,9 @@ defmodule Amauta.Files.Purpose do
   """
   # Los adjuntos del tablón se vinculan al publicar (`Amauta.Feed.sync_attachments/4`).
   def attach(_tenant, %StoredFile{purpose: "feed_attachment"}), do: :ok
+
+  # Los materiales, al guardar el elemento (`Amauta.Content.sync_files/4`).
+  def attach(_tenant, %StoredFile{purpose: "content_material"}), do: :ok
 
   def attach(tenant, %StoredFile{purpose: "avatar", owner_id: user_id} = file) do
     opts = Tenancy.opts(tenant)

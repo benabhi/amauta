@@ -16,7 +16,7 @@
     dots-six-vertical dots-three paperclip file-pdf file-doc file-xls file-ppt file-zip
     file-audio file-video file-image file-text arrows-out
     code calculator flask globe-hemisphere-west palette music-notes translate chart-line
-    scales heartbeat leaf copy text-b text-italic text-strikethrough arrow-clockwise
+    scales heartbeat leaf copy text-b text-italic text-strikethrough arrow-clockwise clock
   ),
   duotone: ~w(
     graduation-cap book-open chats-circle folder-open calendar-check confetti users path
