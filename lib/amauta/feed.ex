@@ -24,6 +24,9 @@ defmodule Amauta.Feed do
   alias Amauta.{Authorization, Repo, Scope, Tenancy}
 
   @page 30
+
+  # Cuántas novedades del contenido muestra el tablón (`list_news/3`).
+  @news 5
   @reply_window 3
   @child_window 2
 
@@ -135,6 +138,7 @@ defmodule Amauta.Feed do
     |> where([p], not pinned(p, ^DateTime.utc_now()))
     |> visible_to(scope, course)
     |> filter_section(filters["section"])
+    |> filter_kind(filters["kind"])
     |> before(opts[:before])
     |> order_by([p], desc: p.published_at, desc: p.id)
     |> limit(@page)
@@ -158,6 +162,22 @@ defmodule Amauta.Feed do
     |> preload([:author, :section, :item, attachments: :file])
     |> Repo.all(Tenancy.opts(scope))
     |> with_replies(scope, opts[:windows] || %{})
+  end
+
+  @doc """
+  Novedades del contenido para el tablón (ERS 4.3): las tarjetas más
+  recientes de elementos que se empezaron a ver, sin las fijadas. Van en su
+  propio bloque, aparte de la conversación.
+  """
+  def list_news(%Scope{} = scope, %Course{} = course, limit \\ @news) do
+    Post
+    |> where([p], p.course_id == ^course.id and p.status == "published" and p.kind == "content")
+    |> where([p], not pinned(p, ^DateTime.utc_now()))
+    |> visible_to(scope, course)
+    |> order_by([p], desc: p.published_at, desc: p.id)
+    |> limit(^limit)
+    |> preload([:author, :item])
+    |> Repo.all(Tenancy.opts(scope))
   end
 
   @doc "La publicación está fijada y no venció."
@@ -305,6 +325,12 @@ defmodule Amauta.Feed do
       _ -> own
     end
   end
+
+  # `post` (la conversación) o `content` (tarjetas del contenido).
+  defp filter_kind(query, kind) when kind in ["post", "content"],
+    do: where(query, [p], p.kind == ^kind)
+
+  defp filter_kind(query, _kind), do: query
 
   defp filter_section(query, value) when value in [nil, ""], do: query
   defp filter_section(query, "none"), do: where(query, [p], is_nil(p.section_id))

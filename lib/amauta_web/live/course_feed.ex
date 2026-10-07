@@ -65,6 +65,8 @@ defmodule AmautaWeb.CourseFeed do
        # La publicación de su página (`post_id`), con toda su conversación.
        post_id: nil,
        single: nil,
+       news: [],
+       has_posts: false,
        # Cuántas respuestas mostrar, por publicación o respuesta, cuando
        # alguien pidió ver más (`Amauta.Feed.with_replies/3`).
        windows: %{},
@@ -143,22 +145,40 @@ defmodule AmautaWeb.CourseFeed do
         else: widen(socket, nil, id, @single_window)
 
     socket
-    |> assign(single: visible(socket, id), pinned: [], empty: false, more_posts: false)
+    |> assign(single: visible(socket, id), pinned: [], news: [], empty: false, more_posts: false)
     |> stream(:posts, [], reset: true)
   end
 
-  # Fijadas arriba (RF-TAB-006) y el resto en el stream, sin repetirse.
+  # Arriba, las novedades del curso: las fijadas (RF-TAB-006) y el contenido
+  # que se empezó a ver. Abajo, la conversación (solo publicaciones), en el
+  # stream, sin repetirse.
   defp load_posts(socket) do
     %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
-    filters = %{"section" => filter}
     windows = socket.assigns.windows
-    posts = Feed.list_posts(scope, course, filters, windows: windows)
-    pinned = Feed.list_pinned(scope, course, filters, windows: windows)
+
+    posts =
+      Feed.list_posts(scope, course, %{"section" => filter, "kind" => "post"}, windows: windows)
 
     socket
-    |> assign(pinned: pinned, empty: posts == [] and pinned == [])
+    |> assign(has_posts: posts != [])
+    |> load_news()
     |> assign_page(posts)
     |> stream(:posts, posts, reset: true)
+  end
+
+  defp load_news(socket) do
+    %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
+
+    pinned =
+      Feed.list_pinned(scope, course, %{"section" => filter}, windows: socket.assigns.windows)
+
+    news = Feed.list_news(scope, course)
+
+    assign(socket,
+      pinned: pinned,
+      news: news,
+      empty: not socket.assigns.has_posts and pinned == [] and news == []
+    )
   end
 
   # Dónde sigue el tablón: la última publicación traída, y si puede haber más.
@@ -241,14 +261,17 @@ defmodule AmautaWeb.CourseFeed do
     if post.id == id and event != :deleted, do: refresh_post(socket, id), else: socket
   end
 
+  # Cambió qué está fijado o su orden: se vuelven a armar las dos listas.
+  defp apply_event(socket, :pinned, _post), do: load_posts(socket)
+
+  # Las tarjetas del contenido viven en las novedades, no en la conversación.
+  defp apply_event(socket, _event, %{kind: "content"}), do: load_news(socket)
+
   defp apply_event(socket, :deleted, post) do
     socket
     |> stream_delete(:posts, post)
     |> update(:pinned, fn pinned -> Enum.reject(pinned, &(&1.id == post.id)) end)
   end
-
-  # Cambió qué está fijado o su orden: se vuelven a armar las dos listas.
-  defp apply_event(socket, :pinned, _post), do: load_posts(socket)
 
   defp apply_event(socket, event, post) do
     %{current_scope: scope, section_filter: filter} = socket.assigns
@@ -268,7 +291,7 @@ defmodule AmautaWeb.CourseFeed do
               do: put_post(socket, visible, at: 0),
               else: put_post(socket, visible)
 
-          socket = assign(socket, empty: false)
+          socket = assign(socket, empty: false, has_posts: true)
 
           if event == :published and visible.author_id != scope.user.id,
             do: push_event(socket, "feed:new", %{}),
@@ -376,7 +399,7 @@ defmodule AmautaWeb.CourseFeed do
     %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
 
     posts =
-      Feed.list_posts(scope, course, %{"section" => filter},
+      Feed.list_posts(scope, course, %{"section" => filter, "kind" => "post"},
         before: socket.assigns.cursor,
         windows: socket.assigns.windows
       )
@@ -787,26 +810,47 @@ defmodule AmautaWeb.CourseFeed do
           )}
         </.empty_state>
 
+        <%!-- Novedades del curso: lo fijado y el contenido nuevo, aparte de la
+             conversación. También es la zona donde se suelta para fijar. --%>
         <section
-          :if={@pinned != [] or @can_moderate}
+          :if={@pinned != [] or @news != [] or @can_moderate}
           id="feed-pinned"
           phx-hook=".PinZone"
           phx-target={@myself}
-          aria-label={gettext("Pinned posts")}
-          class="mb-4 grid gap-4 rounded-card data-dragging:outline-2 data-dragging:outline-offset-4 data-dragging:outline-dashed data-dragging:outline-primary"
+          aria-labelledby="feed-news-title"
+          class={[
+            "mb-6 rounded-card data-dragging:outline-2 data-dragging:outline-offset-4 data-dragging:outline-dashed data-dragging:outline-primary",
+            (@pinned != [] or @news != []) && "border border-line bg-surface shadow-sm"
+          ]}
         >
+          <header
+            :if={@pinned != [] or @news != []}
+            class="flex items-center gap-2 border-b border-line px-4 py-2.5"
+          >
+            <.icon name="star" class="size-4 text-anil-deep" />
+            <h2 id="feed-news-title" class="text-sm font-semibold">
+              {gettext_term(@current_scope, :course, "What's new in the %{term}")}
+            </h2>
+            <.link
+              navigate={Paths.course(@current_scope, @course, :content)}
+              class="ms-auto inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-anil-deep hover:underline"
+            >
+              {gettext("All content")} <.icon name="arrow-right" class="size-4" />
+            </.link>
+          </header>
           <p
-            :if={@pinned == [] and @can_moderate}
+            :if={@pinned == [] and @news == [] and @can_moderate}
             class="hidden min-h-24 items-center justify-center gap-2 text-sm text-ink-muted in-data-dragging:flex"
           >
             <.icon name="push-pin" class="size-5" /> {gettext("Drop a post here to pin it")}
           </p>
-          <ol :if={@pinned != []} class="grid gap-2" aria-label={gettext("Pinned posts")}>
+          <ol :if={@pinned != [] or @news != []} aria-label={gettext("What's new")}>
             <li
               :for={{post, index} <- Enum.with_index(@pinned)}
               id={"pinned-#{post.id}"}
               data-pinned-item
               data-post-id={post.id}
+              class="border-t border-line first:border-t-0"
             >
               <.pinned_row
                 post={post}
@@ -814,8 +858,20 @@ defmodule AmautaWeb.CourseFeed do
                 pin={%{first: index == 0, last: index == length(@pinned) - 1}}
               />
             </li>
+            <li
+              :for={post <- @news}
+              id={"news-#{post.id}"}
+              data-post-id={post.id}
+              class="border-t border-line first:border-t-0"
+            >
+              <.news_row post={post} ui={ui(assigns)} />
+            </li>
           </ol>
         </section>
+
+        <h2 :if={@has_posts} class="mb-3 text-sm font-semibold text-ink-muted">
+          {gettext("Conversation")}
+        </h2>
 
         <ol
           id="feed-posts"
@@ -1168,6 +1224,17 @@ defmodule AmautaWeb.CourseFeed do
               {Format.datetime(@post.published_at, @ui.timezone, :short)}
             </time>
             <span :if={@post.edited_at}>· {gettext("edited")}</span>
+            <span
+              :if={@files != []}
+              id={"post-files-count-#{@post.id}"}
+              class="inline-flex items-center gap-0.5"
+              title={ngettext("%{count} attachment", "%{count} attachments", length(@files))}
+            >
+              · <.icon name="paperclip" class="size-4" /> {length(@files)}
+              <span class="sr-only">
+                {ngettext("%{count} attachment", "%{count} attachments", length(@files))}
+              </span>
+            </span>
             <.badge :if={@post.section} family="airampo">{@post.section.name}</.badge>
           </p>
         </div>
@@ -1270,24 +1337,26 @@ defmodule AmautaWeb.CourseFeed do
   attr :ui, :map, required: true
   attr :pin, :map, required: true
 
-  # Una fijada, arriba del tablón: una línea que lleva a su página. Quien
+  # Una fijada, en las novedades: una fila que lleva a su página. Quien
   # modera la ordena (arrastrándola o desde el menú) y le pone vencimiento.
   defp pinned_row(assigns) do
     assigns = assign(assigns, excerpt: excerpt(assigns.post))
 
     ~H"""
-    <div class="grid gap-2">
-      <div class="relative flex min-h-12 items-center gap-3 rounded-card border border-primary/50 bg-surface px-4 py-1 shadow-sm transition-colors duration-fast hover:border-primary has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-primary">
+    <div>
+      <div class="relative flex min-h-14 items-center gap-3 px-4 py-2 transition-colors duration-fast hover:bg-surface-sunken has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-primary">
         <.drag_handle :if={@ui.can_moderate} />
-        <.icon name="push-pin" class="size-4 shrink-0 text-anil-deep" />
+        <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-control bg-anil-soft text-anil-deep">
+          <.icon name="push-pin" class="size-4" />
+        </span>
         <.link
           navigate={post_path(@ui, @post)}
-          class="min-w-0 flex-1 truncate font-semibold outline-none after:absolute after:inset-0 after:rounded-card"
+          class="min-w-0 flex-1 truncate font-semibold outline-none after:absolute after:inset-0"
         >
           {if @excerpt == "", do: gettext("Open post"), else: @excerpt}
         </.link>
         <span class="hidden shrink-0 text-xs text-ink-muted sm:inline">
-          <span :if={@post.author}>{User.given_name(@post.author)}</span>
+          {gettext("Pinned")}<span :if={@post.author}> · {User.given_name(@post.author)}</span>
           <span :if={@post.pin_expires_at}>
             · {gettext("until %{date}", date: Format.date(@post.pin_expires_at, @ui.timezone))}
           </span>
@@ -1296,7 +1365,40 @@ defmodule AmautaWeb.CourseFeed do
           <.post_menu post={@post} ui={@ui} pin={@pin} />
         </div>
       </div>
-      <.pin_expiry :if={@ui.can_moderate && @ui.pin_editing == @post.id} post={@post} ui={@ui} />
+      <div :if={@ui.can_moderate && @ui.pin_editing == @post.id} class="px-4">
+        <.pin_expiry post={@post} ui={@ui} />
+      </div>
+    </div>
+    """
+  end
+
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+
+  # Un elemento del contenido que se empezó a ver, en las novedades: qué es,
+  # cómo se llama y cuándo se publicó. Lleva al elemento.
+  defp news_row(assigns) do
+    ~H"""
+    <div class="relative flex min-h-14 items-center gap-3 px-4 py-2 transition-colors duration-fast hover:bg-surface-sunken has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-primary">
+      <.drag_handle :if={@ui.can_moderate} />
+      <AmautaWeb.ContentComponents.kind_icon kind={@post.item.kind} />
+      <.link
+        navigate={post_path(@ui, @post)}
+        id={"post-open-#{@post.id}"}
+        data-open
+        class="min-w-0 flex-1 truncate font-semibold outline-none after:absolute after:inset-0"
+      >
+        {@post.item.title}
+      </.link>
+      <span class="hidden shrink-0 text-xs text-ink-muted sm:inline">
+        {AmautaWeb.ContentComponents.kind_label(@post.item.kind)} ·
+        <time datetime={DateTime.to_iso8601(@post.published_at)}>
+          {Format.datetime(@post.published_at, @ui.timezone, :short)}
+        </time>
+      </span>
+      <div :if={@ui.can_moderate} class="relative z-10">
+        <.post_menu post={@post} ui={@ui} />
+      </div>
     </div>
     """
   end

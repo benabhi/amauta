@@ -588,6 +588,8 @@ defmodule AmautaWeb.CourseFeedTest do
       |> render_submit(%{post: %{body: body("Programa de la materia")}})
 
       assert has_element?(view, "#feed-posts article", "programa.pdf")
+      # El clip con la cantidad, junto a la fecha.
+      assert has_element?(view, "#feed-posts [id^=post-files-count-]", "1 attachment")
       refute has_element?(view, "#feed-files-composer")
     end
 
