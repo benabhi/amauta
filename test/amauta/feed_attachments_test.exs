@@ -2,6 +2,8 @@ defmodule Amauta.FeedAttachmentsTest do
   @moduledoc "Adjuntos del tablón (RF-TAB-005): subir, vincular, ver, quitar y borrar."
   use Amauta.DataCase, async: true
 
+  import Ecto.Query
+
   import Amauta.AccountsFixtures
   import Amauta.AuthorizationFixtures
 
@@ -101,6 +103,25 @@ defmodule Amauta.FeedAttachmentsTest do
 
     assert Purpose.can_view?(teacher, file)
     refute Purpose.can_view?(member(course, "teacher"), file)
+  end
+
+  test "un curso con el ajuste guardado en nulo usa el valor por defecto", %{course: course} do
+    # Así lo dejaba un build que todavía no conocía el ajuste: la página del
+    # curso fallaba al preguntar si se puede adjuntar.
+    from(c in Amauta.Courses.Course,
+      where: c.id == ^course.id,
+      update: [
+        set: [
+          settings:
+            fragment("jsonb_set(?::jsonb, '{student_attachments}', 'null'::jsonb)", c.settings)
+        ]
+      ]
+    )
+    |> Amauta.Repo.update_all([], Amauta.Tenancy.opts(institution()))
+
+    course = Amauta.Courses.get(institution(), course.id)
+    assert is_nil(course.settings.student_attachments)
+    assert Feed.can_attach?(member(course, "student"), course)
   end
 
   test "los estudiantes adjuntan al responder, si el curso lo permite", ctx do

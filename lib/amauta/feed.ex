@@ -90,7 +90,7 @@ defmodule Amauta.Feed do
   """
   def can_attach?(%Scope{} = scope, %Course{} = course) do
     (can_post?(scope, course) or can_reply?(scope, course)) and
-      (course.settings.student_attachments or
+      (course.settings.student_attachments != false or
          Enrollments.can_in_course?(scope, "course.feed.post", course))
   end
 
