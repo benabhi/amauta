@@ -192,8 +192,8 @@ msgid "Save Password"
 msgstr ""
 
 #: lib/amauta_web/live/admin/institution_live.ex:183
-#: lib/amauta_web/live/course_feed.ex:958
-#: lib/amauta_web/live/course_feed.ex:1176
+#: lib/amauta_web/live/course_feed.ex:1005
+#: lib/amauta_web/live/course_feed.ex:1223
 #: lib/amauta_web/live/course_live.ex:827
 #: lib/amauta_web/live/course_live.ex:1031
 #: lib/amauta_web/live/course_live.ex:1079
@@ -385,9 +385,9 @@ msgid "At least 12 characters."
 msgstr ""
 
 #: lib/amauta_web/live/admin/institutions_live.ex:84
-#: lib/amauta_web/live/course_feed.ex:960
-#: lib/amauta_web/live/course_feed.ex:1185
-#: lib/amauta_web/live/course_feed.ex:1363
+#: lib/amauta_web/live/course_feed.ex:1007
+#: lib/amauta_web/live/course_feed.ex:1232
+#: lib/amauta_web/live/course_feed.ex:1410
 #: lib/amauta_web/live/course_live.ex:829
 #: lib/amauta_web/live/courses_live.ex:146
 #: lib/amauta_web/live/pathway_live.ex:306
@@ -547,8 +547,8 @@ msgid "Retry"
 msgstr ""
 
 #: lib/amauta_web/live/admin/institution_live.ex:183
-#: lib/amauta_web/live/course_feed.ex:958
-#: lib/amauta_web/live/course_feed.ex:1176
+#: lib/amauta_web/live/course_feed.ex:1005
+#: lib/amauta_web/live/course_feed.ex:1223
 #: lib/amauta_web/live/course_live.ex:827
 #: lib/amauta_web/live/course_live.ex:1031
 #: lib/amauta_web/live/course_live.ex:1079
@@ -755,8 +755,8 @@ msgstr ""
 msgid "Download the error report"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:907
-#: lib/amauta_web/live/course_feed.ex:953
+#: lib/amauta_web/live/course_feed.ex:921
+#: lib/amauta_web/live/course_feed.ex:1000
 #: lib/amauta_web/live/course_live.ex:780
 #: lib/amauta_web/live/pathway_live.ex:265
 #: lib/amauta_web/live/pathway_live.ex:300
@@ -981,17 +981,17 @@ msgstr ""
 msgid "Suspend %{name}? They will not be able to log in."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:255
-#: lib/amauta_web/live/course_feed.ex:292
-#: lib/amauta_web/live/course_feed.ex:299
-#: lib/amauta_web/live/course_feed.ex:337
-#: lib/amauta_web/live/course_feed.ex:344
-#: lib/amauta_web/live/course_feed.ex:351
-#: lib/amauta_web/live/course_feed.ex:384
-#: lib/amauta_web/live/course_feed.ex:440
-#: lib/amauta_web/live/course_feed.ex:481
-#: lib/amauta_web/live/course_feed.ex:512
-#: lib/amauta_web/live/course_feed.ex:552
+#: lib/amauta_web/live/course_feed.ex:257
+#: lib/amauta_web/live/course_feed.ex:294
+#: lib/amauta_web/live/course_feed.ex:301
+#: lib/amauta_web/live/course_feed.ex:339
+#: lib/amauta_web/live/course_feed.ex:346
+#: lib/amauta_web/live/course_feed.ex:353
+#: lib/amauta_web/live/course_feed.ex:392
+#: lib/amauta_web/live/course_feed.ex:448
+#: lib/amauta_web/live/course_feed.ex:489
+#: lib/amauta_web/live/course_feed.ex:520
+#: lib/amauta_web/live/course_feed.ex:560
 #: lib/amauta_web/live/course_live.ex:425
 #: lib/amauta_web/live/pathway_enroll_live.ex:94
 #: lib/amauta_web/live/pathway_live.ex:224
@@ -1128,7 +1128,7 @@ msgstr ""
 msgid "Dates"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:936
+#: lib/amauta_web/live/course_feed.ex:979
 #: lib/amauta_web/live/course_live.ex:788
 #: lib/amauta_web/live/pathway_live.ex:371
 #, elixir-autogen, elixir-format
@@ -1156,13 +1156,13 @@ msgstr ""
 msgid "Mark as current"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1085
+#: lib/amauta_web/live/course_feed.ex:959
 #: lib/amauta_web/live/pathway_live.ex:355
 #, elixir-autogen, elixir-format
 msgid "Move down"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1075
+#: lib/amauta_web/live/course_feed.ex:949
 #: lib/amauta_web/live/pathway_live.ex:346
 #, elixir-autogen, elixir-format
 msgid "Move up"
@@ -1189,7 +1189,7 @@ msgstr ""
 msgid "Optional: it is generated from the name. Lowercase letters, digits and hyphens."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:645
+#: lib/amauta_web/live/course_feed.ex:653
 #: lib/amauta_web/live/course_live.ex:992
 #: lib/amauta_web/live/pathway_live.ex:272
 #, elixir-autogen, elixir-format
@@ -1548,7 +1548,7 @@ msgstr ""
 msgid "Everyone, with moderation"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:706
+#: lib/amauta_web/live/course_feed.ex:714
 #: lib/amauta_web/live/course_live.ex:611
 #, elixir-autogen, elixir-format
 msgid "Feed"
@@ -1654,7 +1654,7 @@ msgstr ""
 msgid "Nobody enrolled yet."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:662
+#: lib/amauta_web/live/course_feed.ex:670
 #, elixir-autogen, elixir-format
 msgid "Nothing posted yet"
 msgstr ""
@@ -1765,7 +1765,7 @@ msgstr ""
 msgid "Yellow"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:663
+#: lib/amauta_web/live/course_feed.ex:671
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Announcements and conversations of the %{term} will appear here."
@@ -1801,7 +1801,7 @@ msgctxt "feminine"
 msgid "Share it so students can join the %{term} on their own."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:663
+#: lib/amauta_web/live/course_feed.ex:671
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Announcements and conversations of the %{term} will appear here."
@@ -1943,6 +1943,7 @@ msgstr ""
 msgid "Choose one"
 msgstr ""
 
+#: lib/amauta_web/live/course_feed.ex:1138
 #: lib/amauta_web/live/course_import_live.ex:196
 #: lib/amauta_web/live/pathway_enroll_live.ex:117
 #, elixir-autogen, elixir-format
@@ -2269,19 +2270,14 @@ msgstr ""
 msgid "Upload a photo"
 msgstr ""
 
-#: lib/amauta_web/components/direct_upload.ex:150
+#: lib/amauta_web/components/direct_upload.ex:172
 #, elixir-autogen, elixir-format
 msgid "Upload progress"
 msgstr ""
 
-#: lib/amauta_web/components/direct_upload.ex:165
+#: lib/amauta_web/components/direct_upload.ex:192
 #, elixir-autogen, elixir-format
 msgid "Uploaded."
-msgstr ""
-
-#: lib/amauta_web/components/direct_upload.ex:143
-#, elixir-autogen, elixir-format
-msgid "Uploading %{name}…"
 msgstr ""
 
 #: lib/amauta_web/components/direct_upload.ex:95
@@ -2631,188 +2627,188 @@ msgstr ""
 msgid "Write, or type «/» to add a block…"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:656
+#: lib/amauta_web/live/course_feed.ex:664
 #, elixir-autogen, elixir-format
 msgid "%{count} new posts"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:655
+#: lib/amauta_web/live/course_feed.ex:663
 #, elixir-autogen, elixir-format
 msgid "1 new post"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:636
+#: lib/amauta_web/live/course_feed.ex:644
 #, elixir-autogen, elixir-format
 msgid "Audience"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:934
+#: lib/amauta_web/live/course_feed.ex:977
 #, elixir-autogen, elixir-format
 msgid "Delete this post?"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:875
-#: lib/amauta_web/live/course_feed.ex:1198
+#: lib/amauta_web/live/course_feed.ex:885
+#: lib/amauta_web/live/course_feed.ex:1245
 #, elixir-autogen, elixir-format
 msgid "Former member"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:625
+#: lib/amauta_web/live/course_feed.ex:633
 #, elixir-autogen, elixir-format
 msgid "New post"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:642
+#: lib/amauta_web/live/course_feed.ex:650
 #, elixir-autogen, elixir-format
 msgid "Publishing..."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:884
-#: lib/amauta_web/live/course_feed.ex:1224
+#: lib/amauta_web/live/course_feed.ex:898
+#: lib/amauta_web/live/course_feed.ex:1271
 #, elixir-autogen, elixir-format
 msgid "edited"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:626
+#: lib/amauta_web/live/course_feed.ex:634
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "Share something with the %{term}…"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:802
+#: lib/amauta_web/live/course_feed.ex:810
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "The whole %{term}"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:626
+#: lib/amauta_web/live/course_feed.ex:634
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "Share something with the %{term}…"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:802
+#: lib/amauta_web/live/course_feed.ex:810
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "The whole %{term}"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:988
+#: lib/amauta_web/live/course_feed.ex:1031
 #, elixir-autogen, elixir-format
 msgid "%{count} reply"
 msgid_plural "%{count} replies"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/amauta_web/live/course_feed.ex:926
+#: lib/amauta_web/live/course_feed.ex:969
 #, elixir-autogen, elixir-format
 msgid "Close replies"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1267
+#: lib/amauta_web/live/course_feed.ex:1314
 #, elixir-autogen, elixir-format
 msgid "Delete reply"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1265
+#: lib/amauta_web/live/course_feed.ex:1312
 #, elixir-autogen, elixir-format
 msgid "Delete this reply?"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1171
-#: lib/amauta_web/live/course_feed.ex:1247
+#: lib/amauta_web/live/course_feed.ex:1218
+#: lib/amauta_web/live/course_feed.ex:1294
 #, elixir-autogen, elixir-format
 msgid "Edit reply"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1257
+#: lib/amauta_web/live/course_feed.ex:1304
 #, elixir-autogen, elixir-format
 msgid "Hide reply"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1122
+#: lib/amauta_web/live/course_feed.ex:1169
 #, elixir-autogen, elixir-format
 msgid "Let %{name} post again"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1123
+#: lib/amauta_web/live/course_feed.ex:1170
 #, elixir-autogen, elixir-format
 msgid "Mute %{name} in this feed"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1116
+#: lib/amauta_web/live/course_feed.ex:1163
 #, elixir-autogen, elixir-format
 msgid "Mute %{name}? They will be able to read, but not post or reply here."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:501
+#: lib/amauta_web/live/course_feed.ex:509
 #, elixir-autogen, elixir-format
 msgid "Muted in this feed: they can read, but not post or reply."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:926
+#: lib/amauta_web/live/course_feed.ex:969
 #, elixir-autogen, elixir-format
 msgid "Open replies"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:981
+#: lib/amauta_web/live/course_feed.ex:1044
 #, elixir-autogen, elixir-format
 msgid "Replies"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:991
+#: lib/amauta_web/live/course_feed.ex:1034
 #, elixir-autogen, elixir-format
 msgid "Replies are closed"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1234
-#: lib/amauta_web/live/course_feed.ex:1354
+#: lib/amauta_web/live/course_feed.ex:1281
+#: lib/amauta_web/live/course_feed.ex:1401
 #, elixir-autogen, elixir-format
 msgid "Reply"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1353
+#: lib/amauta_web/live/course_feed.ex:1400
 #, elixir-autogen, elixir-format
 msgid "Sending..."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1257
+#: lib/amauta_web/live/course_feed.ex:1304
 #, elixir-autogen, elixir-format
 msgid "Show reply"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:502
+#: lib/amauta_web/live/course_feed.ex:510
 #, elixir-autogen, elixir-format
 msgid "They can post and reply again."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1205
+#: lib/amauta_web/live/course_feed.ex:1252
 #, elixir-autogen, elixir-format
 msgid "This reply was hidden by the teaching team."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1348
+#: lib/amauta_web/live/course_feed.ex:1395
 #, elixir-autogen, elixir-format
 msgid "Write a reply. Use «@» to mention someone."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:437
+#: lib/amauta_web/live/course_feed.ex:445
 #, elixir-autogen, elixir-format
 msgid "Write something first."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1347
+#: lib/amauta_web/live/course_feed.ex:1394
 #, elixir-autogen, elixir-format
 msgid "Your reply"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1202
+#: lib/amauta_web/live/course_feed.ex:1249
 #, elixir-autogen, elixir-format
 msgid "hidden"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:877
-#: lib/amauta_web/live/course_feed.ex:1200
+#: lib/amauta_web/live/course_feed.ex:891
+#: lib/amauta_web/live/course_feed.ex:1247
 #, elixir-autogen, elixir-format
 msgid "muted"
 msgstr ""
@@ -2822,64 +2818,64 @@ msgstr ""
 msgid "+%{count} more"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:381
+#: lib/amauta_web/live/course_feed.ex:389
 #, elixir-autogen, elixir-format
 msgid "Choose a date in the future."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:862
+#: lib/amauta_web/live/course_feed.ex:872
 #, elixir-autogen, elixir-format
 msgid "Drag to the pinned area"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:682
+#: lib/amauta_web/live/course_feed.ex:690
 #, elixir-autogen, elixir-format
 msgid "Drop a post here to pin it"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:916
+#: lib/amauta_web/live/course_feed.ex:930
 #, elixir-autogen, elixir-format
 msgid "Pin to the top"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:887
+#: lib/amauta_web/live/course_feed.ex:903
 #, elixir-autogen, elixir-format
 msgid "Pinned"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:675
-#: lib/amauta_web/live/course_feed.ex:684
+#: lib/amauta_web/live/course_feed.ex:683
+#: lib/amauta_web/live/course_feed.ex:692
 #: lib/amauta_web/live/course_live.ex:529
 #, elixir-autogen, elixir-format
 msgid "Pinned posts"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:916
+#: lib/amauta_web/live/course_feed.ex:930
 #, elixir-autogen, elixir-format
 msgid "Unpin"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1068
+#: lib/amauta_web/live/course_feed.ex:1127
 #, elixir-autogen, elixir-format
 msgid "Unpin on"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:889
+#: lib/amauta_web/live/course_feed.ex:905
 #, elixir-autogen, elixir-format
 msgid "until %{date}"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:897
+#: lib/amauta_web/live/course_feed.ex:911
 #, elixir-autogen, elixir-format
 msgid "Post options"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:720
+#: lib/amauta_web/live/course_feed.ex:728
 #, elixir-autogen, elixir-format
 msgid "Loading..."
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1237
+#: lib/amauta_web/live/course_feed.ex:1284
 #, elixir-autogen, elixir-format
 msgid "Reply options"
 msgstr ""
@@ -2894,24 +2890,24 @@ msgstr ""
 msgid "Show more"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1295
+#: lib/amauta_web/live/course_feed.ex:1342
 #, elixir-autogen, elixir-format
 msgid "View %{count} earlier reply"
 msgid_plural "View %{count} earlier replies"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/amauta_web/live/course_feed.ex:722
+#: lib/amauta_web/live/course_feed.ex:730
 #, elixir-autogen, elixir-format
 msgid "View earlier posts"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1030
+#: lib/amauta_web/live/course_feed.ex:1087
 #, elixir-autogen, elixir-format
 msgid "Write a reply…"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1326
+#: lib/amauta_web/live/course_feed.ex:1373
 #, elixir-autogen, elixir-format
 msgid "Attach file"
 msgstr ""
@@ -2941,7 +2937,7 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
-#: lib/amauta_web/live/course_feed.ex:1327
+#: lib/amauta_web/live/course_feed.ex:1374
 #, elixir-autogen, elixir-format
 msgid "Up to %{count} files per post."
 msgstr ""
@@ -2950,4 +2946,24 @@ msgstr ""
 #: lib/amauta_web/components/core_components.ex:409
 #, elixir-autogen, elixir-format
 msgid "View %{name}"
+msgstr ""
+
+#: lib/amauta_web/live/course_feed.ex:939
+#, elixir-autogen, elixir-format
+msgid "Unpin on a date…"
+msgstr ""
+
+#: lib/amauta_web/components/direct_upload.ex:157
+#, elixir-autogen, elixir-format
+msgid "Checking"
+msgstr ""
+
+#: lib/amauta_web/components/direct_upload.ex:155
+#, elixir-autogen, elixir-format
+msgid "Preparing"
+msgstr ""
+
+#: lib/amauta_web/components/direct_upload.ex:156
+#, elixir-autogen, elixir-format
+msgid "Uploading"
 msgstr ""

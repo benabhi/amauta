@@ -157,14 +157,14 @@ defmodule AmautaWeb.CourseFeedTest do
       post = publish(teacher, course, "¿Dudas?")
       {:ok, view, _html} = open(conn, student, course)
 
-      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+      view |> element("#reply-open-#{post.id}") |> render_click()
 
       view
       |> form("#reply-form-#{post.id}")
       |> render_submit(%{reply: %{body: body("Sí, el punto 2")}})
 
       assert has_element?(view, "#replies-#{post.id} li", "Sí, el punto 2")
-      assert has_element?(view, "#replies-#{post.id}", "1 reply")
+      assert has_element?(view, "#reply-summary-#{post.id}", "1 reply")
       refute has_element?(view, "#reply-form-#{post.id}")
     end
 
@@ -201,8 +201,8 @@ defmodule AmautaWeb.CourseFeedTest do
       view |> element(~s(#post-menu-#{post.id} [phx-click="toggle_replies"])) |> render_click()
       _ = render(view)
 
-      assert has_element?(view, "#replies-#{post.id}", "Replies are closed")
-      refute has_element?(view, ~s(#replies-#{post.id} > button[phx-click="reply"]))
+      assert has_element?(view, "#reply-summary-#{post.id}", "Replies are closed")
+      refute has_element?(view, "#reply-open-#{post.id}")
     end
   end
 
@@ -342,11 +342,18 @@ defmodule AmautaWeb.CourseFeedTest do
 
       date = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
 
+      # La fecha se elige desde el menú; antes no ocupa lugar en la tarjeta.
+      refute has_element?(view, "#pin-expiry-#{post.id}")
+      view |> element(~s(#pinned-#{post.id} [phx-click="edit_pin_expiry"])) |> render_click()
+
       view
       |> form("#pin-expiry-#{post.id}")
       |> render_change(%{pin: %{post_id: post.id, expires_on: date}})
 
       assert [%{pin_expires_at: %DateTime{}}] = Feed.list_pinned(scope, course)
+
+      view |> element(~s(#pinned-#{post.id} [phx-click="close_pin_expiry"])) |> render_click()
+      refute has_element?(view, "#pin-expiry-#{post.id}")
     end
 
     test "un estudiante ve las fijadas pero no los controles", %{conn: conn, course: course} do
@@ -387,7 +394,7 @@ defmodule AmautaWeb.CourseFeedTest do
       {:ok, view, _html} = open(conn, teacher, course)
       replies = "#replies-#{post.id} > ul > li"
 
-      assert view |> element("#replies-#{post.id}") |> render() =~ "25 replies"
+      assert view |> element("#reply-summary-#{post.id}") |> render() =~ "25 replies"
 
       assert count(view, replies) == 3
 
@@ -422,7 +429,7 @@ defmodule AmautaWeb.CourseFeedTest do
       end
 
       {:ok, view, _html} = open(conn, member(course, "student"), course)
-      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+      view |> element("#reply-open-#{post.id}") |> render_click()
 
       view
       |> form("#reply-form-#{post.id}")
@@ -527,7 +534,7 @@ defmodule AmautaWeb.CourseFeedTest do
       post = publish(teacher, course, "Consultas")
       {:ok, view, _html} = open(conn, student, course)
 
-      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+      view |> element("#reply-open-#{post.id}") |> render_click()
       attach(view, student, course, "reply", "duda.pdf")
 
       view
@@ -550,7 +557,7 @@ defmodule AmautaWeb.CourseFeedTest do
       post = publish(teacher, course, "Consultas")
       {:ok, view, _html} = open(conn, member(course, "student"), course)
 
-      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+      view |> element("#reply-open-#{post.id}") |> render_click()
       assert has_element?(view, "#reply-form-#{post.id}")
       refute has_element?(view, "#feed-upload-reply")
     end
