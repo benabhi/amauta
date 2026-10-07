@@ -21,7 +21,7 @@ msgstr ""
 msgid "Account Settings"
 msgstr ""
 
-#: lib/amauta_web/components/core_components.ex:1174
+#: lib/amauta_web/components/core_components.ex:1175
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -265,7 +265,7 @@ msgstr ""
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr ""
 
-#: lib/amauta_web/components/core_components.ex:940
+#: lib/amauta_web/components/core_components.ex:941
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
