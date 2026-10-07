@@ -31,6 +31,17 @@ defmodule AmautaWeb.Format do
   @spec number(number()) :: String.t()
   def number(number), do: Cldr.Number.to_string!(number)
 
+  @doc "Tamaño de un archivo, con la unidad que corresponda (KB, MB o GB)."
+  @spec bytes(non_neg_integer()) :: String.t()
+  def bytes(size) when size < 1024, do: "#{size} B"
+  def bytes(size) when size < 1024 * 1024, do: unit(size / 1024, "KB")
+  def bytes(size) when size < 1024 * 1024 * 1024, do: unit(size / (1024 * 1024), "MB")
+  def bytes(size), do: unit(size / (1024 * 1024 * 1024), "GB")
+
+  defp unit(value, unit),
+    do:
+      "#{Cldr.Number.to_string!(value, fractional_digits: if(value < 10, do: 1, else: 0))} #{unit}"
+
   @doc "Lista con la conjunción del idioma («a, b y c»)."
   @spec list([String.t()]) :: String.t()
   def list(items), do: Cldr.List.to_string!(items)

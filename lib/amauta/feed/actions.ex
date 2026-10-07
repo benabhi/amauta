@@ -43,7 +43,8 @@ defmodule Amauta.Feed.Actions.SaveDraft do
     params: [
       course_id: {Ecto.UUID, required: true},
       body: :string,
-      section_id: Ecto.UUID
+      section_id: Ecto.UUID,
+      attachment_ids: {{:array, Ecto.UUID}, []}
     ]
 
   alias Amauta.Feed
@@ -62,9 +63,13 @@ defmodule Amauta.Feed.Actions.SaveDraft do
       draft =
         Feed.get_draft(scope, course) || %Post{course_id: course.id, author_id: scope.user.id}
 
-      draft
-      |> Post.draft_changeset(Map.take(input, [:body, :section_id]))
-      |> Repo.insert_or_update(Tenancy.opts(scope))
+      with {:ok, draft} <-
+             draft
+             |> Post.draft_changeset(Map.take(input, [:body, :section_id]))
+             |> Repo.insert_or_update(Tenancy.opts(scope)),
+           :ok <- Feed.sync_attachments(scope, draft, course, input[:attachment_ids]) do
+        {:ok, draft}
+      end
     end
   end
 
@@ -84,7 +89,8 @@ defmodule Amauta.Feed.Actions.PublishPost do
     params: [
       course_id: {Ecto.UUID, required: true},
       body: :string,
-      section_id: Ecto.UUID
+      section_id: Ecto.UUID,
+      attachment_ids: {{:array, Ecto.UUID}, []}
     ]
 
   alias Amauta.Feed
@@ -106,7 +112,8 @@ defmodule Amauta.Feed.Actions.PublishPost do
       attrs = %{body: input[:body], section_id: input[:section_id]}
 
       with {:ok, post} <-
-             post |> Post.publish_changeset(attrs) |> Repo.insert_or_update(Tenancy.opts(scope)) do
+             post |> Post.publish_changeset(attrs) |> Repo.insert_or_update(Tenancy.opts(scope)),
+           :ok <- Feed.sync_attachments(scope, post, course, input[:attachment_ids]) do
         {:ok, Repo.preload(post, [:author, :section, :course], force: true)}
       end
     end
@@ -128,7 +135,11 @@ defmodule Amauta.Feed.Actions.UpdatePost do
   use Amauta.Action,
     name: "feed.post.update",
     description: "Edita una publicación propia del tablón.",
-    params: [post_id: {Ecto.UUID, required: true}, body: {:string, required: true}]
+    params: [
+      post_id: {Ecto.UUID, required: true},
+      body: {:string, required: true},
+      attachment_ids: {{:array, Ecto.UUID}, []}
+    ]
 
   alias Amauta.Feed
   alias Amauta.Feed.Post
@@ -153,13 +164,13 @@ defmodule Amauta.Feed.Actions.UpdatePost do
   end
 
   @impl true
-  def run(scope, %{post_id: id, body: body}) do
-    with {:ok, post} <-
-           scope
-           |> Feed.get(id)
-           |> Post.edit_changeset(%{body: body})
-           |> Repo.update(Tenancy.opts(scope)) do
-      {:ok, Repo.preload(post, [:author, :section, :course], force: true)}
+  def run(scope, %{post_id: id, body: body} = input) do
+    post = Feed.get(scope, id)
+
+    with {:ok, updated} <-
+           post |> Post.edit_changeset(%{body: body}) |> Repo.update(Tenancy.opts(scope)),
+         :ok <- Feed.sync_attachments(scope, updated, post.course, input[:attachment_ids]) do
+      {:ok, Repo.preload(updated, [:author, :section, :course], force: true)}
     end
   end
 
@@ -198,6 +209,7 @@ defmodule Amauta.Feed.Actions.DeletePost do
   @impl true
   def run(scope, %{post_id: id}) do
     post = Feed.get(scope, id)
+    Feed.discard_attachments(scope, post)
 
     with {:ok, _} <- Repo.delete(post, Tenancy.opts(scope)), do: {:ok, post}
   end
@@ -225,7 +237,8 @@ defmodule Amauta.Feed.Actions.ReplyToPost do
     params: [
       post_id: {Ecto.UUID, required: true},
       parent_id: Ecto.UUID,
-      body: :string
+      body: :string,
+      attachment_ids: {{:array, Ecto.UUID}, []}
     ]
 
   alias Amauta.Feed
@@ -248,8 +261,10 @@ defmodule Amauta.Feed.Actions.ReplyToPost do
          {:ok, reply} <-
            %Reply{post_id: id, author_id: scope.user.id, parent_id: parent_id}
            |> Reply.create_changeset(%{body: input[:body]})
-           |> Repo.insert(Tenancy.opts(scope)) do
-      {:ok, Repo.preload(reply, post: :course)}
+           |> Repo.insert(Tenancy.opts(scope)),
+         reply = Repo.preload(reply, post: :course),
+         :ok <- Feed.sync_attachments(scope, reply, reply.post.course, input[:attachment_ids]) do
+      {:ok, reply}
     end
   end
 
@@ -280,7 +295,11 @@ defmodule Amauta.Feed.Actions.UpdateReply do
   use Amauta.Action,
     name: "feed.reply.update",
     description: "Edita una respuesta propia del tablón.",
-    params: [reply_id: {Ecto.UUID, required: true}, body: {:string, required: true}]
+    params: [
+      reply_id: {Ecto.UUID, required: true},
+      body: {:string, required: true},
+      attachment_ids: {{:array, Ecto.UUID}, []}
+    ]
 
   alias Amauta.Feed
   alias Amauta.Feed.Reply
@@ -297,11 +316,12 @@ defmodule Amauta.Feed.Actions.UpdateReply do
   end
 
   @impl true
-  def run(scope, %{reply_id: id, body: body}) do
+  def run(scope, %{reply_id: id, body: body} = input) do
     reply = Feed.get_reply(scope, id)
 
     with {:ok, updated} <-
-           reply |> Reply.edit_changeset(%{body: body}) |> Repo.update(Tenancy.opts(scope)) do
+           reply |> Reply.edit_changeset(%{body: body}) |> Repo.update(Tenancy.opts(scope)),
+         :ok <- Feed.sync_attachments(scope, updated, reply.post.course, input[:attachment_ids]) do
       {:ok, %{updated | post: reply.post}}
     end
   end
@@ -343,6 +363,7 @@ defmodule Amauta.Feed.Actions.DeleteReply do
   @impl true
   def run(scope, %{reply_id: id}) do
     reply = Feed.get_reply(scope, id)
+    Feed.discard_attachments(scope, reply)
     with {:ok, _} <- Repo.delete(reply, Tenancy.opts(scope)), do: {:ok, reply}
   end
 

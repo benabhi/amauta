@@ -18,7 +18,9 @@ defmodule Amauta.Feed do
 
   alias Amauta.Courses.Course
   alias Amauta.Enrollments
-  alias Amauta.Feed.{Mute, Post, Reply}
+  alias Amauta.Feed.{Attachment, Mute, Post, Reply}
+  alias Amauta.Files
+  alias Amauta.Files.StoredFile
   alias Amauta.{Authorization, Repo, Scope, Tenancy}
 
   @page 30
@@ -82,6 +84,16 @@ defmodule Amauta.Feed do
     |> MapSet.new()
   end
 
+  @doc """
+  Puede adjuntar archivos en el tablón (RF-TAB-005): quien puede publicar
+  o responder; los estudiantes, si el curso lo permite.
+  """
+  def can_attach?(%Scope{} = scope, %Course{} = course) do
+    (can_post?(scope, course) or can_reply?(scope, course)) and
+      (course.settings.student_attachments or
+         Enrollments.can_in_course?(scope, "course.feed.post", course))
+  end
+
   @doc "Puede moderar (ocultar o eliminar lo de otras personas)."
   def can_moderate?(%Scope{} = scope, %Course{} = course),
     do: Enrollments.can_in_course?(scope, "course.feed.moderate", course)
@@ -126,7 +138,7 @@ defmodule Amauta.Feed do
     |> before(opts[:before])
     |> order_by([p], desc: p.published_at, desc: p.id)
     |> limit(@page)
-    |> preload([:author, :section])
+    |> preload([:author, :section, attachments: :file])
     |> Repo.all(Tenancy.opts(scope))
     |> with_replies(scope, opts[:windows] || %{})
   end
@@ -143,7 +155,7 @@ defmodule Amauta.Feed do
     |> visible_to(scope, course)
     |> filter_section(filters["section"])
     |> order_by([p], asc: p.pin_position, asc: p.pinned_at)
-    |> preload([:author, :section])
+    |> preload([:author, :section, attachments: :file])
     |> Repo.all(Tenancy.opts(scope))
     |> with_replies(scope, opts[:windows] || %{})
   end
@@ -266,7 +278,7 @@ defmodule Amauta.Feed do
         on: x.id == r.id,
         where: x.rank <= ^n,
         order_by: [asc: r.inserted_at, asc: r.id],
-        preload: :author
+        preload: [:author, attachments: :file]
       )
       |> Repo.all(opts)
     end)
@@ -314,7 +326,7 @@ defmodule Amauta.Feed do
            Post
            |> where([p], p.id == ^id and p.course_id == ^course.id and p.status == "published")
            |> visible_to(scope, course)
-           |> preload([:author, :section])
+           |> preload([:author, :section, attachments: :file])
            |> Repo.one(Tenancy.opts(scope)) do
       [post] = with_replies([post], scope, opts[:windows] || %{})
       post
@@ -349,6 +361,151 @@ defmodule Amauta.Feed do
   end
 
   def get_draft(_scope, _course), do: nil
+
+  ## Adjuntos (RF-TAB-005)
+
+  @max_attachments 10
+
+  @doc "Cuántos archivos se pueden adjuntar a una publicación o respuesta."
+  def max_attachments, do: @max_attachments
+
+  @doc """
+  Deja adjuntos a una publicación o respuesta exactamente los archivos de
+  `file_ids`, en ese orden: vincula los nuevos, reordena los que ya estaban
+  y descarta los que se quitaron. Los nuevos tienen que ser archivos listos
+  del tablón, subidos por la persona para ese curso y sin vincular. Con
+  `nil` no cambia nada.
+  """
+  def sync_attachments(_scope, _owner, _course, nil), do: :ok
+
+  def sync_attachments(%Scope{} = scope, owner, %Course{} = course, file_ids) do
+    opts = Tenancy.opts(scope)
+    ids = Enum.uniq(file_ids)
+    {key, owner_id} = owner_key(owner)
+
+    current =
+      from(a in Attachment, where: field(a, ^key) == ^owner_id, preload: :file)
+      |> Repo.all(opts)
+
+    current_ids = Enum.map(current, & &1.file_id)
+    new_ids = ids -- current_ids
+
+    valid =
+      from(f in StoredFile,
+        left_join: a in Attachment,
+        on: a.file_id == f.id,
+        where: f.id in ^new_ids and is_nil(a.id),
+        where: f.purpose == "feed_attachment" and f.status == "ready",
+        where: f.uploaded_by_id == ^scope.user.id and f.owner_id == ^course.id,
+        select: f.id
+      )
+      |> Repo.all(opts)
+
+    cond do
+      length(ids) > @max_attachments ->
+        {:error, :too_many_attachments}
+
+      length(valid) != length(new_ids) ->
+        {:error, :invalid_attachment}
+
+      true ->
+        for attachment <- current, attachment.file_id not in ids do
+          Repo.delete!(attachment, opts)
+          Files.discard(scope, attachment.file)
+        end
+
+        ids
+        |> Enum.with_index()
+        |> Enum.each(fn {file_id, position} ->
+          %Attachment{file_id: file_id, position: position}
+          |> Map.put(key, owner_id)
+          |> Repo.insert!(
+            Keyword.merge(opts,
+              on_conflict: [set: [position: position]],
+              conflict_target: :file_id
+            )
+          )
+        end)
+
+        :ok
+    end
+  end
+
+  @doc "Archivos adjuntos a una publicación o respuesta, en orden."
+  def attached_files(%Scope{} = scope, owner) do
+    {key, owner_id} = owner_key(owner)
+
+    from(a in Attachment,
+      join: f in assoc(a, :file),
+      where: field(a, ^key) == ^owner_id,
+      order_by: a.position,
+      select: f
+    )
+    |> Repo.all(Tenancy.opts(scope))
+  end
+
+  defp owner_key(%Post{id: id}), do: {:post_id, id}
+  defp owner_key(%Reply{id: id}), do: {:reply_id, id}
+
+  @doc """
+  Descarta del almacenamiento los adjuntos de una publicación (y de sus
+  respuestas) o de una respuesta (y de sus anidadas), antes de borrarla.
+  """
+  def discard_attachments(%Scope{} = scope, owner) do
+    opts = Tenancy.opts(scope)
+
+    query =
+      case owner do
+        %Post{id: id} ->
+          from(a in Attachment,
+            left_join: r in Reply,
+            on: r.id == a.reply_id,
+            where: a.post_id == ^id or r.post_id == ^id
+          )
+
+        %Reply{id: id} ->
+          from(a in Attachment,
+            left_join: r in Reply,
+            on: r.id == a.reply_id,
+            where: a.reply_id == ^id or r.parent_id == ^id
+          )
+      end
+
+    query
+    |> preload(:file)
+    |> Repo.all(opts)
+    |> Enum.each(&Files.discard(scope, &1.file))
+  end
+
+  @doc """
+  Puede ver un adjunto del tablón: quien lo subió (antes de publicar) o
+  quien ve la publicación a la que pertenece.
+  """
+  def can_view_attachment?(%Scope{user: %{id: user_id}}, %StoredFile{uploaded_by_id: user_id}),
+    do: true
+
+  def can_view_attachment?(%Scope{} = scope, %StoredFile{id: file_id}) do
+    post_id =
+      from(a in Attachment,
+        left_join: r in Reply,
+        on: r.id == a.reply_id,
+        where: a.file_id == ^file_id,
+        select: coalesce(a.post_id, r.post_id)
+      )
+      |> Repo.one(Tenancy.opts(scope))
+
+    # La URL del archivo anda por fuera del tablón: hay que poder ver el
+    # curso, además de la publicación.
+    with %Post{status: "published", course: course} <- post_id && get(scope, post_id),
+         true <- Enrollments.can_in_course?(scope, "course.view", course) do
+      Post
+      |> where([p], p.id == ^post_id)
+      |> visible_to(scope, course)
+      |> Repo.exists?(Tenancy.opts(scope))
+    else
+      _ -> false
+    end
+  end
 
   ## Tiempo real
 

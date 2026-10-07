@@ -19,6 +19,9 @@ defmodule AmautaWeb.Components.DirectUpload do
       />
 
       def handle_info({AmautaWeb.Components.DirectUpload, "avatar-upload", {:uploaded, file}}, socket)
+
+  Con `variant="button"` es un botón compacto («Adjuntar archivo») que
+  también acepta arrastrar y pegar, para los formularios.
   """
   use AmautaWeb, :live_component
 
@@ -37,6 +40,7 @@ defmodule AmautaWeb.Components.DirectUpload do
      |> assign_new(:owner_id, fn -> nil end)
      |> assign_new(:accept, fn -> nil end)
      |> assign_new(:hint, fn -> nil end)
+     |> assign_new(:variant, fn -> "zone" end)
      |> assign(:max_size, Purpose.limits(assigns.purpose).max_size)}
   end
 
@@ -101,6 +105,7 @@ defmodule AmautaWeb.Components.DirectUpload do
     ~H"""
     <div id={@id} phx-hook=".DirectUpload" phx-target={@myself} class="grid gap-2">
       <label
+        :if={@variant == "zone"}
         data-drop
         tabindex="0"
         for={"#{@id}-input"}
@@ -117,6 +122,20 @@ defmodule AmautaWeb.Components.DirectUpload do
           {gettext("Choose a file, drag it here or paste it.")}
         </span>
         <span :if={@hint} class="text-xs text-ink-muted">{@hint}</span>
+      </label>
+      <label
+        :if={@variant == "button"}
+        data-drop
+        tabindex="0"
+        for={"#{@id}-input"}
+        title={@hint}
+        class={[
+          "inline-flex min-h-11 cursor-pointer items-center gap-2 justify-self-start rounded-control px-3",
+          "text-sm font-semibold text-ink-muted hover:bg-surface-sunken hover:text-ink",
+          "focus-visible:outline-2 focus-visible:outline-primary data-[dragging]:bg-anil-soft"
+        ]}
+      >
+        <.icon name="paperclip" class="size-5" /> {@label}
       </label>
       <input id={"#{@id}-input"} type="file" accept={@accept} class="sr-only" />
 
@@ -139,7 +158,7 @@ defmodule AmautaWeb.Components.DirectUpload do
       </div>
 
       <p
-        :if={@status == :done}
+        :if={@status == :done and @variant == "zone"}
         class="flex items-center gap-2 text-sm text-chilca-deep"
         aria-live="polite"
       >

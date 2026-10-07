@@ -22,6 +22,8 @@ defmodule Amauta.Courses.Settings do
     field :enrollment_code_enabled, :boolean, default: false
     field :feed_posting, :string, default: "teachers"
     field :comments_enabled, :boolean, default: true
+    # Los estudiantes pueden adjuntar archivos en el tablón (RF-TAB-005).
+    field :student_attachments, :boolean, default: true
     field :grading_scale, :string, default: "numeric"
     field :unit_name, :string, default: "unit"
   end
@@ -38,6 +40,7 @@ defmodule Amauta.Courses.Settings do
       :enrollment_code_enabled,
       :feed_posting,
       :comments_enabled,
+      :student_attachments,
       :grading_scale,
       :unit_name
     ])

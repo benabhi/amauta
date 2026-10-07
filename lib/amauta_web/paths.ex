@@ -66,6 +66,10 @@ defmodule AmautaWeb.Paths do
   @doc "Archivo (redirige a una URL prefirmada después de verificar el permiso)."
   def file(tenant, file_id), do: ~p"/#{slug(tenant)}/files/#{file_id}"
 
+  @doc "Archivo para guardar con su nombre original."
+  def file_download(tenant, file_id),
+    do: ~p"/#{slug(tenant)}/files/#{file_id}?#{[download: 1]}"
+
   @doc "Foto de perfil de la persona, o `nil` si no tiene."
   def avatar(_tenant, %{avatar_file_id: nil}), do: nil
   def avatar(tenant, %{avatar_file_id: id}), do: file(tenant, id)

@@ -24,6 +24,7 @@ defmodule Amauta.Feed.Reply do
     belongs_to :parent, __MODULE__
     belongs_to :author, User
     has_many :children, __MODULE__, foreign_key: :parent_id
+    has_many :attachments, Amauta.Feed.Attachment, preload_order: [asc: :position]
 
     timestamps()
   end

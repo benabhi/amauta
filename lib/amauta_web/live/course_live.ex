@@ -444,6 +444,15 @@ defmodule AmautaWeb.CourseLive do
      if(event in [:pinned, :updated, :deleted], do: assign_pinned(socket), else: socket)}
   end
 
+  # Un archivo terminó de subir en un formulario del tablón (RF-TAB-005).
+  def handle_info(
+        {AmautaWeb.Components.DirectUpload, "feed-upload-" <> _ = id, {:uploaded, file}},
+        socket
+      ) do
+    send_update(AmautaWeb.CourseFeed, id: "course-feed", uploaded: {id, file})
+    {:noreply, socket}
+  end
+
   def handle_info({:put_flash, kind, message}, socket),
     do: {:noreply, put_flash(socket, kind, message)}
 
@@ -1056,6 +1065,11 @@ defmodule AmautaWeb.CourseLive do
             field={@settings_form[:comments_enabled]}
             type="checkbox"
             label={gettext("Allow comments on posts")}
+          />
+          <.input
+            field={@settings_form[:student_attachments]}
+            type="checkbox"
+            label={gettext("Let students attach files in the feed")}
           />
           <.input
             field={@settings_form[:enrollment_code_enabled]}

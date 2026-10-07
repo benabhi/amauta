@@ -35,6 +35,7 @@ defmodule Amauta.Feed.Post do
     belongs_to :author, User
     belongs_to :section, Section
     has_many :replies, Amauta.Feed.Reply
+    has_many :attachments, Amauta.Feed.Attachment, preload_order: [asc: :position]
 
     timestamps()
   end
