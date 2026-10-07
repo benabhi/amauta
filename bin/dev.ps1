@@ -60,8 +60,11 @@ switch ($Command) {
   'precommit' { Invoke-InApp @('mix', 'precommit') }
   'ci'        { docker compose exec -e MIX_ENV=test app bash -c 'mix deps.unlock --check-unused && mix compile --warnings-as-errors && mix format --check-formatted && mix gettext.extract --check-up-to-date && mix amauta.gettext.check && mix test --warnings-as-errors' }
   'e2e'       {
-    docker compose --profile e2e up -d playwright
+    # Playwright comparte la red de la app: se recrea por si la app se
+    # reinició, y se espera a que su servidor responda.
+    docker compose --profile e2e up -d --force-recreate playwright
     if ($LASTEXITCODE -eq 0) {
+      docker compose exec app bash -c 'until curl -s localhost:3000 >/dev/null; do sleep 1; done'
       docker compose exec -e MIX_ENV=test -e E2E=1 app mix test --only e2e @Rest
     }
   }
