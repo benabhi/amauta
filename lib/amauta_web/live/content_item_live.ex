@@ -13,7 +13,7 @@ defmodule AmautaWeb.ContentItemLive do
   import AmautaWeb.ContentComponents
 
   alias Amauta.{Actions, Content, Courses, Files}
-  alias Amauta.Content.Actions.{CreateItem, UpdateItem}
+  alias Amauta.Content.Actions.{CreateItem, SetItemDone, UpdateItem}
   alias Amauta.Content.Item
   alias AmautaWeb.Components.DirectUpload
   alias AmautaWeb.Paths
@@ -46,12 +46,21 @@ defmodule AmautaWeb.ContentItemLive do
   defp apply_action(socket, :show, %{"item_id" => id}) do
     %{current_scope: scope, course: course} = socket.assigns
     item = Content.get_item(scope, course, id) || raise AmautaWeb.NotFoundError
+    units = Content.list_units(scope, course)
+    {prev, next} = Content.neighbors(units, item.id)
+    done = Content.completed_ids(scope, course)
 
     assign(socket,
       page_title: item.title,
       item: item,
       unit: item.unit,
-      files: Enum.map(item.files, & &1.file)
+      files: Enum.map(item.files, & &1.file),
+      units: units,
+      prev: prev,
+      next: next,
+      done: done,
+      is_done: MapSet.member?(done, item.id),
+      tracks: Content.tracks_progress?(scope, course)
     )
   end
 
@@ -119,9 +128,24 @@ defmodule AmautaWeb.ContentItemLive do
     )
   end
 
-  ## Edición
+  ## Finalización (RF-CON-006)
 
   @impl true
+  def handle_event("toggle_done", _params, socket) do
+    %{current_scope: scope, item: item, is_done: is_done, done: done} = socket.assigns
+
+    case Actions.run(SetItemDone, scope, %{"item_id" => item.id, "done" => !is_done}) do
+      {:ok, _} ->
+        done = if is_done, do: MapSet.delete(done, item.id), else: MapSet.put(done, item.id)
+        {:noreply, assign(socket, done: done, is_done: !is_done)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, gettext("That could not be done."))}
+    end
+  end
+
+  ## Edición
+
   def handle_event("change", %{"item" => params}, socket),
     do: {:noreply, assign_form(socket, params)}
 
@@ -205,60 +229,126 @@ defmodule AmautaWeb.ContentItemLive do
         <span>{@unit.title}</span>
       </nav>
 
-      <.header>
-        <span class="flex items-center gap-3">
-          <.kind_icon kind={@item.kind} />
-          <span>{@item.title}</span>
-        </span>
-        <:subtitle>
-          <span class="flex flex-wrap items-center gap-2">
-            {kind_label(@item.kind)}
-            <.visibility_badge subject={@item} timezone={@timezone} />
-            <.visibility_badge subject={@unit} timezone={@timezone} />
-          </span>
-        </:subtitle>
-        <:actions>
-          <.button
-            :if={@can_manage}
-            id="content-item-edit"
-            variant="secondary"
-            icon="pencil-simple"
-            navigate={Paths.edit_course_item(@current_scope, @course, @item)}
-          >
-            {gettext("Edit")}
-          </.button>
-        </:actions>
-      </.header>
+      <div class="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <aside class="hidden lg:block">
+          <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pe-2">
+            <.content_nav
+              units={@units}
+              current_id={@item.id}
+              done={@done}
+              tracks={@tracks}
+              current_scope={@current_scope}
+              course={@course}
+            />
+          </div>
+        </aside>
 
-      <article id="content-item" class="grid gap-6">
-        <.card :if={not Amauta.RichText.blank?(@item.body)}>
-          <.rich_text id="content-item-body" doc={@item.body} />
-        </.card>
+        <div class="min-w-0">
+          <.header>
+            <span class="flex items-center gap-3">
+              <.kind_icon kind={@item.kind} />
+              <span>{@item.title}</span>
+            </span>
+            <:subtitle>
+              <span class="flex flex-wrap items-center gap-2">
+                {kind_label(@item.kind)}
+                <.visibility_badge subject={@item} timezone={@timezone} />
+                <.visibility_badge subject={@unit} timezone={@timezone} />
+              </span>
+            </:subtitle>
+            <:actions>
+              <.button
+                :if={@can_manage}
+                id="content-item-edit"
+                variant="secondary"
+                icon="pencil-simple"
+                navigate={Paths.edit_course_item(@current_scope, @course, @item)}
+              >
+                {gettext("Edit")}
+              </.button>
+            </:actions>
+          </.header>
 
-        <div :if={@item.kind == "material" and (@item.url || @files != [])} class="grid gap-3">
-          <a
-            :if={@item.url}
-            id="content-item-link"
-            href={@item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex min-h-11 max-w-full items-center gap-2 justify-self-start rounded-control border border-line bg-surface px-4 font-semibold text-anil-deep hover:border-primary"
-          >
-            <.icon name="link" class="size-5 shrink-0" />
-            <span class="truncate">{link_label(@item.url)}</span>
-          </a>
-          <.attachment_list id="content-item-files" files={@files} tenant={@current_scope} />
+          <article id="content-item" class="grid gap-6">
+            <.card :if={not Amauta.RichText.blank?(@item.body)}>
+              <.rich_text id="content-item-body" doc={@item.body} />
+            </.card>
+
+            <a
+              :if={@item.url}
+              id="content-item-link"
+              href={@item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex min-h-11 max-w-full items-center gap-2 justify-self-start rounded-control border border-line bg-surface px-4 font-semibold text-anil-deep hover:border-primary"
+            >
+              <.icon name="link" class="size-5 shrink-0" />
+              <span class="truncate">{link_label(@item.url)}</span>
+            </a>
+
+            <.file_viewer
+              :for={file <- Enum.filter(@files, &viewable?/1)}
+              file={file}
+              tenant={@current_scope}
+            />
+            <.attachment_list
+              id="content-item-files"
+              files={Enum.reject(@files, &viewable?/1)}
+              tenant={@current_scope}
+            />
+          </article>
+
+          <footer class="mt-8 grid gap-4 border-t border-line pt-6">
+            <div :if={@tracks} class="flex justify-center">
+              <.button
+                id="content-item-done"
+                variant={if @is_done, do: "secondary", else: "primary"}
+                icon={if @is_done, do: "check-circle", else: "check"}
+                phx-click="toggle_done"
+                aria-pressed={to_string(@is_done)}
+              >
+                {if @is_done, do: gettext("Done · undo"), else: gettext("Mark as done")}
+              </.button>
+            </div>
+
+            <nav
+              aria-label={gettext("Previous and next")}
+              class="grid grid-cols-2 gap-3"
+            >
+              <.link
+                :if={@prev}
+                id="content-item-prev"
+                navigate={Paths.course_item(@current_scope, @course, @prev)}
+                class="group flex min-h-16 flex-col justify-center rounded-card border border-line bg-surface px-4 py-2 hover:border-primary"
+              >
+                <span class="flex items-center gap-1 text-xs text-ink-muted">
+                  <.icon name="arrow-left" class="size-3.5" /> {gettext("Previous")}
+                </span>
+                <span class="truncate font-semibold">{@prev.title}</span>
+              </.link>
+              <span :if={!@prev}></span>
+              <.link
+                :if={@next}
+                id="content-item-next"
+                navigate={Paths.course_item(@current_scope, @course, @next)}
+                class="group flex min-h-16 flex-col items-end justify-center rounded-card border border-line bg-surface px-4 py-2 text-end hover:border-primary"
+              >
+                <span class="flex items-center gap-1 text-xs text-ink-muted">
+                  {gettext("Next")} <.icon name="arrow-right" class="size-3.5" />
+                </span>
+                <span class="max-w-full truncate font-semibold">{@next.title}</span>
+              </.link>
+              <.link
+                :if={!@next}
+                navigate={Paths.course(@current_scope, @course, :content)}
+                class="flex min-h-16 flex-col items-end justify-center rounded-card border border-dashed border-line px-4 py-2 text-end text-ink-muted hover:border-primary hover:text-ink"
+              >
+                <span class="text-xs">{gettext("You reached the end")}</span>
+                <span class="font-semibold">{gettext("Back to content")}</span>
+              </.link>
+            </nav>
+          </footer>
         </div>
-      </article>
-
-      <div class="mt-8">
-        <.button
-          variant="ghost"
-          icon="arrow-left"
-          navigate={Paths.course(@current_scope, @course, :content)}
-        >
-          {gettext("Back to content")}
-        </.button>
       </div>
     </Layouts.app>
     """

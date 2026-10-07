@@ -38,6 +38,7 @@ defmodule AmautaWeb.CourseContent do
      |> assign(assigns)
      |> assign(
        can_manage: Content.can_manage?(scope, course),
+       tracks: Content.tracks_progress?(scope, course),
        timezone: scope.user.timezone || scope.institution.timezone
      )
      |> load()}
@@ -45,7 +46,11 @@ defmodule AmautaWeb.CourseContent do
 
   defp load(socket) do
     %{current_scope: scope, course: course} = socket.assigns
-    assign(socket, units: Content.list_units(scope, course))
+
+    assign(socket,
+      units: Content.list_units(scope, course),
+      done: Content.completed_ids(scope, course)
+    )
   end
 
   ## Unidades
@@ -220,6 +225,8 @@ defmodule AmautaWeb.CourseContent do
           <.unit
             :if={@editing_unit != unit.id}
             unit={unit}
+            done={@done}
+            tracks={@tracks}
             first={index == 0}
             last={index == length(@units) - 1}
             can_manage={@can_manage}
@@ -294,6 +301,8 @@ defmodule AmautaWeb.CourseContent do
 
   attr :unit, :map, required: true
   attr :first, :boolean, required: true
+  attr :done, :any, required: true, doc: "IDs de los elementos hechos (MapSet)"
+  attr :tracks, :boolean, required: true
   attr :last, :boolean, required: true
   attr :can_manage, :boolean, required: true
   attr :current_scope, :map, required: true
@@ -304,7 +313,15 @@ defmodule AmautaWeb.CourseContent do
   # Una unidad: el encabezado pliega y despliega sus elementos (en el
   # navegador, sin ir al servidor).
   defp unit(assigns) do
-    assigns = assign(assigns, body_id: "unit-body-#{assigns.unit.id}")
+    %{unit: unit, tracks: tracks, done: done} = assigns
+    progress = if tracks and unit.items != [], do: Content.unit_progress(unit, done)
+
+    assigns =
+      assign(assigns,
+        body_id: "unit-body-#{unit.id}",
+        progress: progress,
+        progress_label: progress && progress_label(progress)
+      )
 
     ~H"""
     <section class="rounded-card border border-line bg-surface shadow-sm in-data-dragging:opacity-60">
@@ -337,11 +354,20 @@ defmodule AmautaWeb.CourseContent do
           <span class="min-w-0">
             <span class="block truncate font-semibold">{@unit.title}</span>
             <span class="block text-sm text-ink-muted">
-              {ngettext("%{count} item", "%{count} items", length(@unit.items))}
+              {if @progress,
+                do: @progress_label,
+                else: ngettext("%{count} item", "%{count} items", length(@unit.items))}
               <span :if={dates(@unit)}>· {dates(@unit)}</span>
             </span>
           </span>
         </button>
+        <.progress_bar
+          :if={@progress}
+          value={elem(@progress, 0)}
+          max={elem(@progress, 1)}
+          label={@progress_label}
+          class="hidden w-24 shrink-0 sm:block"
+        />
         <.visibility_badge subject={@unit} timezone={@timezone} />
         <.dropdown
           :if={@can_manage}
@@ -415,6 +441,7 @@ defmodule AmautaWeb.CourseContent do
           <.item
             :for={{item, index} <- Enum.with_index(@unit.items)}
             item={item}
+            done={MapSet.member?(@done, item.id)}
             first={index == 0}
             last={index == length(@unit.items) - 1}
             can_manage={@can_manage}
@@ -450,6 +477,7 @@ defmodule AmautaWeb.CourseContent do
 
   attr :item, :map, required: true
   attr :first, :boolean, required: true
+  attr :done, :boolean, default: false
   attr :last, :boolean, required: true
   attr :can_manage, :boolean, required: true
   attr :current_scope, :map, required: true
@@ -486,6 +514,10 @@ defmodule AmautaWeb.CourseContent do
         {@item.title}
       </.link>
       <.visibility_badge subject={@item} timezone={@timezone} />
+      <span :if={@done} class="shrink-0 text-chilca-deep" title={gettext("Completed")}>
+        <.icon name="check-circle" class="size-5" />
+        <span class="sr-only">{gettext("Completed")}</span>
+      </span>
       <.dropdown :if={@can_manage} id={"item-menu-#{@item.id}"} label={gettext("Item options")}>
         <:trigger><.icon name="dots-three" class="size-5 text-ink-muted" /></:trigger>
         <.dropdown_item
@@ -573,6 +605,9 @@ defmodule AmautaWeb.CourseContent do
     </.card>
     """
   end
+
+  defp progress_label({done, total}),
+    do: ngettext("%{done} of %{count} done", "%{done} of %{count} done", total, done: done)
 
   # «del 1/3 al 15/3», «desde el 1/3» o «hasta el 15/3».
   defp dates(%{starts_on: nil, ends_on: nil}), do: nil
