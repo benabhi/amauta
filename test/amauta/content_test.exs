@@ -16,6 +16,7 @@ defmodule Amauta.ContentTest do
     DeleteUnit,
     MoveItem,
     MoveUnit,
+    SetItemDone,
     UpdateItem,
     UpdateUnit
   }
@@ -290,6 +291,62 @@ defmodule Amauta.ContentTest do
                  "title" => "Ajeno",
                  "file_ids" => [file.id]
                })
+    end
+  end
+
+  describe "recorrido y finalización" do
+    test "quien cursa marca y desmarca lo hecho; el progreso es por unidad", %{
+      course: course,
+      teacher: t
+    } do
+      student = member(course, "student")
+      u1 = unit(t, course, "Uno")
+      a = page(t, u1, "A")
+      page(t, u1, "B")
+
+      assert Content.tracks_progress?(student, course)
+      refute Content.tracks_progress?(t, course)
+
+      {:ok, _} = Actions.run(SetItemDone, student, %{"item_id" => a.id, "done" => true})
+      # Dos veces no duplica.
+      {:ok, _} = Actions.run(SetItemDone, student, %{"item_id" => a.id, "done" => true})
+
+      done = Content.completed_ids(student, course)
+      assert MapSet.to_list(done) == [a.id]
+      assert [unit] = Content.list_units(student, course)
+      assert {1, 2} = Content.unit_progress(unit, done)
+
+      {:ok, _} = Actions.run(SetItemDone, student, %{"item_id" => a.id, "done" => false})
+      assert Content.completed_ids(student, course) == MapSet.new()
+    end
+
+    test "no se marca lo que no se ve, ni lo marca el equipo docente", %{
+      course: course,
+      teacher: t
+    } do
+      student = member(course, "student")
+      hidden = page(t, unit(t, course, "Uno"), "Oculta", %{"visibility" => "hidden"})
+      visible = page(t, unit(t, course, "Dos"), "Visible")
+
+      assert {:error, :forbidden} =
+               Actions.run(SetItemDone, student, %{"item_id" => hidden.id, "done" => true})
+
+      assert {:error, :forbidden} =
+               Actions.run(SetItemDone, t, %{"item_id" => visible.id, "done" => true})
+    end
+
+    test "anterior y siguiente recorren el curso entre unidades", %{course: course, teacher: t} do
+      student = member(course, "student")
+      u1 = unit(t, course, "Uno")
+      a = page(t, u1, "A")
+      page(t, u1, "Oculta", %{"visibility" => "hidden"})
+      b = page(t, unit(t, course, "Dos"), "B")
+
+      units = Content.list_units(student, course)
+      assert {nil, %{id: b_id}} = Content.neighbors(units, a.id)
+      assert b_id == b.id
+      assert {%{id: a_id}, nil} = Content.neighbors(units, b.id)
+      assert a_id == a.id
     end
   end
 end

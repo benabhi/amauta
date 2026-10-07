@@ -223,7 +223,9 @@ defmodule AmautaWeb.CourseContentTest do
         |> render_submit()
         |> follow_redirect(conn)
 
-      assert has_element?(show, "#content-item-files", "apunte.pdf")
+      # El PDF se ve integrado en la página (RF-CON-008).
+      assert has_element?(show, "#viewer-#{file.id} iframe")
+      assert has_element?(show, "#viewer-#{file.id}", "apunte.pdf")
       assert has_element?(show, "#content-item-link", "example.com")
     end
 
@@ -248,6 +250,50 @@ defmodule AmautaWeb.CourseContentTest do
       assert_raise AmautaWeb.ForbiddenError, fn ->
         live(conn, Paths.edit_course_item(institution(), course, visible))
       end
+    end
+  end
+
+  describe "recorrido" do
+    test "quien cursa marca como hecho y avanza al siguiente", %{
+      conn: conn,
+      course: course,
+      teacher: t,
+      student: s
+    } do
+      u1 = unit(t, course, "Uno")
+      a = page(t, u1, "A")
+      b = page(t, unit(t, course, "Dos"), "B")
+      conn = log_in_user(conn, s)
+
+      {:ok, view, _html} = live(conn, Paths.course_item(institution(), course, a))
+
+      assert has_element?(view, "#content-nav [aria-current=page]", "A")
+      refute has_element?(view, "#content-item-prev")
+      assert has_element?(view, "#content-item-next", "B")
+
+      view |> element("#content-item-done") |> render_click()
+      assert has_element?(view, "#content-item-done[aria-pressed=true]")
+      assert MapSet.member?(Content.completed_ids(scope(s), course), a.id)
+
+      {:ok, view, _html} =
+        view |> element("#content-item-next") |> render_click() |> follow_redirect(conn)
+
+      assert has_element?(view, "#content-item-prev", "A")
+      assert has_element?(view, "#content-nav", "B")
+
+      {:ok, index, _html} = live(conn, Paths.course(institution(), course, :content))
+      assert has_element?(index, "#unit-#{u1.id}", "1 of 1 done")
+      assert has_element?(index, "#item-#{a.id}", "Completed")
+      refute has_element?(index, "#item-#{b.id}", "Completed")
+    end
+
+    test "el equipo docente no ve el botón de hecho", %{conn: conn, course: course, teacher: t} do
+      a = page(t, unit(t, course, "Uno"), "A")
+
+      {:ok, view, _html} =
+        conn |> log_in_user(t) |> live(Paths.course_item(institution(), course, a))
+
+      refute has_element?(view, "#content-item-done")
     end
   end
 end

@@ -353,3 +353,38 @@ defmodule Amauta.Content.Actions.MoveItem do
   @impl true
   def audit(_scope, input, item), do: {item, input}
 end
+
+defmodule Amauta.Content.Actions.SetItemDone do
+  @moduledoc """
+  Marca o desmarca un elemento como hecho (RF-CON-006, «marcar como
+  hecho»). Lo hace quien cursa, sobre lo que puede ver. No se audita: es el
+  registro personal del avance, no un cambio en el curso.
+  """
+  use Amauta.Action,
+    name: "content.item.set_done",
+    description: "Marca o desmarca un elemento del contenido como hecho.",
+    params: [item_id: {Ecto.UUID, required: true}, done: {:boolean, required: true}]
+
+  alias Amauta.Content
+  alias Amauta.Content.Actions.Helpers
+
+  @impl true
+  def authorize(scope, %{item_id: id}) do
+    with {:ok, item} <- Helpers.fetch_item(scope, id) do
+      if Content.tracks_progress?(scope, item.course) and Content.get_item(scope, item.course, id),
+        do: :ok,
+        else: {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{item_id: id, done: done}) do
+    with {:ok, item} <- Helpers.fetch_item(scope, id),
+         {:ok, _} <- Content.set_done(scope, item, done) do
+      {:ok, %{item_id: item.id, done: done}}
+    end
+  end
+
+  @impl true
+  def audit(_scope, _input, _result), do: :skip
+end

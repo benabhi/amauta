@@ -15,7 +15,7 @@ defmodule Amauta.Content do
   import Ecto.Query
   import Ecto.Changeset, only: [validate_inclusion: 3, get_field: 2, add_error: 3]
 
-  alias Amauta.Content.{Item, ItemFile, Unit}
+  alias Amauta.Content.{Completion, Item, ItemFile, Unit}
   alias Amauta.Courses.Course
   alias Amauta.Enrollments
   alias Amauta.Files
@@ -238,4 +238,66 @@ defmodule Amauta.Content do
       _ -> false
     end
   end
+
+  ## Recorrido y finalización (RF-CON-006 y 007)
+
+  @doc """
+  Si la persona lleva su progreso en el curso: quien cursa (ve el
+  contenido publicado, sin lo oculto). El equipo docente no.
+  """
+  def tracks_progress?(%Scope{user: %{}} = scope, %Course{} = course),
+    do: can_view?(scope, course) and not can_view_hidden?(scope, course)
+
+  def tracks_progress?(_scope, _course), do: false
+
+  @doc "IDs de los elementos del curso que la persona marcó como hechos."
+  def completed_ids(%Scope{user: %{id: user_id}} = scope, %Course{id: course_id}) do
+    from(c in Completion,
+      where: c.course_id == ^course_id and c.user_id == ^user_id,
+      select: c.item_id
+    )
+    |> Repo.all(Tenancy.opts(scope))
+    |> MapSet.new()
+  end
+
+  def completed_ids(_scope, _course), do: MapSet.new()
+
+  @doc "Marca (o desmarca) un elemento como hecho para la persona."
+  def set_done(%Scope{user: %{id: user_id}} = scope, %Item{} = item, true) do
+    %Completion{
+      item_id: item.id,
+      user_id: user_id,
+      course_id: item.course_id,
+      completed_at: DateTime.utc_now()
+    }
+    |> Repo.insert(
+      Tenancy.opts(scope) ++ [on_conflict: :nothing, conflict_target: [:item_id, :user_id]]
+    )
+  end
+
+  def set_done(%Scope{user: %{id: user_id}} = scope, %Item{id: item_id}, false) do
+    from(c in Completion, where: c.item_id == ^item_id and c.user_id == ^user_id)
+    |> Repo.delete_all(Tenancy.opts(scope))
+
+    {:ok, nil}
+  end
+
+  @doc "Los elementos de las unidades, en el orden del curso."
+  def sequence(units), do: Enum.flat_map(units, & &1.items)
+
+  @doc "El elemento anterior y el siguiente en el recorrido del curso."
+  def neighbors(units, item_id) do
+    items = sequence(units)
+    index = Enum.find_index(items, &(&1.id == item_id))
+
+    case index do
+      nil -> {nil, nil}
+      0 -> {nil, Enum.at(items, 1)}
+      i -> {Enum.at(items, i - 1), Enum.at(items, i + 1)}
+    end
+  end
+
+  @doc "Cuántos elementos de la unidad están hechos, y cuántos tiene."
+  def unit_progress(%Unit{items: items}, done),
+    do: {Enum.count(items, &MapSet.member?(done, &1.id)), length(items)}
 end

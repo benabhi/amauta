@@ -615,6 +615,43 @@ defmodule AmautaWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Barra de avance (por ejemplo, cuánto de una unidad está hecho). Con
+  `label` la leen los lectores de pantalla.
+
+      <.progress_bar value={2} max={4} label="2 de 4 hechos" />
+  """
+  attr :value, :integer, required: true
+  attr :max, :integer, required: true
+  attr :label, :string, required: true
+  attr :class, :any, default: nil
+
+  def progress_bar(assigns) do
+    assigns =
+      assign(assigns,
+        percent: if(assigns.max > 0, do: round(assigns.value * 100 / assigns.max), else: 0)
+      )
+
+    ~H"""
+    <div
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax={@max}
+      aria-valuenow={@value}
+      aria-label={@label}
+      class={["h-1.5 overflow-hidden rounded-full bg-surface-sunken", @class]}
+    >
+      <div
+        class={[
+          "h-full rounded-full motion-safe:transition-[width] motion-safe:duration-base",
+          if(@percent == 100, do: "bg-chilca-deep", else: "bg-primary")
+        ]}
+        style={"width: #{@percent}%"}
+      />
+    </div>
+    """
+  end
+
   ## Insignias, avatares y detalles
 
   @doc """

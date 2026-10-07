@@ -70,7 +70,8 @@ defmodule Amauta.Actions do
     Amauta.Content.Actions.CreateItem,
     Amauta.Content.Actions.UpdateItem,
     Amauta.Content.Actions.DeleteItem,
-    Amauta.Content.Actions.MoveItem
+    Amauta.Content.Actions.MoveItem,
+    Amauta.Content.Actions.SetItemDone
   ]
 
   @doc "Todas las acciones."
