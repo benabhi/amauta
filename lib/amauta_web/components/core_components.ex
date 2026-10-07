@@ -132,6 +132,12 @@ defmodule AmautaWeb.CoreComponents do
   attr :label, :string, required: true
   attr :placeholder, :string, default: nil
 
+  attr :id, :string,
+    default: nil,
+    doc: "otro id vuelve a montar el editor (por ejemplo, vacío después de publicar)"
+
+  attr :debounce, :string, default: nil, doc: "demora del aviso de cambio (phx-debounce)"
+
   def rich_text_editor(assigns) do
     %{field: field} = assigns
 
@@ -144,7 +150,7 @@ defmodule AmautaWeb.CoreComponents do
 
     assigns =
       assign(assigns,
-        id: "#{field.id}-editor",
+        id: assigns.id || "#{field.id}-editor",
         value: value,
         errors: Enum.map(field.errors, &translate_error/1),
         commands: Jason.encode!(rich_text_commands()),
@@ -172,7 +178,13 @@ defmodule AmautaWeb.CoreComponents do
         data-placeholder={@placeholder || gettext("Write, or type «/» to add a block…")}
         class="rounded-control border border-line bg-surface focus-within:border-primary"
       >
-        <input type="hidden" name={@field.name} value={@value} data-editor-input />
+        <input
+          type="hidden"
+          name={@field.name}
+          value={@value}
+          phx-debounce={@debounce}
+          data-editor-input
+        />
         <div
           role="toolbar"
           aria-label={gettext("Text format")}
