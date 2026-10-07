@@ -4,19 +4,14 @@ defmodule AmautaWeb.E2E.CourseHeaderTest do
   arriba que el recuadro del código de inscripción. Se mide en un navegador
   real que los dos estén centrados en la misma línea.
   """
-  use PhoenixTest.Playwright.Case, async: true
-
-  import Amauta.AccountsFixtures
-  import Amauta.AuthorizationFixtures
+  use AmautaWeb.E2ECase
 
   alias Amauta.{Actions, Enrollments}
   alias Amauta.Courses.Actions.{CreateCourse, PublishCourse, UpdateCourseSettings}
   alias AmautaWeb.Paths
 
-  @moduletag :e2e
-
   setup do
-    user = user_fixture() |> set_password()
+    user = user_fixture()
     assign!(user, "institution_admin", :institution)
     admin = Amauta.Scope.for_user(institution(), user)
     {:ok, course} = Actions.run(CreateCourse, admin, %{"name" => "Programación I"})
@@ -41,16 +36,7 @@ defmodule AmautaWeb.E2E.CourseHeaderTest do
     %{conn: conn, user: user, course: course} = ctx
 
     conn
-    |> visit(Paths.log_in(institution()))
-    |> assert_has("[data-phx-main].phx-connected")
-    |> within("#login_form_password", fn session ->
-      session
-      |> fill_in("Email", with: user.email)
-      |> fill_in("Password", with: valid_user_password())
-      |> click_button("Log in only this time")
-    end)
-    |> assert_has("#my-courses")
-    |> visit(Paths.course(institution(), course))
+    |> log_in(user, Paths.course(institution(), course))
     |> assert_has("#enrollment-code")
     |> assert_has("#teaching-team")
     |> evaluate(
