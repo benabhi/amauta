@@ -309,8 +309,11 @@ defmodule AmautaWeb.CourseContentTest do
       conn = log_in_user(conn, s)
 
       {:ok, feed, _html} = live(conn, Paths.course(institution(), course))
-      assert has_element?(feed, "#content-card-#{card.id}", "Apunte de la unidad")
-      refute has_element?(feed, "#content-card-#{card.id} [phx-click=toggle_replies]")
+
+      # Va en las novedades del curso, no en la conversación.
+      assert has_element?(feed, "#feed-pinned #news-#{card.id}", "Apunte de la unidad")
+      refute has_element?(feed, "#feed-posts", "Apunte de la unidad")
+      refute has_element?(feed, "#news-#{card.id} [phx-click=toggle_replies]")
 
       {:ok, show, _html} =
         feed |> element("#post-open-#{card.id}") |> render_click() |> follow_redirect(conn)
