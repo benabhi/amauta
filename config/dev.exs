@@ -92,7 +92,12 @@ config :amauta, Amauta.Mailer,
 # no atraviesan de forma confiable el montaje desde Windows (RNF-DEV-004).
 config :phoenix_live_reload,
   backend: :fs_poll,
-  backend_opts: [interval: 500]
+  backend_opts: [interval: 500],
+  # Solo las carpetas de los patrones de recarga (config/runtime.exs). Por
+  # defecto vigila la raíz entera, con _build, deps y node_modules: decenas
+  # de miles de archivos revisados cada medio segundo, que frenaban cada
+  # pedido en desarrollo.
+  dirs: ["priv/static", "priv/gettext", "lib", "storybook"]
 
 # Inicio de sesión rápido con las personas de ejemplo (RNF-DEV-009).
 config :amauta, dev_login: true

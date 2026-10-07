@@ -20,7 +20,11 @@ defmodule AmautaWeb.Endpoint do
   @doc "Opciones de la cookie de sesión (las usan las pruebas en navegador)."
   def session_options, do: @session_options
 
+  # Sin recargador de código al conectar: el pedido HTTP de la página ya lo
+  # pasó, y repetirlo demoraba cada conexión en desarrollo (por el bind
+  # mount, ~1 s). Los cambios de código recargan la página (live_reload).
   socket "/live", Phoenix.LiveView.Socket,
+    code_reloader: false,
     websocket: [connect_info: [:user_agent, session: @session_options]],
     longpoll: [connect_info: [:user_agent, session: @session_options]]
 

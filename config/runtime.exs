@@ -37,9 +37,10 @@ if config_env() == :dev do
         ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg)$"E,
         # Gettext translations
         ~r"priv/gettext/.*\.po$"E,
-        # Router, Controllers, LiveViews and LiveComponents
-        ~r"lib/amauta_web/router\.ex$"E,
-        ~r"lib/amauta_web/(controllers|live|components)/.*\.(ex|heex)$"E,
+        # Todo el código web y del dominio: la recarga de la página es la que
+        # recompila (la conexión en vivo no pasa por el recargador).
+        ~r"lib/amauta_web/.*\.(ex|heex)$"E,
+        ~r"lib/amauta/.*\.ex$"E,
         ~r"storybook/.*\.exs$"E
       ]
     ]
