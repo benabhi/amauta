@@ -57,6 +57,9 @@ defmodule AmautaWeb.Paths do
   def course(tenant, course, tab, params),
     do: course(tenant, course, tab) <> "?" <> URI.encode_query(params)
 
+  @doc "Publicación fijada en el tablón del curso (ancla dentro de la pestaña)."
+  def pinned_post(tenant, course, post), do: course(tenant, course) <> "#pinned-#{post.id}"
+
   def import_enrollments(tenant, course), do: ~p"/#{slug(tenant)}/c/#{course.slug}/people/import"
   def join(tenant), do: ~p"/#{slug(tenant)}/join"
 

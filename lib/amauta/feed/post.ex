@@ -4,6 +4,10 @@ defmodule Amauta.Feed.Post do
   (`section_id`). Mientras se escribe es un borrador (`draft`, uno por
   persona y curso); al publicarla pasa a `published`. Editarla deja la marca
   `edited_at` (RF-TAB-003).
+
+  Fijada (RF-TAB-006): `pinned_at` con su orden (`pin_position`) y un
+  vencimiento opcional (`pin_expires_at`). Vencida, deja de estar fijada
+  (`Amauta.Feed.pinned?/2`).
   """
   use Amauta.Schema
 
@@ -18,6 +22,10 @@ defmodule Amauta.Feed.Post do
     field :published_at, :utc_datetime_usec
     field :edited_at, :utc_datetime_usec
     field :replies_enabled, :boolean, default: true
+    field :pinned_at, :utc_datetime_usec
+    field :pin_position, :integer
+    field :pin_expires_at, :utc_datetime_usec
+    field :pinned_by_id, Ecto.UUID
 
     belongs_to :course, Course
     belongs_to :author, User

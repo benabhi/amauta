@@ -1,5 +1,5 @@
 defmodule Amauta.FeedTest do
-  @moduledoc "Tablón: publicar, borradores, destinatarios, respuestas, moderación, visibilidad y permisos (RF-TAB-001 a 004, 007 y 008)."
+  @moduledoc "Tablón: publicar, borradores, destinatarios, respuestas, fijadas, moderación, visibilidad y permisos (RF-TAB-001 a 004 y 006 a 008)."
   use Amauta.DataCase, async: true
 
   import Amauta.AccountsFixtures
@@ -14,7 +14,9 @@ defmodule Amauta.FeedTest do
     DeleteReply,
     HideReply,
     MuteMember,
+    PinPost,
     PublishPost,
+    ReorderPinned,
     ReplyToPost,
     SaveDraft,
     SetRepliesEnabled,
@@ -395,6 +397,100 @@ defmodule Amauta.FeedTest do
 
       assert {:error, :forbidden} = Actions.run(MuteMember, teacher, mute.(lead))
       assert {:error, :forbidden} = Actions.run(MuteMember, teacher, mute.(teacher))
+    end
+  end
+
+  defp pin(scope, post, attrs \\ %{}) do
+    Actions.run(PinPost, scope, Map.merge(%{"post_id" => post.id, "pinned" => true}, attrs))
+  end
+
+  defp pinned_texts(scope, course) do
+    scope |> Feed.list_pinned(course) |> Enum.map(&Amauta.RichText.to_text(&1.body))
+  end
+
+  describe "fijadas" do
+    test "quien modera fija; van arriba en orden y salen del listado común", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, one} = publish(teacher, course, "Uno")
+      {:ok, two} = publish(teacher, course, "Dos")
+      {:ok, _} = publish(teacher, course, "Tres")
+      Phoenix.PubSub.subscribe(Amauta.PubSub, Feed.topic(course))
+
+      assert {:error, :forbidden} = pin(member(course, "student"), one)
+      assert {:ok, %{pin_position: 1}} = pin(teacher, two)
+      assert {:ok, %{pin_position: 2}} = pin(teacher, one)
+      assert_received {:feed, :pinned, _}
+
+      assert pinned_texts(teacher, course) == ["Dos", "Uno"]
+      assert texts(teacher, course) == ["Tres"]
+      assert "feed.post.pin" in Enum.map(Audit.list_events(teacher), & &1.action)
+    end
+
+    test "desfijar la devuelve al listado común", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Uno")
+      {:ok, _} = pin(teacher, post)
+      {:ok, _} = pin(teacher, post, %{"pinned" => false})
+
+      assert pinned_texts(teacher, course) == []
+      assert texts(teacher, course) == ["Uno"]
+    end
+
+    test "se ordenan a mano, sin mover las que la persona no ve", ctx do
+      %{course: course, a: a, b: b} = ctx
+      lead = member(course, "course_lead")
+      {:ok, all} = publish(lead, course, "Todos")
+      {:ok, for_a} = publish(lead, course, "Para A", a)
+      {:ok, for_b} = publish(lead, course, "Para B", b)
+      for post <- [all, for_a, for_b], do: {:ok, _} = pin(lead, post)
+
+      params = %{"course_id" => course.id, "post_ids" => [for_b.id, all.id]}
+      assert {:error, :forbidden} = Actions.run(ReorderPinned, member(course, "student"), params)
+      assert {:ok, _} = Actions.run(ReorderPinned, lead, params)
+
+      # Las que faltan en la lista quedan al final, en su orden.
+      assert pinned_texts(lead, course) == ["Para B", "Todos", "Para A"]
+      assert pinned_texts(member(course, "student", a), course) == ["Todos", "Para A"]
+    end
+
+    test "vencida, deja de estar fijada sola", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Inscripción abierta")
+      tomorrow = DateTime.add(DateTime.utc_now(), 1, :day)
+      {:ok, pinned} = pin(teacher, post, %{"expires_at" => tomorrow})
+      assert pinned_texts(teacher, course) == ["Inscripción abierta"]
+
+      pinned
+      |> Ecto.Changeset.change(pin_expires_at: DateTime.add(DateTime.utc_now(), -1, :minute))
+      |> Amauta.Repo.update!(Amauta.Tenancy.opts(teacher))
+
+      assert pinned_texts(teacher, course) == []
+      assert texts(teacher, course) == ["Inscripción abierta"]
+    end
+
+    test "cambiar el vencimiento no la mueve; tiene que ser a futuro", %{course: course} do
+      teacher = member(course, "teacher")
+      {:ok, one} = publish(teacher, course, "Uno")
+      {:ok, two} = publish(teacher, course, "Dos")
+      {:ok, _} = pin(teacher, one)
+      {:ok, _} = pin(teacher, two)
+
+      next_week = DateTime.add(DateTime.utc_now(), 7, :day)
+      assert {:ok, %{pin_position: 1}} = pin(teacher, one, %{"expires_at" => next_week})
+
+      yesterday = DateTime.add(DateTime.utc_now(), -1, :day)
+      assert {:error, changeset} = pin(teacher, one, %{"expires_at" => yesterday})
+      assert %{expires_at: ["must be in the future"]} = errors_on(changeset)
+    end
+
+    test "en un curso archivado no se fija", %{admin: admin, course: course} do
+      teacher = member(course, "teacher")
+      {:ok, post} = publish(teacher, course, "Uno")
+
+      {:ok, _} =
+        Actions.run(Amauta.Courses.Actions.ArchiveCourse, admin, %{"course_id" => course.id})
+
+      assert {:error, :archived} = pin(teacher, post)
     end
   end
 end

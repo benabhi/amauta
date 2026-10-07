@@ -43,6 +43,11 @@ defmodule Storybook.Components.Input do
       %Variation{
         id: :checkbox,
         attributes: %{name: "remember", type: "checkbox", label: "Recordarme"}
+      },
+      %Variation{
+        id: :inline,
+        description: "En línea: etiqueta al costado y sin margen, para barras de herramientas",
+        attributes: %{name: "expires_on", type: "date", label: "Desfijar el", inline: true}
       }
     ]
   end

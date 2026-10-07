@@ -60,6 +60,8 @@ defmodule Amauta.Actions do
     Amauta.Feed.Actions.DeleteReply,
     Amauta.Feed.Actions.HideReply,
     Amauta.Feed.Actions.SetRepliesEnabled,
+    Amauta.Feed.Actions.PinPost,
+    Amauta.Feed.Actions.ReorderPinned,
     Amauta.Feed.Actions.MuteMember
   ]
 

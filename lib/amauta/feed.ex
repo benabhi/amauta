@@ -23,6 +23,14 @@ defmodule Amauta.Feed do
 
   @page 30
 
+  # Fijada y vigente (RF-TAB-006).
+  defmacrop pinned(p, now) do
+    quote do
+      not is_nil(unquote(p).pinned_at) and
+        (is_nil(unquote(p).pin_expires_at) or unquote(p).pin_expires_at > unquote(now))
+    end
+  end
+
   ## Permisos
 
   @doc "Ve todas las publicaciones del curso (no está limitado a una comisión)."
@@ -100,17 +108,51 @@ defmodule Amauta.Feed do
   @doc """
   Publicaciones visibles del curso, de la más reciente a la más vieja, con
   autor y comisión. Con `"section"`, solo las de esa comisión y las del
-  curso entero (el filtro del encabezado, RF-COM-003).
+  curso entero (el filtro del encabezado, RF-COM-003). Las fijadas van
+  aparte (`list_pinned/3`).
   """
   def list_posts(%Scope{} = scope, %Course{} = course, filters \\ %{}) do
     Post
     |> where([p], p.course_id == ^course.id and p.status == "published")
+    |> where([p], not pinned(p, ^DateTime.utc_now()))
     |> visible_to(scope, course)
     |> filter_section(filters["section"])
     |> order_by([p], desc: p.published_at, desc: p.id)
     |> limit(@page)
     |> preload(^post_preloads())
     |> Repo.all(Tenancy.opts(scope))
+  end
+
+  @doc """
+  Publicaciones fijadas y vigentes que la persona ve (RF-TAB-006), en el
+  orden que eligió el equipo docente. Acepta el mismo filtro de comisión
+  que `list_posts/3`.
+  """
+  def list_pinned(%Scope{} = scope, %Course{} = course, filters \\ %{}) do
+    Post
+    |> where([p], p.course_id == ^course.id and p.status == "published")
+    |> where([p], pinned(p, ^DateTime.utc_now()))
+    |> visible_to(scope, course)
+    |> filter_section(filters["section"])
+    |> order_by([p], asc: p.pin_position, asc: p.pinned_at)
+    |> preload(^post_preloads())
+    |> Repo.all(Tenancy.opts(scope))
+  end
+
+  @doc "La publicación está fijada y no venció."
+  def pinned?(%Post{pinned_at: nil}, _now), do: false
+  def pinned?(%Post{pin_expires_at: nil}, _now), do: true
+  def pinned?(%Post{pin_expires_at: expires}, now), do: DateTime.compare(expires, now) == :gt
+
+  @doc "IDs de las fijadas vigentes del curso, en orden (sin filtrar por visibilidad)."
+  def pinned_ids(tenant, %Course{id: course_id}) do
+    from(p in Post,
+      where: p.course_id == ^course_id and p.status == "published",
+      where: pinned(p, ^DateTime.utc_now()),
+      order_by: [asc: p.pin_position, asc: p.pinned_at],
+      select: p.id
+    )
+    |> Repo.all(Tenancy.opts(tenant))
   end
 
   # Autor, comisión y respuestas en orden, con sus autores.
