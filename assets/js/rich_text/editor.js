@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import {Callout, MathBlock, VideoEmbed} from "./nodes"
 import {SlashMenu} from "./slash_menu"
+import {MentionPeople} from "./mention"
 import {ensureKatexCss} from "./katex_css"
 
 const readJSON = (text, fallback) => {
@@ -25,6 +26,7 @@ export const mountEditor = (root) => {
   const linkInput = root.querySelector("[data-link-input]")
   const labels = readJSON(root.dataset.labels, {})
   const commands = readJSON(root.dataset.commands, [])
+  const people = readJSON(root.dataset.mentions, null)
 
   // Barra de herramientas: formato del texto, enlace y deshacer.
   const buttons = root.querySelectorAll("[data-command]")
@@ -58,6 +60,7 @@ export const mountEditor = (root) => {
       MathBlock(labels),
       VideoEmbed(labels),
       SlashMenu(commands),
+      ...(people ? [MentionPeople(people)] : []),
     ],
     editorProps: {
       attributes: {

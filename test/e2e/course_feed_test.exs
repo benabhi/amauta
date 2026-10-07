@@ -1,5 +1,5 @@
 defmodule AmautaWeb.E2E.CourseFeedTest do
-  @moduledoc "Tablón en un navegador real: escribir con el editor de bloques y publicar."
+  @moduledoc "Tablón en un navegador real: escribir con el editor de bloques, mencionar y publicar."
   use AmautaWeb.E2ECase
 
   alias Amauta.{Actions, Enrollments}
@@ -36,5 +36,22 @@ defmodule AmautaWeb.E2E.CourseFeedTest do
     |> assert_has("#feed-posts article strong", text: "por paro")
     |> assert_has("#feed-posts article", text: "Mañana no hay clase")
     |> refute_has("#feed-composer .ProseMirror", text: "Mañana")
+  end
+
+  test "menciona con «@» a alguien del curso", %{conn: conn, teacher: teacher, course: course} do
+    student = user_fixture(%{first_name: "Grace", last_name: "Hopper"})
+
+    {:ok, _} =
+      Enrollments.enroll(institution(), course, student.id, %{role: "student", origin: "manual"})
+
+    conn
+    |> log_in(teacher, Paths.course(institution(), course))
+    |> assert_has(@editor)
+    |> click(@editor)
+    |> type(@editor, "Felicitaciones @gra")
+    |> assert_has(".rich-slash-item", text: "Grace Hopper")
+    |> press(@editor, "Enter")
+    |> click_button("Publish")
+    |> assert_has("#feed-posts article .rich-mention", text: "@Grace Hopper")
   end
 end

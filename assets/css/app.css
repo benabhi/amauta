@@ -272,6 +272,15 @@
 
   .rich-math { overflow-x: auto; text-align: center; font-family: var(--font-mono); }
 
+  .rich-mention {
+    color: var(--anil-deep);
+    background: var(--anil-soft);
+    border-radius: var(--radius-control);
+    padding: 0 0.25em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   .rich-video {
     position: relative;
     aspect-ratio: 16 / 9;

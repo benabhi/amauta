@@ -138,6 +138,10 @@ defmodule AmautaWeb.CoreComponents do
 
   attr :debounce, :string, default: nil, doc: "demora del aviso de cambio (phx-debounce)"
 
+  attr :mentions, :list,
+    default: nil,
+    doc: "personas que se pueden mencionar con «@»: [%{id: id, label: nombre}]"
+
   def rich_text_editor(assigns) do
     %{field: field} = assigns
 
@@ -154,6 +158,7 @@ defmodule AmautaWeb.CoreComponents do
         value: value,
         errors: Enum.map(field.errors, &translate_error/1),
         commands: Jason.encode!(rich_text_commands()),
+        mention_list: assigns.mentions && Jason.encode!(assigns.mentions),
         labels:
           Jason.encode!(%{
             slash: gettext("Blocks"),
@@ -161,7 +166,8 @@ defmodule AmautaWeb.CoreComponents do
             video: gettext("Video"),
             videoUrl: gettext("Video address"),
             videoHint: gettext("Paste a YouTube or Vimeo link and press Enter."),
-            videoInvalid: gettext("That link is not from YouTube or Vimeo.")
+            videoInvalid: gettext("That link is not from YouTube or Vimeo."),
+            mentions: gettext("People")
           })
       )
 
@@ -175,6 +181,7 @@ defmodule AmautaWeb.CoreComponents do
         data-commands={@commands}
         data-labels={@labels}
         data-labelledby={"#{@id}-label"}
+        data-mentions={@mention_list}
         data-placeholder={@placeholder || gettext("Write, or type «/» to add a block…")}
         class="rounded-control border border-line bg-surface focus-within:border-primary"
       >

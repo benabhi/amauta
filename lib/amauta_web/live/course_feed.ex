@@ -14,12 +14,37 @@ defmodule AmautaWeb.CourseFeed do
 
   alias Amauta.Accounts.User
   alias Amauta.{Actions, Feed}
-  alias Amauta.Feed.Actions.{DeletePost, PublishPost, SaveDraft, UpdatePost}
+
+  alias Amauta.Feed.Actions.{
+    DeletePost,
+    DeleteReply,
+    HideReply,
+    MuteMember,
+    PublishPost,
+    ReplyToPost,
+    SaveDraft,
+    SetRepliesEnabled,
+    UpdatePost,
+    UpdateReply
+  }
+
   alias AmautaWeb.{Format, Paths}
 
   @impl true
-  def mount(socket),
-    do: {:ok, assign(socket, editor_key: 0, editing: nil, edit_form: nil, loaded: false)}
+  def mount(socket) do
+    {:ok,
+     assign(socket,
+       editor_key: 0,
+       editing: nil,
+       edit_form: nil,
+       loaded: false,
+       replying: nil,
+       reply_form: nil,
+       reply_key: 0,
+       editing_reply: nil,
+       edit_reply_form: nil
+     )}
+  end
 
   @impl true
   def update(%{feed_event: {event, post}}, socket), do: {:ok, apply_event(socket, event, post)}
@@ -34,8 +59,11 @@ defmodule AmautaWeb.CourseFeed do
       |> assign(
         can_post: Feed.can_post?(scope, course),
         can_moderate: Feed.can_moderate?(scope, course),
+        can_reply: Feed.can_reply?(scope, course),
+        muted: Feed.muted_ids(scope, course),
         timezone: scope.user.timezone || scope.institution.timezone
       )
+      |> assign_new(:mentions, fn -> mention_candidates(scope, course) end)
 
     socket =
       if socket.assigns.loaded and not filter_changed,
@@ -43,6 +71,14 @@ defmodule AmautaWeb.CourseFeed do
         else: load(socket)
 
     {:ok, socket}
+  end
+
+  # Personas que se pueden mencionar con «@» (RF-TAB-004): las del curso.
+  defp mention_candidates(scope, course) do
+    {teaching, students} = Amauta.Enrollments.participants(scope, course)
+
+    for enrollment <- teaching ++ students,
+        do: %{id: enrollment.user_id, label: User.display_name(enrollment.user)}
   end
 
   defp load(socket) do
@@ -102,8 +138,12 @@ defmodule AmautaWeb.CourseFeed do
         if filter not in [nil, ""] and visible.section_id not in [nil, filter] do
           socket
         else
+          # Lo nuevo va arriba; lo actualizado (edición, respuestas) queda en
+          # su lugar.
           socket =
-            stream_insert(socket, :posts, visible, at: if(event == :published, do: 0, else: -1))
+            if event == :published,
+              do: stream_insert(socket, :posts, visible, at: 0),
+              else: stream_insert(socket, :posts, visible)
 
           socket = assign(socket, empty: false)
 
@@ -171,7 +211,7 @@ defmodule AmautaWeb.CourseFeed do
 
     case Actions.run(UpdatePost, socket.assigns.current_scope, params) do
       {:ok, post} ->
-        {:noreply, socket |> assign(editing: nil, edit_form: nil) |> stream_insert(:posts, post)}
+        {:noreply, socket |> assign(editing: nil, edit_form: nil) |> refresh_post(post.id)}
 
       {:error, _} ->
         {:noreply, put_flash_message(socket, gettext("That could not be done."))}
@@ -184,6 +224,125 @@ defmodule AmautaWeb.CourseFeed do
       {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
     end
   end
+
+  ## Respuestas (RF-TAB-004) y moderación (RF-TAB-007)
+
+  def handle_event("reply", %{"post" => post_id} = params, socket) do
+    target = {post_id, blank_to_nil(params["parent"])}
+
+    {:noreply,
+     socket
+     |> assign(replying: target, reply_form: to_form(%{"body" => nil}, as: "reply"))
+     |> update(:reply_key, &(&1 + 1))
+     |> refresh_post(post_id)}
+  end
+
+  def handle_event("cancel_reply", _params, socket) do
+    {post_id, _parent} = socket.assigns.replying
+    {:noreply, socket |> assign(replying: nil, reply_form: nil) |> refresh_post(post_id)}
+  end
+
+  def handle_event("send_reply", %{"reply" => %{"body" => body}}, socket) do
+    {post_id, parent_id} = socket.assigns.replying
+    params = %{"post_id" => post_id, "parent_id" => parent_id, "body" => body}
+
+    case Actions.run(ReplyToPost, socket.assigns.current_scope, params) do
+      {:ok, _reply} ->
+        {:noreply, socket |> assign(replying: nil, reply_form: nil) |> refresh_post(post_id)}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash_message(socket, gettext("Write something first."))}
+
+      {:error, _} ->
+        {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  def handle_event("edit_reply", %{"id" => id, "post" => post_id}, socket) do
+    case Feed.get_reply(socket.assigns.current_scope, id) do
+      %{body: body} ->
+        {:noreply,
+         socket
+         |> assign(
+           editing_reply: id,
+           edit_reply_form: to_form(%{"body" => body}, as: "edit_reply")
+         )
+         |> refresh_post(post_id)}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_edit_reply", %{"post" => post_id}, socket),
+    do:
+      {:noreply,
+       socket |> assign(editing_reply: nil, edit_reply_form: nil) |> refresh_post(post_id)}
+
+  def handle_event("save_reply", %{"edit_reply" => %{"body" => body}}, socket) do
+    params = %{"reply_id" => socket.assigns.editing_reply, "body" => body}
+
+    case Actions.run(UpdateReply, socket.assigns.current_scope, params) do
+      {:ok, reply} ->
+        {:noreply,
+         socket
+         |> assign(editing_reply: nil, edit_reply_form: nil)
+         |> refresh_post(reply.post_id)}
+
+      {:error, _} ->
+        {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  def handle_event("delete_reply", %{"id" => id}, socket),
+    do: run_reply_action(socket, DeleteReply, %{"reply_id" => id})
+
+  def handle_event("hide_reply", %{"id" => id, "hidden" => hidden}, socket),
+    do: run_reply_action(socket, HideReply, %{"reply_id" => id, "hidden" => hidden})
+
+  def handle_event("toggle_replies", %{"post" => id, "enabled" => enabled}, socket),
+    do: run_reply_action(socket, SetRepliesEnabled, %{"post_id" => id, "enabled" => enabled})
+
+  def handle_event("mute", %{"user" => user_id, "muted" => muted, "post" => post_id}, socket) do
+    params = %{"course_id" => socket.assigns.course.id, "user_id" => user_id, "muted" => muted}
+
+    case Actions.run(MuteMember, socket.assigns.current_scope, params) do
+      {:ok, _} ->
+        message =
+          if muted == "true",
+            do: gettext("Muted in this feed: they can read, but not post or reply."),
+            else: gettext("They can post and reply again.")
+
+        send(self(), {:put_flash, :info, message})
+
+        {:noreply,
+         socket
+         |> assign(muted: Feed.muted_ids(socket.assigns.current_scope, socket.assigns.course))
+         |> refresh_post(post_id)}
+
+      {:error, _} ->
+        {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  # El cambio llega a todos por el tema del tablón; acá no hace falta más.
+  defp run_reply_action(socket, action, params) do
+    case Actions.run(action, socket.assigns.current_scope, params) do
+      {:ok, _} -> {:noreply, socket}
+      {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  # Vuelve a dibujar una publicación (cambió el estado de sus respuestas).
+  defp refresh_post(socket, post_id) do
+    case Feed.get_visible(socket.assigns.current_scope, socket.assigns.course, post_id) do
+      nil -> socket
+      post -> stream_insert(socket, :posts, post)
+    end
+  end
+
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(value), do: value
 
   # Los avisos van a la vista del curso, que es la que muestra los flash.
   defp put_flash_message(socket, message) do
@@ -209,6 +368,7 @@ defmodule AmautaWeb.CourseFeed do
             label={gettext("New post")}
             placeholder={gettext_term(@current_scope, :course, "Share something with the %{term}…")}
             debounce="1000"
+            mentions={@mentions}
           />
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div :if={length(@targets) > 1} class="w-60">
@@ -252,15 +412,7 @@ defmodule AmautaWeb.CourseFeed do
 
         <ol id="feed-posts" phx-update="stream" class="grid gap-4" aria-label={gettext("Feed")}>
           <li :for={{dom_id, post} <- @streams.posts} id={dom_id}>
-            <.post
-              post={post}
-              current_scope={@current_scope}
-              timezone={@timezone}
-              can_moderate={@can_moderate}
-              editing={@editing == post.id}
-              edit_form={@edit_form}
-              myself={@myself}
-            />
+            <.post post={post} ui={ui(assigns)} />
           </li>
         </ol>
       </div>
@@ -299,19 +451,44 @@ defmodule AmautaWeb.CourseFeed do
     end)
   end
 
+  # Estado de la interacción que necesitan las publicaciones del stream.
+  defp ui(assigns) do
+    Map.take(assigns, [
+      :current_scope,
+      :timezone,
+      :can_moderate,
+      :can_reply,
+      :muted,
+      :editing,
+      :edit_form,
+      :replying,
+      :reply_form,
+      :reply_key,
+      :editing_reply,
+      :edit_reply_form,
+      :mentions,
+      :myself
+    ])
+  end
+
   attr :post, :map, required: true
-  attr :current_scope, :map, required: true
-  attr :timezone, :string, required: true
-  attr :can_moderate, :boolean, required: true
-  attr :editing, :boolean, required: true
-  attr :edit_form, :any, required: true
-  attr :myself, :any, required: true
+  attr :ui, :map, required: true
 
   defp post(assigns) do
+    %{post: post, ui: ui} = assigns
+    user_id = ui.current_scope.user.id
+    replies = Enum.group_by(post.replies, & &1.parent_id)
+
     assigns =
       assign(assigns,
-        mine: assigns.post.author_id == assigns.current_scope.user.id,
-        author: assigns.post.author
+        mine: post.author_id == user_id,
+        author: post.author,
+        editing: ui.editing == post.id,
+        top_replies: Map.get(replies, nil, []),
+        children: replies,
+        replies_count: length(post.replies),
+        can_toggle: post.author_id == user_id or ui.can_moderate,
+        can_answer: ui.can_reply and post.replies_enabled
       )
 
     ~H"""
@@ -320,22 +497,25 @@ defmodule AmautaWeb.CourseFeed do
         <.avatar
           :if={@author}
           name={User.display_name(@author)}
-          src={Paths.avatar(@current_scope, @author)}
+          src={Paths.avatar(@ui.current_scope, @author)}
           size="md"
         />
         <div class="min-w-0 flex-1">
           <p class="font-semibold">
             {(@author && User.display_name(@author)) || gettext("Former member")}
+            <.badge :if={@author && MapSet.member?(@ui.muted, @author.id)} family="nogal" class="ms-1">
+              {gettext("muted")}
+            </.badge>
           </p>
           <p class="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted">
             <time datetime={DateTime.to_iso8601(@post.published_at)}>
-              {Format.datetime(@post.published_at, @timezone, :short)}
+              {Format.datetime(@post.published_at, @ui.timezone, :short)}
             </time>
             <span :if={@post.edited_at}>· {gettext("edited")}</span>
             <.badge :if={@post.section} family="airampo">{@post.section.name}</.badge>
           </p>
         </div>
-        <div :if={(@mine or @can_moderate) and not @editing} class="flex gap-1">
+        <div :if={(@mine or @ui.can_moderate) and not @editing} class="flex gap-1">
           <.icon_button
             :if={@mine}
             icon="pencil-simple"
@@ -343,7 +523,7 @@ defmodule AmautaWeb.CourseFeed do
             size="sm"
             phx-click="edit"
             phx-value-id={@post.id}
-            phx-target={@myself}
+            phx-target={@ui.myself}
           />
           <.icon_button
             icon="trash"
@@ -351,34 +531,293 @@ defmodule AmautaWeb.CourseFeed do
             size="sm"
             phx-click="delete"
             phx-value-id={@post.id}
-            phx-target={@myself}
+            phx-target={@ui.myself}
             data-confirm={gettext("Delete this post?")}
           />
+          <.mute_button :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
         </div>
       </header>
 
       <.form
         :if={@editing}
-        for={@edit_form}
+        for={@ui.edit_form}
         id={"edit-post-#{@post.id}"}
         phx-submit="save_edit"
-        phx-target={@myself}
+        phx-target={@ui.myself}
       >
         <.rich_text_editor
           id={"edit-editor-#{@post.id}"}
-          field={@edit_form[:body]}
+          field={@ui.edit_form[:body]}
           label={gettext("Edit")}
+          mentions={@ui.mentions}
         />
         <div class="flex gap-2">
           <.button phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
-          <.button type="button" variant="ghost" phx-click="cancel_edit" phx-target={@myself}>
+          <.button type="button" variant="ghost" phx-click="cancel_edit" phx-target={@ui.myself}>
             {gettext("Cancel")}
           </.button>
         </div>
       </.form>
 
       <.rich_text :if={!@editing} id={"post-body-#{@post.id}"} doc={@post.body} />
+
+      <section
+        id={"replies-#{@post.id}"}
+        class="mt-4 border-t border-line pt-3"
+        aria-label={gettext("Replies")}
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-ink-muted">
+          <span>{ngettext("%{count} reply", "%{count} replies", @replies_count)}</span>
+          <span :if={!@post.replies_enabled}>· {gettext("Replies are closed")}</span>
+          <.button
+            :if={@can_toggle}
+            type="button"
+            variant="ghost"
+            size="sm"
+            phx-click="toggle_replies"
+            phx-value-post={@post.id}
+            phx-value-enabled={to_string(!@post.replies_enabled)}
+            phx-target={@ui.myself}
+            class="ms-auto"
+          >
+            {if @post.replies_enabled, do: gettext("Close replies"), else: gettext("Open replies")}
+          </.button>
+        </div>
+
+        <ul :if={@top_replies != []} class="mt-2 grid gap-3">
+          <li :for={reply <- @top_replies} id={"reply-#{reply.id}"}>
+            <.reply reply={reply} post={@post} ui={@ui} can_answer={@can_answer} />
+            <ul
+              :if={Map.has_key?(@children, reply.id)}
+              class="mt-3 grid gap-3 border-s-2 border-line ps-4"
+            >
+              <li :for={child <- @children[reply.id]} id={"reply-#{child.id}"}>
+                <.reply reply={child} post={@post} ui={@ui} can_answer={@can_answer} />
+              </li>
+            </ul>
+            <.reply_form
+              :if={@ui.replying == {@post.id, reply.id}}
+              post={@post}
+              ui={@ui}
+            />
+          </li>
+        </ul>
+
+        <.reply_form :if={@ui.replying == {@post.id, nil}} post={@post} ui={@ui} />
+
+        <.button
+          :if={@can_answer and @ui.replying == nil}
+          type="button"
+          variant="ghost"
+          size="sm"
+          icon="chats-circle"
+          phx-click="reply"
+          phx-value-post={@post.id}
+          phx-target={@ui.myself}
+          class="mt-2"
+        >
+          {gettext("Reply")}
+        </.button>
+      </section>
     </article>
+    """
+  end
+
+  attr :reply, :map, required: true
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+  attr :can_answer, :boolean, required: true
+
+  defp reply(assigns) do
+    %{reply: reply, ui: ui} = assigns
+    mine = reply.author_id == ui.current_scope.user.id
+
+    assigns =
+      assign(assigns,
+        mine: mine,
+        author: reply.author,
+        editing: ui.editing_reply == reply.id,
+        hidden: not is_nil(reply.hidden_at),
+        # El contenido oculto lo ven su autor y quien modera.
+        show_body: is_nil(reply.hidden_at) or mine or ui.can_moderate
+      )
+
+    ~H"""
+    <div class="flex items-start gap-3">
+      <.avatar
+        :if={@author}
+        name={User.display_name(@author)}
+        src={Paths.avatar(@ui.current_scope, @author)}
+        size="sm"
+      />
+      <div class="min-w-0 flex-1">
+        <p class="flex flex-wrap items-center gap-x-2 text-sm">
+          <span class="font-semibold">
+            {(@author && User.display_name(@author)) || gettext("Former member")}
+          </span>
+          <time class="text-ink-muted" datetime={DateTime.to_iso8601(@reply.inserted_at)}>
+            {Format.datetime(@reply.inserted_at, @ui.timezone, :short)}
+          </time>
+          <span :if={@reply.edited_at} class="text-ink-muted">· {gettext("edited")}</span>
+          <.badge :if={@hidden} family="nogal">{gettext("hidden")}</.badge>
+        </p>
+
+        <p :if={!@show_body} class="text-sm italic text-ink-muted">
+          {gettext("This reply was hidden by the teaching team.")}
+        </p>
+
+        <.form
+          :if={@editing}
+          for={@ui.edit_reply_form}
+          id={"edit-reply-#{@reply.id}"}
+          phx-submit="save_reply"
+          phx-target={@ui.myself}
+        >
+          <.rich_text_editor
+            id={"edit-reply-editor-#{@reply.id}"}
+            field={@ui.edit_reply_form[:body]}
+            label={gettext("Edit reply")}
+            mentions={@ui.mentions}
+          />
+          <div class="flex gap-2">
+            <.button size="sm" phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
+            <.button
+              type="button"
+              size="sm"
+              variant="ghost"
+              phx-click="cancel_edit_reply"
+              phx-value-post={@post.id}
+              phx-target={@ui.myself}
+            >
+              {gettext("Cancel")}
+            </.button>
+          </div>
+        </.form>
+
+        <.rich_text
+          :if={@show_body and not @editing}
+          id={"reply-body-#{@reply.id}"}
+          doc={@reply.body}
+          class="text-sm"
+        />
+
+        <div :if={not @editing} class="mt-1 flex flex-wrap gap-1">
+          <.button
+            :if={@can_answer and @ui.replying == nil}
+            type="button"
+            variant="ghost"
+            size="sm"
+            phx-click="reply"
+            phx-value-post={@post.id}
+            phx-value-parent={@reply.id}
+            phx-target={@ui.myself}
+          >
+            {gettext("Reply")}
+          </.button>
+          <.icon_button
+            :if={@mine}
+            icon="pencil-simple"
+            label={gettext("Edit reply")}
+            size="sm"
+            phx-click="edit_reply"
+            phx-value-id={@reply.id}
+            phx-value-post={@post.id}
+            phx-target={@ui.myself}
+          />
+          <.icon_button
+            :if={@ui.can_moderate}
+            icon={if @hidden, do: "eye", else: "eye-slash"}
+            label={if @hidden, do: gettext("Show reply"), else: gettext("Hide reply")}
+            size="sm"
+            phx-click="hide_reply"
+            phx-value-id={@reply.id}
+            phx-value-hidden={to_string(!@hidden)}
+            phx-target={@ui.myself}
+          />
+          <.icon_button
+            :if={@mine or @ui.can_moderate}
+            icon="trash"
+            label={gettext("Delete reply")}
+            size="sm"
+            phx-click="delete_reply"
+            phx-value-id={@reply.id}
+            phx-target={@ui.myself}
+            data-confirm={gettext("Delete this reply?")}
+          />
+          <.mute_button :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+
+  defp reply_form(assigns) do
+    ~H"""
+    <.form
+      for={@ui.reply_form}
+      id={"reply-form-#{@post.id}"}
+      phx-submit="send_reply"
+      phx-target={@ui.myself}
+      class="mt-3"
+    >
+      <.rich_text_editor
+        id={"reply-editor-#{@post.id}-#{@ui.reply_key}"}
+        field={@ui.reply_form[:body]}
+        label={gettext("Your reply")}
+        placeholder={gettext("Write a reply. Use «@» to mention someone.")}
+        mentions={@ui.mentions}
+      />
+      <div class="flex gap-2">
+        <.button size="sm" icon="paper-plane-tilt" phx-disable-with={gettext("Sending...")}>
+          {gettext("Reply")}
+        </.button>
+        <.button
+          type="button"
+          size="sm"
+          variant="ghost"
+          phx-click="cancel_reply"
+          phx-target={@ui.myself}
+        >
+          {gettext("Cancel")}
+        </.button>
+      </div>
+    </.form>
+    """
+  end
+
+  attr :user, :map, required: true
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+
+  # Silenciar a alguien en el tablón (RF-TAB-007), para quien modera.
+  defp mute_button(assigns) do
+    assigns = assign(assigns, muted: MapSet.member?(assigns.ui.muted, assigns.user.id))
+
+    ~H"""
+    <.icon_button
+      :if={@ui.can_moderate}
+      icon={if @muted, do: "user", else: "lock"}
+      label={
+        if @muted,
+          do: gettext("Let %{name} post again", name: User.display_name(@user)),
+          else: gettext("Mute %{name} in this feed", name: User.display_name(@user))
+      }
+      size="sm"
+      phx-click="mute"
+      phx-value-user={@user.id}
+      phx-value-muted={to_string(!@muted)}
+      phx-value-post={@post.id}
+      phx-target={@ui.myself}
+      data-confirm={
+        !@muted &&
+          gettext("Mute %{name}? They will be able to read, but not post or reply here.",
+            name: User.display_name(@user)
+          )
+      }
+    />
     """
   end
 end

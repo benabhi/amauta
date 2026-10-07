@@ -1,5 +1,5 @@
 defmodule AmautaWeb.CourseFeedTest do
-  @moduledoc "Pestaña Tablón: publicar, borrador, tiempo real, edición y permisos."
+  @moduledoc "Pestaña Tablón: publicar, borrador, tiempo real, edición, respuestas, moderación y permisos."
   use AmautaWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -132,5 +132,149 @@ defmodule AmautaWeb.CourseFeedTest do
     assert has_element?(view, "#feed-posts article", "Clase el martes")
     assert has_element?(view, "#feed-posts article", "edited")
     assert [%{edited_at: %DateTime{}}] = Feed.list_posts(scope, course)
+  end
+
+  defp publish(user, course, text) do
+    {:ok, post} =
+      Actions.run(PublishPost, Amauta.Scope.for_user(institution(), user), %{
+        "course_id" => course.id,
+        "body" => body(text)
+      })
+
+    post
+  end
+
+  defp open(conn, user, course),
+    do: conn |> log_in_user(user) |> live(Paths.course(institution(), course))
+
+  describe "respuestas" do
+    test "un estudiante responde y la respuesta aparece en la publicación", %{
+      conn: conn,
+      course: course
+    } do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      post = publish(teacher, course, "¿Dudas?")
+      {:ok, view, _html} = open(conn, student, course)
+
+      view |> element(~s(#replies-#{post.id} > button[phx-click="reply"])) |> render_click()
+
+      view
+      |> form("#reply-form-#{post.id}")
+      |> render_submit(%{reply: %{body: body("Sí, el punto 2")}})
+
+      assert has_element?(view, "#replies-#{post.id} li", "Sí, el punto 2")
+      assert has_element?(view, "#replies-#{post.id}", "1 reply")
+      refute has_element?(view, "#reply-form-#{post.id}")
+    end
+
+    test "responder a una respuesta la anida debajo", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      post = publish(teacher, course, "Consultas")
+
+      {:ok, top} =
+        Actions.run(
+          Amauta.Feed.Actions.ReplyToPost,
+          Amauta.Scope.for_user(institution(), student),
+          %{"post_id" => post.id, "body" => body("Primera")}
+        )
+
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      view
+      |> element(~s(#reply-#{top.id} button[phx-click="reply"][phx-value-parent="#{top.id}"]))
+      |> render_click()
+
+      view
+      |> form("#reply-form-#{post.id}")
+      |> render_submit(%{reply: %{body: body("Respondida")}})
+
+      assert has_element?(view, "#reply-#{top.id} ul li", "Respondida")
+    end
+
+    test "el autor cierra las respuestas y desaparece el botón", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      post = publish(teacher, course, "Aviso")
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      view |> element(~s(#replies-#{post.id} [phx-click="toggle_replies"])) |> render_click()
+      _ = render(view)
+
+      assert has_element?(view, "#replies-#{post.id}", "Replies are closed")
+      refute has_element?(view, ~s(#replies-#{post.id} > button[phx-click="reply"]))
+    end
+  end
+
+  describe "moderación" do
+    test "ocultar deja un aviso para el resto y el contenido para quien modera", %{
+      conn: conn,
+      course: course
+    } do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      post = publish(teacher, course, "Consultas")
+
+      {:ok, r} =
+        Actions.run(
+          Amauta.Feed.Actions.ReplyToPost,
+          Amauta.Scope.for_user(institution(), member(course, "student")),
+          %{"post_id" => post.id, "body" => body("Fuera de tema")}
+        )
+
+      {:ok, teacher_view, _} = open(conn, teacher, course)
+      {:ok, student_view, _} = open(build_conn(), student, course)
+
+      teacher_view
+      |> element(~s(#reply-#{r.id} [phx-click="hide_reply"]))
+      |> render_click()
+
+      _ = render(teacher_view)
+      _ = render(student_view)
+
+      assert has_element?(teacher_view, "#reply-#{r.id}", "Fuera de tema")
+      assert has_element?(teacher_view, "#reply-#{r.id}", "hidden")
+      assert has_element?(student_view, "#reply-#{r.id}", "hidden by the teaching team")
+      refute has_element?(student_view, "#reply-#{r.id}", "Fuera de tema")
+    end
+
+    test "un estudiante no ve los controles de moderación", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      post = publish(teacher, course, "Consultas")
+
+      Actions.run(
+        Amauta.Feed.Actions.ReplyToPost,
+        Amauta.Scope.for_user(institution(), teacher),
+        %{"post_id" => post.id, "body" => body("Hola")}
+      )
+
+      {:ok, view, _} = open(conn, member(course, "student"), course)
+      refute has_element?(view, ~s([phx-click="hide_reply"]))
+      refute has_element?(view, ~s([phx-click="mute"]))
+      refute has_element?(view, ~s([phx-click="toggle_replies"]))
+    end
+
+    test "silenciar marca a la persona y avisa", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      student = member(course, "student")
+      post = publish(teacher, course, "Consultas")
+
+      {:ok, r} =
+        Actions.run(
+          Amauta.Feed.Actions.ReplyToPost,
+          Amauta.Scope.for_user(institution(), student),
+          %{"post_id" => post.id, "body" => body("Hola")}
+        )
+
+      {:ok, view, _} = open(conn, teacher, course)
+
+      view
+      |> element(~s(#reply-#{r.id} [phx-click="mute"][phx-value-muted="true"]))
+      |> render_click()
+
+      assert render(view) =~ "they can read, but not post or reply"
+      assert has_element?(view, ~s(#reply-#{r.id} [phx-click="mute"][phx-value-muted="false"]))
+      assert Feed.muted?(institution(), course, student.id)
+    end
   end
 end

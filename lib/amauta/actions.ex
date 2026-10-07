@@ -54,7 +54,13 @@ defmodule Amauta.Actions do
     Amauta.Feed.Actions.SaveDraft,
     Amauta.Feed.Actions.PublishPost,
     Amauta.Feed.Actions.UpdatePost,
-    Amauta.Feed.Actions.DeletePost
+    Amauta.Feed.Actions.DeletePost,
+    Amauta.Feed.Actions.ReplyToPost,
+    Amauta.Feed.Actions.UpdateReply,
+    Amauta.Feed.Actions.DeleteReply,
+    Amauta.Feed.Actions.HideReply,
+    Amauta.Feed.Actions.SetRepliesEnabled,
+    Amauta.Feed.Actions.MuteMember
   ]
 
   @doc "Todas las acciones."
