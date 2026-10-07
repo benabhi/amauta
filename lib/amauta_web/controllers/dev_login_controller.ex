@@ -49,7 +49,7 @@ defmodule AmautaWeb.DevLoginHTML do
 
   def index(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope} width="sm">
+    <Layouts.app flash={@flash} current_scope={@current_scope} width="sm" palette={false}>
       <.header>
         {gettext("Log in as…")}
         <:subtitle>

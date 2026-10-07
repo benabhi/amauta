@@ -282,6 +282,88 @@ defmodule AmautaWeb.CoreComponents do
   end
 
   @doc """
+  Menú desplegable: un botón que abre una lista de acciones. Se cierra al
+  tocar afuera o con Esc; el botón anuncia si está abierto.
+
+      <.dropdown id="user-menu" label="Menú de la cuenta">
+        <:trigger><.avatar name="Ana Pérez" size="sm" /></:trigger>
+        <.dropdown_item navigate={~p"/unsur/settings"} icon="gear">Ajustes</.dropdown_item>
+      </.dropdown>
+  """
+  attr :id, :string, required: true
+  attr :label, :string, required: true, doc: "nombre del botón para lectores de pantalla"
+  slot :trigger, required: true
+  slot :inner_block, required: true
+
+  def dropdown(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class="relative"
+      phx-click-away={hide_dropdown(@id)}
+      phx-window-keydown={hide_dropdown(@id)}
+      phx-key="Escape"
+    >
+      <button
+        id={"#{@id}-button"}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls={"#{@id}-menu"}
+        aria-label={@label}
+        phx-click={toggle_dropdown(@id)}
+        class="flex min-h-11 items-center gap-2 rounded-control px-1.5 hover:bg-surface-sunken"
+      >
+        {render_slot(@trigger)}
+      </button>
+      <div
+        id={"#{@id}-menu"}
+        role="menu"
+        aria-labelledby={"#{@id}-button"}
+        class="absolute end-0 z-50 mt-2 hidden w-64 rounded-panel border border-line bg-surface p-2 shadow-lg"
+      >
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
+
+  defp toggle_dropdown(id) do
+    JS.toggle(
+      to: "##{id}-menu",
+      in: {"ease-out duration-fast", "opacity-0 scale-95", "opacity-100 scale-100"},
+      out: {"ease-in duration-instant", "opacity-100 scale-100", "opacity-0 scale-95"}
+    )
+    |> JS.toggle_attribute({"aria-expanded", "true", "false"}, to: "##{id}-button")
+  end
+
+  defp hide_dropdown(id) do
+    JS.hide(
+      to: "##{id}-menu",
+      transition: {"ease-in duration-instant", "opacity-100 scale-100", "opacity-0 scale-95"}
+    )
+    |> JS.set_attribute({"aria-expanded", "false"}, to: "##{id}-button")
+  end
+
+  @doc "Opción de un `dropdown/1`: un enlace (o un botón, sin destino)."
+  attr :icon, :string, default: nil
+  attr :rest, :global, include: ~w(href navigate patch method)
+  slot :inner_block, required: true
+
+  def dropdown_item(assigns) do
+    ~H"""
+    <.link
+      role="menuitem"
+      class="flex min-h-11 w-full items-center gap-3 rounded-control px-3 text-sm hover:bg-surface-sunken focus-visible:bg-surface-sunken"
+      {@rest}
+    >
+      <.icon :if={@icon} name={@icon} class="size-4 text-ink-muted" />
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  @doc """
   Indicador: un número grande con su etiqueta y, opcionalmente, un detalle.
   Si lleva `navigate`, toda la tarjeta es el enlace a lo que cuenta.
 

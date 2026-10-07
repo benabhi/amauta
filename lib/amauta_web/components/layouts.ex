@@ -22,6 +22,12 @@ defmodule AmautaWeb.Layouts do
   attr :current_scope, :map, default: nil, doc: "el Amauta.Scope de la pantalla"
   attr :width, :string, default: "md", values: ~w(sm md lg), doc: "ancho del contenido"
   attr :active, :atom, default: nil, doc: "sección activa de la navegación"
+
+  attr :palette, :boolean,
+    default: true,
+    doc:
+      "paleta de comandos; `false` en páginas que no son LiveView (un LiveComponent necesita una)"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -42,7 +48,18 @@ defmodule AmautaWeb.Layouts do
           active={@active}
         />
         <div class="ms-auto flex items-center gap-2">
-          <.theme_toggle />
+          <button
+            :if={@palette && @current_scope && @current_scope.user}
+            type="button"
+            phx-click={JS.dispatch("amauta:palette-open")}
+            class="flex min-h-11 items-center gap-2 rounded-control text-sm text-ink-muted hover:text-ink max-lg:px-2.5 lg:w-52 lg:border lg:border-line lg:bg-surface lg:px-3"
+            aria-label={gettext("Search or go to…")}
+          >
+            <.icon name="magnifying-glass" class="size-5 lg:size-4" />
+            <span class="hidden flex-1 text-start lg:inline">{gettext("Search…")}</span>
+            <span class="hidden lg:inline"><.kbd>Ctrl K</.kbd></span>
+          </button>
+          <.theme_toggle :if={!(@current_scope && @current_scope.user)} />
           <.user_menu :if={@current_scope && @current_scope.user} current_scope={@current_scope} />
         </div>
       </div>
@@ -53,6 +70,13 @@ defmodule AmautaWeb.Layouts do
         {render_slot(@inner_block)}
       </div>
     </main>
+
+    <.live_component
+      :if={@palette && @current_scope && @current_scope.user}
+      module={AmautaWeb.Components.CommandPalette}
+      id="command-palette"
+      current_scope={@current_scope}
+    />
 
     <.flash_group flash={@flash} />
     """
@@ -185,29 +209,34 @@ defmodule AmautaWeb.Layouts do
 
   defp user_menu(assigns) do
     ~H"""
-    <div class="flex items-center gap-1">
-      <.link
-        navigate={Paths.settings(@current_scope)}
-        class="flex items-center gap-2 rounded-control px-2 py-1 hover:bg-surface-sunken"
-        title={gettext("Settings")}
-      >
+    <.dropdown id="user-menu" label={gettext("Account menu")}>
+      <:trigger>
         <.avatar
           name={User.display_name(@current_scope.user)}
           src={Paths.avatar(@current_scope, @current_scope.user)}
           size="sm"
         />
-        <span class="hidden text-sm sm:inline">{@current_scope.user.first_name}</span>
-      </.link>
-      <.link
-        href={Paths.log_out(@current_scope)}
-        method="delete"
-        class="flex size-9 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
-        aria-label={gettext("Log out")}
-        title={gettext("Log out")}
-      >
-        <.icon name="sign-out" class="size-5" />
-      </.link>
-    </div>
+        <.icon name="caret-down" class="size-3.5 text-ink-muted" />
+      </:trigger>
+      <div class="border-b border-line px-3 pt-1 pb-3">
+        <p class="truncate font-semibold">{User.display_name(@current_scope.user)}</p>
+        <p class="truncate text-sm text-ink-muted">{@current_scope.user.email}</p>
+      </div>
+      <div class="py-1">
+        <.dropdown_item navigate={Paths.settings(@current_scope)} icon="gear">
+          {gettext("Account settings")}
+        </.dropdown_item>
+      </div>
+      <div class="flex items-center justify-between gap-3 border-t border-line px-3 py-2">
+        <span class="text-sm text-ink-muted">{gettext("Theme")}</span>
+        <.theme_toggle />
+      </div>
+      <div class="border-t border-line pt-1">
+        <.dropdown_item href={Paths.log_out(@current_scope)} method="delete" icon="sign-out">
+          {gettext("Log out")}
+        </.dropdown_item>
+      </div>
+    </.dropdown>
     """
   end
 
