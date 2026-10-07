@@ -20,6 +20,9 @@ defmodule AmautaWeb.E2E.CourseFeedTest do
 
   @editor "#feed-composer [data-editor-content] .ProseMirror"
 
+  # El editor arranca plegado en una línea: se abre al tocarla.
+  defp open_composer(session), do: session |> click("#feed-composer-open") |> assert_has(@editor)
+
   test "publica un aviso con formato y el editor queda vacío", %{
     conn: conn,
     teacher: teacher,
@@ -27,15 +30,18 @@ defmodule AmautaWeb.E2E.CourseFeedTest do
   } do
     conn
     |> log_in(teacher, Paths.course(institution(), course))
-    |> assert_has(@editor)
+    |> open_composer()
     |> click(@editor)
     |> type(@editor, "Mañana no hay clase ")
     |> press(@editor, "Control+b")
     |> type(@editor, "por paro")
     |> click_button("Publish")
-    |> assert_has("#feed-posts article strong", text: "por paro")
-    |> assert_has("#feed-posts article", text: "Mañana no hay clase")
-    |> refute_has("#feed-composer .ProseMirror", text: "Mañana")
+    # En el tablón, la tarjeta compacta; el editor vuelve a plegarse.
+    |> assert_has("#feed-posts article", text: "Mañana no hay clase por paro")
+    |> assert_has("#feed-composer-open")
+    # El formato se ve en la página de la publicación.
+    |> click("#feed-posts article a[data-open]")
+    |> assert_has("#feed-post-page article strong", text: "por paro")
   end
 
   test "menciona con «@» a alguien del curso", %{conn: conn, teacher: teacher, course: course} do
@@ -46,16 +52,17 @@ defmodule AmautaWeb.E2E.CourseFeedTest do
 
     conn
     |> log_in(teacher, Paths.course(institution(), course))
-    |> assert_has(@editor)
+    |> open_composer()
     |> click(@editor)
     |> type(@editor, "Felicitaciones @gra")
     |> assert_has(".rich-slash-item", text: "Grace Hopper")
     |> press(@editor, "Enter")
     |> click_button("Publish")
-    |> assert_has("#feed-posts article .rich-mention", text: "@Grace Hopper")
+    |> click("#feed-posts article a[data-open]")
+    |> assert_has("#feed-post-page article .rich-mention", text: "@Grace Hopper")
   end
 
-  test "una publicación larga se recorta y se despliega con «Ver más»", %{
+  test "en su página, una publicación larga se recorta y se despliega con «Ver más»", %{
     conn: conn,
     teacher: teacher,
     course: course
@@ -82,7 +89,7 @@ defmodule AmautaWeb.E2E.CourseFeedTest do
     toggle = "#post-text-#{post.id} [data-collapse-toggle]"
 
     conn
-    |> log_in(teacher, Paths.course(institution(), course))
+    |> log_in(teacher, Paths.course_post(institution(), course, post))
     |> assert_has(toggle, text: "Show more")
     |> click(toggle)
     |> assert_has("#post-text-#{post.id}[data-expanded]")
