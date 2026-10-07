@@ -21,7 +21,7 @@ msgstr "Te mandamos un enlace a la nueva dirección para confirmar el cambio de 
 msgid "Account Settings"
 msgstr "Ajustes de la cuenta"
 
-#: lib/amauta_web/components/core_components.ex:742
+#: lib/amauta_web/components/core_components.ex:806
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Acciones"
@@ -86,7 +86,7 @@ msgstr "El enlace para cambiar el email no es válido o ya venció."
 msgid "Email changed successfully."
 msgstr "Cambiaste tu email."
 
-#: lib/amauta_web/live/home_live.ex:15
+#: lib/amauta_web/live/home_live.ex:43
 #, elixir-autogen, elixir-format
 msgid "Hello, %{name}"
 msgstr "Hola, %{name}"
@@ -265,7 +265,7 @@ msgstr "Volvé a entrar para ver esta página."
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr "Para hacer cambios sensibles en tu cuenta, volvé a entrar."
 
-#: lib/amauta_web/components/core_components.ex:514
+#: lib/amauta_web/components/core_components.ex:578
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr "cerrar"
@@ -305,18 +305,18 @@ msgstr "Ir al contenido"
 msgid "System theme"
 msgstr "Tema del sistema"
 
-#: lib/amauta_web/live/home_live.ex:24
+#: lib/amauta_web/live/home_live.ex:128
 #, elixir-autogen, elixir-format
 msgid "When you join a class, you will find it here."
 msgstr "Cuando te sumes a una clase, la vas a encontrar acá."
 
-#: lib/amauta_web/live/home_live.ex:22
+#: lib/amauta_web/live/home_live.ex:126
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "You have no %{terms} yet"
 msgstr "Todavía no tenés %{terms}"
 
-#: lib/amauta_web/live/home_live.ex:22
+#: lib/amauta_web/live/home_live.ex:126
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "You have no %{terms} yet"
@@ -770,6 +770,7 @@ msgid "From a CSV file with one person per row."
 msgstr "Desde un archivo CSV con una persona por fila."
 
 #: lib/amauta_web/components/layouts.ex:147
+#: lib/amauta_web/live/home_live.ex:28
 #, elixir-autogen, elixir-format
 msgid "Home"
 msgstr "Inicio"
@@ -1957,7 +1958,7 @@ msgstr "Matriculando..."
 msgid "Join"
 msgstr "Sumarme"
 
-#: lib/amauta_web/live/home_live.ex:27
+#: lib/amauta_web/live/home_live.ex:47
 #: lib/amauta_web/live/join_live.ex:17
 #: lib/amauta_web/live/join_live.ex:54
 #, elixir-autogen, elixir-format
@@ -2252,3 +2253,114 @@ msgstr "Subiendo %{name}…"
 #, elixir-autogen, elixir-format
 msgid "We couldn't recognize the type of file."
 msgstr "No pudimos reconocer el tipo de archivo."
+
+#: lib/amauta_web/live/home_live.ex:82
+#, elixir-autogen, elixir-format
+msgid "%{count} draft"
+msgid_plural "%{count} drafts"
+msgstr[0] "%{count} en borrador"
+msgstr[1] "%{count} en borrador"
+
+#: lib/amauta_web/live/home_live.ex:179
+#, elixir-autogen, elixir-format
+msgid "%{count} invitation not accepted yet"
+msgid_plural "%{count} invitations not accepted yet"
+msgstr[0] "%{count} invitación todavía sin aceptar"
+msgstr[1] "%{count} invitaciones todavía sin aceptar"
+
+#: lib/amauta_web/live/home_live.ex:66
+#, elixir-autogen, elixir-format
+msgid "%{count} with a pending invitation"
+msgid_plural "%{count} with a pending invitation"
+msgstr[0] "%{count} con la invitación pendiente"
+msgstr[1] "%{count} con la invitación pendiente"
+
+#: lib/amauta_web/live/home_live.ex:96
+#, elixir-autogen, elixir-format
+msgid "Active enrollments"
+msgstr "Matrículas activas"
+
+#: lib/amauta_web/live/home_live.ex:61
+#, elixir-autogen, elixir-format
+msgid "Active people"
+msgstr "Personas activas"
+
+#: lib/amauta_web/live/home_live.ex:163
+#, elixir-autogen, elixir-format
+msgid "For today and this week"
+msgstr "Para hoy y esta semana"
+
+#: lib/amauta_web/live/home_live.ex:186
+#, elixir-autogen, elixir-format
+msgid "In draft: %{count} %{what}"
+msgstr "En borrador: %{count} %{what}"
+
+#: lib/amauta_web/live/home_live.ex:103
+#, elixir-autogen, elixir-format
+msgid "Pending"
+msgstr "Pendientes"
+
+#: lib/amauta_web/live/home_live.ex:159
+#, elixir-autogen, elixir-format
+msgid "Submissions waiting for feedback will appear here."
+msgstr "Acá van a aparecer las entregas que esperan tu devolución."
+
+#: lib/amauta_web/live/home_live.ex:157
+#, elixir-autogen, elixir-format
+msgid "To review"
+msgstr "Para revisar"
+
+#: lib/amauta_web/live/home_live.ex:196
+#, elixir-autogen, elixir-format
+msgid "Without %{section}: %{count} student"
+msgid_plural "Without %{section}: %{count} students"
+msgstr[0] "Sin %{section}: %{count} estudiante"
+msgstr[1] "Sin %{section}: %{count} estudiantes"
+
+#: lib/amauta_web/live/home_live.ex:189
+#, elixir-autogen, elixir-format
+msgid "Without a teaching team: %{count} %{what}"
+msgstr "Sin equipo docente: %{count} %{what}"
+
+#: lib/amauta_web/live/home_live.ex:165
+#, elixir-autogen, elixir-format
+msgid "Your upcoming assignments and assessments will appear here."
+msgstr "Acá van a aparecer tus próximas tareas y evaluaciones."
+
+#: lib/amauta_web/live/home_live.ex:120
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "My %{terms}"
+msgstr "Mis %{terms}"
+
+#: lib/amauta_web/live/home_live.ex:76
+#: lib/amauta_web/live/home_live.ex:88
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "Published %{terms}"
+msgstr "%{terms} publicadas"
+
+#: lib/amauta_web/live/home_live.ex:55
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "Your %{term} today"
+msgstr "Tu %{term} hoy"
+
+#: lib/amauta_web/live/home_live.ex:120
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "My %{terms}"
+msgstr "Mis %{terms}"
+
+#: lib/amauta_web/live/home_live.ex:76
+#: lib/amauta_web/live/home_live.ex:88
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "Published %{terms}"
+msgstr "%{terms} publicados"
+
+#: lib/amauta_web/live/home_live.ex:55
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "Your %{term} today"
+msgstr "Tu %{term} hoy"
