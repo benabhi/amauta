@@ -1,5 +1,5 @@
 defmodule AmautaWeb.CourseFeedTest do
-  @moduledoc "Pestaña Tablón: publicar, borrador, tiempo real, edición, respuestas, moderación y permisos."
+  @moduledoc "Pestaña Tablón: publicar, borrador, tiempo real, edición, respuestas, fijadas, moderación y permisos."
   use AmautaWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -9,7 +9,7 @@ defmodule AmautaWeb.CourseFeedTest do
   alias Amauta.{Actions, Enrollments, Feed}
   alias Amauta.Courses.Actions.{CreateCourse, PublishCourse}
   alias Amauta.Enrollments.Actions.CreateSection
-  alias Amauta.Feed.Actions.PublishPost
+  alias Amauta.Feed.Actions.{PinPost, PublishPost}
   alias AmautaWeb.Paths
 
   setup do
@@ -275,6 +275,95 @@ defmodule AmautaWeb.CourseFeedTest do
       assert render(view) =~ "they can read, but not post or reply"
       assert has_element?(view, ~s(#reply-#{r.id} [phx-click="mute"][phx-value-muted="false"]))
       assert Feed.muted?(institution(), course, student.id)
+    end
+  end
+
+  describe "fijadas" do
+    test "quien modera fija con un clic y la publicación sube a destacadas", %{
+      conn: conn,
+      course: course
+    } do
+      teacher = member(course, "teacher")
+      old = publish(teacher, course, "Programa de la materia")
+      _new = publish(teacher, course, "Clase del lunes")
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      view
+      |> element(~s(#feed-posts [phx-click="pin"][phx-value-id="#{old.id}"]))
+      |> render_click()
+
+      _ = render(view)
+
+      assert has_element?(view, "#pinned-#{old.id}", "Programa de la materia")
+      assert has_element?(view, "#pinned-#{old.id}", "Pinned")
+      refute has_element?(view, "#feed-posts #posts-#{old.id}")
+      assert has_element?(view, "#course-pinned", "Programa de la materia")
+
+      view |> element(~s(#pinned-#{old.id} [phx-click="unpin"])) |> render_click()
+      _ = render(view)
+
+      refute has_element?(view, "#pinned-#{old.id}")
+      refute has_element?(view, "#course-pinned")
+      assert has_element?(view, "#feed-posts #posts-#{old.id}")
+    end
+
+    test "se reordenan con los botones y con el arrastre", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      scope = Amauta.Scope.for_user(institution(), teacher)
+      one = publish(teacher, course, "Uno")
+      two = publish(teacher, course, "Dos")
+      three = publish(teacher, course, "Tres")
+
+      for post <- [one, two],
+          do: {:ok, _} = Actions.run(PinPost, scope, %{"post_id" => post.id, "pinned" => true})
+
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      view
+      |> element(~s(#pinned-#{two.id} [phx-click="move_pin"][phx-value-dir="up"]))
+      |> render_click()
+
+      assert Enum.map(Feed.list_pinned(scope, course), & &1.id) == [two.id, one.id]
+
+      # Arrastrar desde el listado a la zona de destacadas, entre las dos.
+      view
+      |> element("#feed-pinned")
+      |> render_hook("pin", %{"id" => three.id, "ids" => [two.id, three.id, one.id]})
+
+      assert Enum.map(Feed.list_pinned(scope, course), & &1.id) == [two.id, three.id, one.id]
+    end
+
+    test "el vencimiento se elige con una fecha", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      scope = Amauta.Scope.for_user(institution(), teacher)
+      post = publish(teacher, course, "Inscripción")
+      {:ok, _} = Actions.run(PinPost, scope, %{"post_id" => post.id, "pinned" => true})
+      {:ok, view, _html} = open(conn, teacher, course)
+
+      date = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
+
+      view
+      |> form("#pin-expiry-#{post.id}")
+      |> render_change(%{pin: %{post_id: post.id, expires_on: date}})
+
+      assert [%{pin_expires_at: %DateTime{}}] = Feed.list_pinned(scope, course)
+    end
+
+    test "un estudiante ve las fijadas pero no los controles", %{conn: conn, course: course} do
+      teacher = member(course, "teacher")
+      post = publish(teacher, course, "Programa")
+
+      {:ok, _} =
+        Actions.run(PinPost, Amauta.Scope.for_user(institution(), teacher), %{
+          "post_id" => post.id,
+          "pinned" => true
+        })
+
+      {:ok, view, _html} = open(conn, member(course, "student"), course)
+      assert has_element?(view, "#pinned-#{post.id}", "Programa")
+      refute has_element?(view, ~s([phx-click="unpin"]))
+      refute has_element?(view, ~s([phx-click="move_pin"]))
+      refute has_element?(view, "[data-drag-handle]")
     end
   end
 end

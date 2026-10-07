@@ -55,7 +55,7 @@ defmodule AmautaWeb.CourseLive do
      socket
      |> assign(page_title: course.name, form: nil, settings_form: nil)
      |> assign(periods: [], pathways: [], stages: [], standalone: true)
-     |> assign(section_filter: nil, section_form: nil, editing_section: nil)
+     |> assign(section_filter: nil, section_form: nil, editing_section: nil, pinned: [])
      |> assign(people_query: "", people_results: [], enroll_form: enroll_form())
      |> assign_course(course)
      |> subscribe_feed(course)}
@@ -101,7 +101,11 @@ defmodule AmautaWeb.CourseLive do
           socket
       end
 
-    {:noreply, socket |> assign_section_filter(params["section"]) |> load_people()}
+    {:noreply,
+     socket
+     |> assign_section_filter(params["section"])
+     |> assign_pinned()
+     |> load_people()}
   end
 
   # Filtro de comisión (RF-COM-003). Quien está limitado a sus comisiones
@@ -118,6 +122,12 @@ defmodule AmautaWeb.CourseLive do
       end
 
     assign(socket, section_filter: filter)
+  end
+
+  # Fijadas del tablón en el encabezado del curso (RF-TAB-006).
+  defp assign_pinned(socket) do
+    %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
+    assign(socket, pinned: Amauta.Feed.list_pinned(scope, course, %{"section" => filter}))
   end
 
   defp load_people(%{assigns: %{live_action: :people}} = socket) do
@@ -430,13 +440,22 @@ defmodule AmautaWeb.CourseLive do
       send_update(AmautaWeb.CourseFeed, id: "course-feed", feed_event: {event, post})
     end
 
-    {:noreply, socket}
+    {:noreply,
+     if(event in [:pinned, :updated, :deleted], do: assign_pinned(socket), else: socket)}
   end
 
   def handle_info({:put_flash, kind, message}, socket),
     do: {:noreply, put_flash(socket, kind, message)}
 
   ## Vista
+
+  # Primera línea del texto de una fijada, para el encabezado.
+  defp pin_summary(post) do
+    post.body
+    |> Amauta.RichText.to_text()
+    |> String.split("\n", trim: true)
+    |> List.first("")
+  end
 
   @impl true
   def render(assigns) do
@@ -494,6 +513,29 @@ defmodule AmautaWeb.CourseLive do
           </div>
         </:actions>
       </.header>
+
+      <nav
+        :if={@pinned != []}
+        id="course-pinned"
+        aria-label={gettext("Pinned posts")}
+        class="mb-4 flex flex-wrap gap-2"
+      >
+        <.link
+          :for={post <- Enum.take(@pinned, 3)}
+          patch={Paths.pinned_post(@current_scope, @course, post)}
+          class="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full bg-anil-soft px-4 text-sm text-anil-deep transition-opacity duration-fast hover:opacity-80"
+        >
+          <.icon name="push-pin" class="size-4 shrink-0" />
+          <span class="truncate">{pin_summary(post)}</span>
+        </.link>
+        <.link
+          :if={length(@pinned) > 3}
+          patch={Paths.course(@current_scope, @course)}
+          class="inline-flex min-h-11 items-center px-2 text-sm text-ink-muted hover:text-ink"
+        >
+          {gettext("+%{count} more", count: length(@pinned) - 3)}
+        </.link>
+      </nav>
 
       <.form
         :if={@sections != []}

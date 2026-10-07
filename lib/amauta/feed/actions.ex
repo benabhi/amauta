@@ -495,3 +495,145 @@ defmodule Amauta.Feed.Actions.MuteMember do
   @impl true
   def audit(_scope, input, _result), do: {nil, input}
 end
+
+defmodule Amauta.Feed.Actions.PinPost do
+  @moduledoc """
+  Fija o desfija una publicación (RF-TAB-006), con vencimiento opcional:
+  vencida, deja de estar fijada sola. Una nueva va al final de las fijadas;
+  cambiar el vencimiento de una ya fijada no la mueve. Lo hace quien modera.
+  """
+  use Amauta.Action,
+    name: "feed.post.pin",
+    description: "Fija o desfija una publicación del tablón.",
+    params: [
+      post_id: {Ecto.UUID, required: true},
+      pinned: {:boolean, required: true},
+      expires_at: :utc_datetime_usec
+    ]
+
+  import Ecto.Query
+
+  alias Amauta.Feed
+  alias Amauta.Feed.Post
+  alias Amauta.{Repo, Tenancy}
+
+  @impl true
+  def validate(changeset) do
+    Ecto.Changeset.validate_change(changeset, :expires_at, fn :expires_at, expires ->
+      if DateTime.compare(expires, DateTime.utc_now()) == :gt,
+        do: [],
+        else: [expires_at: "must be in the future"]
+    end)
+  end
+
+  @impl true
+  def authorize(scope, %{post_id: id}) do
+    with %{course: course} = post <- Feed.get(scope, id) || {:error, :not_found},
+         true <- post.status == "published" || {:error, :not_found},
+         true <- course.status != "archived" || {:error, :archived} do
+      if Feed.can_moderate?(scope, course), do: :ok, else: {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{post_id: id, pinned: true} = input) do
+    post = Feed.get(scope, id)
+    now = DateTime.utc_now()
+
+    changes =
+      if Feed.pinned?(post, now),
+        do: [pin_expires_at: input[:expires_at]],
+        else: [
+          pinned_at: now,
+          pinned_by_id: scope.user.id,
+          pin_expires_at: input[:expires_at],
+          pin_position: next_position(scope, post.course_id)
+        ]
+
+    save(scope, post, changes)
+  end
+
+  def run(scope, %{post_id: id, pinned: false}) do
+    post = Feed.get(scope, id)
+    save(scope, post, pinned_at: nil, pinned_by_id: nil, pin_expires_at: nil, pin_position: nil)
+  end
+
+  defp save(scope, post, changes) do
+    with {:ok, updated} <-
+           post |> Ecto.Changeset.change(changes) |> Repo.update(Tenancy.opts(scope)) do
+      {:ok, %{updated | course: post.course}}
+    end
+  end
+
+  defp next_position(scope, course_id) do
+    from(p in Post, where: p.course_id == ^course_id, select: max(p.pin_position))
+    |> Repo.one(Tenancy.opts(scope))
+    |> Kernel.||(0)
+    |> Kernel.+(1)
+  end
+
+  @impl true
+  def audit(_scope, input, post),
+    do: {post, Map.take(input, [:pinned, :expires_at])}
+
+  @impl true
+  def after_commit(_scope, _input, post) do
+    Feed.broadcast(post.course, :pinned, post)
+    :ok
+  end
+end
+
+defmodule Amauta.Feed.Actions.ReorderPinned do
+  @moduledoc """
+  Ordena a mano las publicaciones fijadas de un curso (RF-TAB-006). Recibe
+  los IDs en el orden nuevo; las fijadas que falten quedan al final, en su
+  orden anterior, y lo que no esté fijado se ignora.
+  """
+  use Amauta.Action,
+    name: "feed.post.reorder_pins",
+    description: "Ordena las publicaciones fijadas del tablón.",
+    params: [
+      course_id: {Ecto.UUID, required: true},
+      post_ids: {{:array, Ecto.UUID}, required: true}
+    ]
+
+  import Ecto.Query
+
+  alias Amauta.Feed.Post
+  alias Amauta.{Courses, Feed, Repo, Tenancy}
+
+  @impl true
+  def authorize(scope, %{course_id: id}) do
+    case Courses.get(scope, id) do
+      nil -> {:error, :not_found}
+      %{status: "archived"} -> {:error, :archived}
+      course -> if Feed.can_moderate?(scope, course), do: :ok, else: {:error, :forbidden}
+    end
+  end
+
+  @impl true
+  def run(scope, %{course_id: id, post_ids: ids}) do
+    course = Courses.get(scope, id)
+    current = Feed.pinned_ids(scope, course)
+    order = Enum.filter(Enum.uniq(ids), &(&1 in current)) ++ (current -- ids)
+
+    order
+    |> Enum.with_index(1)
+    |> Enum.each(fn {post_id, position} ->
+      from(p in Post, where: p.id == ^post_id)
+      |> Repo.update_all([set: [pin_position: position]], Tenancy.opts(scope))
+    end)
+
+    {:ok, %{course: course, post_ids: order}}
+  end
+
+  @impl true
+  def audit(_scope, _input, %{course: course, post_ids: ids}),
+    do: {course, %{post_ids: ids}}
+
+  @impl true
+  def after_commit(_scope, _input, %{course: course}) do
+    Feed.broadcast(course, :pinned, nil)
+    :ok
+  end
+end

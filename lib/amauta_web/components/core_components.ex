@@ -900,6 +900,7 @@ defmodule AmautaWeb.CoreComponents do
   attr :options, :list, doc: "opciones del select (Phoenix.HTML.Form.options_for_select/2)"
   attr :multiple, :boolean, default: false
   attr :class, :any, default: nil
+  attr :inline, :boolean, default: false, doc: "etiqueta al costado y sin margen inferior"
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -988,8 +989,8 @@ defmodule AmautaWeb.CoreComponents do
 
   def input(assigns) do
     ~H"""
-    <div class="mb-4">
-      <.field_label for={@id} label={@label} />
+    <div class={if @inline, do: "flex items-center gap-2", else: "mb-4"}>
+      <.field_label for={@id} label={@label} inline={@inline} />
       <input
         type={@type}
         name={@name}
@@ -1017,10 +1018,15 @@ defmodule AmautaWeb.CoreComponents do
 
   attr :for, :any, default: nil
   attr :label, :string, default: nil
+  attr :inline, :boolean, default: false
 
   defp field_label(assigns) do
     ~H"""
-    <label :if={@label} for={@for} class="mb-1.5 block text-sm font-semibold text-ink">
+    <label
+      :if={@label}
+      for={@for}
+      class={["text-sm font-semibold text-ink", if(@inline, do: "shrink-0", else: "mb-1.5 block")]}
+    >
       {@label}
     </label>
     """

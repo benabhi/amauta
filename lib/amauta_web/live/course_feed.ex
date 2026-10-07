@@ -20,7 +20,9 @@ defmodule AmautaWeb.CourseFeed do
     DeleteReply,
     HideReply,
     MuteMember,
+    PinPost,
     PublishPost,
+    ReorderPinned,
     ReplyToPost,
     SaveDraft,
     SetRepliesEnabled,
@@ -82,13 +84,34 @@ defmodule AmautaWeb.CourseFeed do
   end
 
   defp load(socket) do
+    socket
+    |> assign(loaded: true)
+    |> load_posts()
+    |> assign_composer()
+  end
+
+  # Fijadas arriba (RF-TAB-006) y el resto en el stream, sin repetirse.
+  defp load_posts(socket) do
     %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
-    posts = Feed.list_posts(scope, course, %{"section" => filter})
+    filters = %{"section" => filter}
+    posts = Feed.list_posts(scope, course, filters)
+    pinned = Feed.list_pinned(scope, course, filters)
 
     socket
-    |> assign(loaded: true, empty: posts == [])
+    |> assign(pinned: pinned, empty: posts == [] and pinned == [])
     |> stream(:posts, posts, reset: true)
-    |> assign_composer()
+  end
+
+  # Dibuja de nuevo una publicación donde esté: entre las fijadas o en el
+  # stream.
+  defp put_post(socket, post, opts \\ []) do
+    if Enum.any?(socket.assigns.pinned, &(&1.id == post.id)) do
+      update(socket, :pinned, fn pinned ->
+        Enum.map(pinned, &if(&1.id == post.id, do: post, else: &1))
+      end)
+    else
+      stream_insert(socket, :posts, post, opts)
+    end
   end
 
   defp assign_composer(%{assigns: %{can_post: false}} = socket),
@@ -125,7 +148,14 @@ defmodule AmautaWeb.CourseFeed do
 
   # Llega algo del tablón en tiempo real: se muestra solo si esta persona lo
   # puede ver (y si coincide con el filtro de comisión).
-  defp apply_event(socket, :deleted, post), do: stream_delete(socket, :posts, post)
+  defp apply_event(socket, :deleted, post) do
+    socket
+    |> stream_delete(:posts, post)
+    |> update(:pinned, fn pinned -> Enum.reject(pinned, &(&1.id == post.id)) end)
+  end
+
+  # Cambió qué está fijado o su orden: se vuelven a armar las dos listas.
+  defp apply_event(socket, :pinned, _post), do: load_posts(socket)
 
   defp apply_event(socket, event, post) do
     %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
@@ -142,8 +172,8 @@ defmodule AmautaWeb.CourseFeed do
           # su lugar.
           socket =
             if event == :published,
-              do: stream_insert(socket, :posts, visible, at: 0),
-              else: stream_insert(socket, :posts, visible)
+              do: put_post(socket, visible, at: 0),
+              else: put_post(socket, visible)
 
           socket = assign(socket, empty: false)
 
@@ -190,7 +220,7 @@ defmodule AmautaWeb.CourseFeed do
         {:noreply,
          socket
          |> assign(editing: post.id, edit_form: to_form(%{"body" => post.body}, as: "edit"))
-         |> stream_insert(:posts, post)}
+         |> put_post(post)}
     end
   end
 
@@ -203,7 +233,7 @@ defmodule AmautaWeb.CourseFeed do
       )
 
     socket = assign(socket, editing: nil, edit_form: nil)
-    {:noreply, if(post, do: stream_insert(socket, :posts, post), else: socket)}
+    {:noreply, if(post, do: put_post(socket, post), else: socket)}
   end
 
   def handle_event("save_edit", %{"edit" => %{"body" => body}}, socket) do
@@ -222,6 +252,66 @@ defmodule AmautaWeb.CourseFeed do
     case Actions.run(DeletePost, socket.assigns.current_scope, %{"post_id" => id}) do
       {:ok, _post} -> {:noreply, socket}
       {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  ## Fijadas (RF-TAB-006)
+
+  # Con un clic queda al final de las fijadas; arrastrada a la zona de
+  # destacadas, llega con el orden nuevo (`ids`).
+  def handle_event("pin", %{"id" => id} = params, socket) do
+    with {:ok, _} <- pin(socket, id, true),
+         {:ok, _} <- reorder_pins(socket, params["ids"]) do
+      {:noreply, socket}
+    else
+      {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  def handle_event("unpin", %{"id" => id}, socket) do
+    case pin(socket, id, false) do
+      {:ok, _} -> {:noreply, socket}
+      {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  def handle_event("reorder_pins", %{"ids" => ids}, socket) do
+    case reorder_pins(socket, ids) do
+      {:ok, _} -> {:noreply, socket}
+      {:error, _} -> {:noreply, put_flash_message(socket, gettext("That could not be done."))}
+    end
+  end
+
+  # Subir o bajar con los botones (teclado y pantallas táctiles).
+  def handle_event("move_pin", %{"id" => id, "dir" => dir}, socket) do
+    ids = Enum.map(socket.assigns.pinned, & &1.id)
+    index = Enum.find_index(ids, &(&1 == id))
+    target = if dir == "up", do: index - 1, else: index + 1
+
+    if index && target in 0..(length(ids) - 1)//1 do
+      ids = ids |> List.replace_at(index, Enum.at(ids, target)) |> List.replace_at(target, id)
+      handle_event("reorder_pins", %{"ids" => ids}, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("pin_expiry", %{"pin" => %{"post_id" => id, "expires_on" => date}}, socket) do
+    params = %{
+      "post_id" => id,
+      "pinned" => true,
+      "expires_at" => end_of_day(date, socket.assigns.timezone)
+    }
+
+    case Actions.run(PinPost, socket.assigns.current_scope, params) do
+      {:ok, _} ->
+        {:noreply, socket}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash_message(socket, gettext("Choose a date in the future."))}
+
+      {:error, _} ->
+        {:noreply, put_flash_message(socket, gettext("That could not be done."))}
     end
   end
 
@@ -325,6 +415,38 @@ defmodule AmautaWeb.CourseFeed do
     end
   end
 
+  defp pin(socket, id, pinned),
+    do: Actions.run(PinPost, socket.assigns.current_scope, %{"post_id" => id, "pinned" => pinned})
+
+  defp reorder_pins(_socket, nil), do: {:ok, nil}
+
+  # La persona ve solo parte de las fijadas (por su comisión o el filtro):
+  # el orden nuevo se aplica a esas, sin mover las que no ve.
+  defp reorder_pins(socket, ids) do
+    %{current_scope: scope, course: course} = socket.assigns
+    full = Feed.pinned_ids(scope, course)
+    ordered = ids |> Enum.uniq() |> Enum.filter(&(&1 in full))
+
+    {order, _rest} =
+      Enum.map_reduce(full, ordered, fn
+        id, [next | rest] = all -> if id in ordered, do: {next, rest}, else: {id, all}
+        id, [] -> {id, []}
+      end)
+
+    Actions.run(ReorderPinned, scope, %{"course_id" => course.id, "post_ids" => order})
+  end
+
+  # La fecha de vencimiento se toma hasta el final de ese día, en la zona
+  # horaria de la persona.
+  defp end_of_day(date, timezone) do
+    with {:ok, date} <- Date.from_iso8601(date),
+         {:ok, datetime} <- DateTime.new(date, ~T[23:59:59.999999], timezone) do
+      DateTime.shift_zone!(datetime, "Etc/UTC")
+    else
+      _ -> nil
+    end
+  end
+
   # El cambio llega a todos por el tema del tablón; acá no hace falta más.
   defp run_reply_action(socket, action, params) do
     case Actions.run(action, socket.assigns.current_scope, params) do
@@ -337,7 +459,7 @@ defmodule AmautaWeb.CourseFeed do
   defp refresh_post(socket, post_id) do
     case Feed.get_visible(socket.assigns.current_scope, socket.assigns.course, post_id) do
       nil -> socket
-      post -> stream_insert(socket, :posts, post)
+      post -> put_post(socket, post)
     end
   end
 
@@ -410,12 +532,88 @@ defmodule AmautaWeb.CourseFeed do
           )}
         </.empty_state>
 
+        <section
+          :if={@pinned != [] or @can_moderate}
+          id="feed-pinned"
+          phx-hook=".PinZone"
+          phx-target={@myself}
+          aria-label={gettext("Pinned posts")}
+          class="mb-4 grid gap-4 rounded-card data-dragging:outline-2 data-dragging:outline-offset-4 data-dragging:outline-dashed data-dragging:outline-primary"
+        >
+          <p
+            :if={@pinned == [] and @can_moderate}
+            class="hidden min-h-24 items-center justify-center gap-2 text-sm text-ink-muted in-data-dragging:flex"
+          >
+            <.icon name="push-pin" class="size-5" /> {gettext("Drop a post here to pin it")}
+          </p>
+          <ol :if={@pinned != []} class="grid gap-4" aria-label={gettext("Pinned posts")}>
+            <li
+              :for={{post, index} <- Enum.with_index(@pinned)}
+              id={"pinned-#{post.id}"}
+              data-pinned-item
+              data-post-id={post.id}
+            >
+              <.post
+                post={post}
+                ui={ui(assigns)}
+                pin={%{first: index == 0, last: index == length(@pinned) - 1}}
+              />
+            </li>
+          </ol>
+        </section>
+
         <ol id="feed-posts" phx-update="stream" class="grid gap-4" aria-label={gettext("Feed")}>
-          <li :for={{dom_id, post} <- @streams.posts} id={dom_id}>
+          <li :for={{dom_id, post} <- @streams.posts} id={dom_id} data-post-id={post.id}>
             <.post post={post} ui={ui(assigns)} />
           </li>
         </ol>
       </div>
+
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".PinZone">
+        // Zona de destacadas (RF-TAB-006): quien modera arrastra una
+        // publicación desde su manija para fijarla o para cambiar el orden.
+        // Los botones de cada fijada hacen lo mismo con teclado o táctil.
+        export default {
+          mounted() {
+            this.onStart = (e) => {
+              const handle = e.target.closest?.("[data-drag-handle]")
+              const item = handle?.closest("[data-post-id]")
+              if (!item) return
+              this.dragId = item.dataset.postId
+              e.dataTransfer.effectAllowed = "move"
+              e.dataTransfer.setData("text/plain", this.dragId)
+              e.dataTransfer.setDragImage(item, 24, 24)
+              this.el.dataset.dragging = ""
+            }
+            this.onEnd = () => {
+              delete this.el.dataset.dragging
+              this.dragId = null
+            }
+            document.addEventListener("dragstart", this.onStart)
+            document.addEventListener("dragend", this.onEnd)
+            this.el.addEventListener("dragover", (e) => { if (this.dragId) e.preventDefault() })
+            this.el.addEventListener("drop", (e) => {
+              if (!this.dragId) return
+              e.preventDefault()
+              const id = this.dragId
+              const items = [...this.el.querySelectorAll("[data-pinned-item]")]
+              const ids = items.map((i) => i.dataset.postId).filter((x) => x !== id)
+              const before = items.find((i) => {
+                const r = i.getBoundingClientRect()
+                return i.dataset.postId !== id && e.clientY < r.top + r.height / 2
+              })
+              ids.splice(before ? ids.indexOf(before.dataset.postId) : ids.length, 0, id)
+              const pinned = items.some((i) => i.dataset.postId === id)
+              this.pushEventTo(this.el, pinned ? "reorder_pins" : "pin", {id, ids})
+              this.onEnd()
+            })
+          },
+          destroyed() {
+            document.removeEventListener("dragstart", this.onStart)
+            document.removeEventListener("dragend", this.onEnd)
+          }
+        }
+      </script>
 
       <script :type={Phoenix.LiveView.ColocatedHook} name=".FeedNewPosts">
         // Publicaciones nuevas en tiempo real (RF-TAB-008): si la persona está
@@ -474,6 +672,10 @@ defmodule AmautaWeb.CourseFeed do
   attr :post, :map, required: true
   attr :ui, :map, required: true
 
+  attr :pin, :map,
+    default: nil,
+    doc: "Entre las fijadas: `%{first: bool, last: bool}` para ordenarla."
+
   defp post(assigns) do
     %{post: post, ui: ui} = assigns
     user_id = ui.current_scope.user.id
@@ -492,8 +694,21 @@ defmodule AmautaWeb.CourseFeed do
       )
 
     ~H"""
-    <article class="rounded-card border border-line bg-surface p-5 shadow-sm">
+    <article class={[
+      "rounded-card border bg-surface p-5 shadow-sm",
+      if(@pin, do: "border-primary", else: "border-line")
+    ]}>
       <header class="mb-3 flex items-start gap-3">
+        <span
+          :if={@ui.can_moderate and not @editing}
+          data-drag-handle
+          draggable="true"
+          aria-hidden="true"
+          title={gettext("Drag to the pinned area")}
+          class="-ms-2 hidden cursor-grab self-center text-ink-muted hover:text-ink md:block"
+        >
+          <.icon name="dots-six-vertical" class="size-5" />
+        </span>
         <.avatar
           :if={@author}
           name={User.display_name(@author)}
@@ -513,30 +728,52 @@ defmodule AmautaWeb.CourseFeed do
             </time>
             <span :if={@post.edited_at}>· {gettext("edited")}</span>
             <.badge :if={@post.section} family="airampo">{@post.section.name}</.badge>
+            <span :if={@pin} class="inline-flex items-center gap-1 font-semibold text-anil-deep">
+              <.icon name="push-pin" class="size-3.5" /> {gettext("Pinned")}
+              <span :if={@post.pin_expires_at} class="font-normal">
+                {gettext("until %{date}", date: Format.date(@post.pin_expires_at, @ui.timezone))}
+              </span>
+            </span>
           </p>
         </div>
-        <div :if={(@mine or @ui.can_moderate) and not @editing} class="flex gap-1">
-          <.icon_button
+        <.dropdown
+          :if={(@mine or @ui.can_moderate) and not @editing}
+          id={"post-menu-#{@post.id}"}
+          label={gettext("Post options")}
+        >
+          <:trigger><.icon name="dots-three" class="size-5 text-ink-muted" /></:trigger>
+          <.dropdown_item
             :if={@mine}
             icon="pencil-simple"
-            label={gettext("Edit")}
-            size="sm"
             phx-click="edit"
             phx-value-id={@post.id}
             phx-target={@ui.myself}
-          />
-          <.icon_button
+          >
+            {gettext("Edit")}
+          </.dropdown_item>
+          <.dropdown_item
+            :if={@ui.can_moderate}
+            icon={if @pin, do: "push-pin-slash", else: "push-pin"}
+            phx-click={if @pin, do: "unpin", else: "pin"}
+            phx-value-id={@post.id}
+            phx-target={@ui.myself}
+          >
+            {if @pin, do: gettext("Unpin"), else: gettext("Pin to the top")}
+          </.dropdown_item>
+          <.mute_item :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
+          <.dropdown_item
             icon="trash"
-            label={gettext("Delete")}
-            size="sm"
             phx-click="delete"
             phx-value-id={@post.id}
             phx-target={@ui.myself}
             data-confirm={gettext("Delete this post?")}
-          />
-          <.mute_button :if={!@mine && @author} user={@author} post={@post} ui={@ui} />
-        </div>
+          >
+            {gettext("Delete")}
+          </.dropdown_item>
+        </.dropdown>
       </header>
+
+      <.pin_controls :if={@pin && @ui.can_moderate && !@editing} post={@post} pin={@pin} ui={@ui} />
 
       <.form
         :if={@editing}
@@ -620,6 +857,97 @@ defmodule AmautaWeb.CourseFeed do
         </.button>
       </section>
     </article>
+    """
+  end
+
+  attr :post, :map, required: true
+  attr :pin, :map, required: true
+  attr :ui, :map, required: true
+
+  # Para quien modera, en una fijada: vencimiento y orden (RF-TAB-006).
+  defp pin_controls(assigns) do
+    expires = assigns.post.pin_expires_at
+
+    assigns =
+      assign(assigns,
+        expires_on:
+          expires &&
+            expires |> DateTime.shift_zone!(assigns.ui.timezone) |> DateTime.to_date()
+      )
+
+    ~H"""
+    <div class="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+      <.form
+        for={%{}}
+        as={:pin}
+        id={"pin-expiry-#{@post.id}"}
+        phx-change="pin_expiry"
+        phx-target={@ui.myself}
+      >
+        <.input type="hidden" name="pin[post_id]" value={@post.id} />
+        <.input
+          type="date"
+          inline
+          id={"pin-expires-#{@post.id}"}
+          name="pin[expires_on]"
+          value={@expires_on}
+          label={gettext("Unpin on")}
+        />
+      </.form>
+      <div class="ms-auto flex gap-1">
+        <.icon_button
+          :if={!@pin.first}
+          icon="arrow-up"
+          label={gettext("Move up")}
+          size="sm"
+          phx-click="move_pin"
+          phx-value-id={@post.id}
+          phx-value-dir="up"
+          phx-target={@ui.myself}
+        />
+        <.icon_button
+          :if={!@pin.last}
+          icon="arrow-down"
+          label={gettext("Move down")}
+          size="sm"
+          phx-click="move_pin"
+          phx-value-id={@post.id}
+          phx-value-dir="down"
+          phx-target={@ui.myself}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :user, :map, required: true
+  attr :post, :map, required: true
+  attr :ui, :map, required: true
+
+  # Silenciar desde el menú de una publicación (RF-TAB-007).
+  defp mute_item(assigns) do
+    assigns = assign(assigns, muted: MapSet.member?(assigns.ui.muted, assigns.user.id))
+
+    ~H"""
+    <.dropdown_item
+      :if={@ui.can_moderate}
+      icon={if @muted, do: "user", else: "lock"}
+      phx-click="mute"
+      phx-value-user={@user.id}
+      phx-value-muted={to_string(!@muted)}
+      phx-value-post={@post.id}
+      phx-target={@ui.myself}
+      data-confirm={
+        !@muted &&
+          gettext("Mute %{name}? They will be able to read, but not post or reply here.",
+            name: User.display_name(@user)
+          )
+      }
+    >
+      {if @muted,
+        do: gettext("Let %{name} post again", name: User.display_name(@user)),
+        else: gettext("Mute %{name} in this feed", name: User.display_name(@user))}
+    </.dropdown_item>
     """
   end
 
