@@ -466,6 +466,11 @@ defmodule AmautaWeb.CourseLive do
           >
             <span class="text-ink-muted">{gettext("Enrollment code")}</span>
             <.kbd>{@course.enrollment_code}</.kbd>
+            <.copy_button
+              value={@course.enrollment_code}
+              label={gettext("Copy the enrollment code")}
+              class="-me-2"
+            />
           </div>
         </:actions>
       </.header>
@@ -1009,6 +1014,10 @@ defmodule AmautaWeb.CourseLive do
         <:header>{gettext("Enrollment code")}</:header>
         <div class="flex flex-wrap items-center gap-3">
           <.kbd>{@course.enrollment_code}</.kbd>
+          <.copy_button
+            value={@course.enrollment_code}
+            label={gettext("Copy the enrollment code")}
+          />
           <.button
             variant="secondary"
             size="sm"

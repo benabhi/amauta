@@ -41,6 +41,25 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// Copiar al portapapeles (componente copy_button): muestra un tilde por dos
+// segundos y lo anuncia a los lectores de pantalla.
+window.addEventListener("amauta:copy", async (e) => {
+  const button = e.target
+  try {
+    await navigator.clipboard.writeText(button.dataset.copy)
+  } catch (_error) {
+    return
+  }
+  const status = button.querySelector("[data-copy-status]")
+  button.dataset.copied = ""
+  if (status) status.textContent = button.dataset.copiedLabel
+  clearTimeout(button.copyTimer)
+  button.copyTimer = setTimeout(() => {
+    delete button.dataset.copied
+    if (status) status.textContent = ""
+  }, 2000)
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 

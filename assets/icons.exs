@@ -14,7 +14,7 @@
     folder file upload-simple download-simple link
     path archive arrow-counter-clockwise arrow-up arrow-down star
     code calculator flask globe-hemisphere-west palette music-notes translate chart-line
-    scales heartbeat leaf
+    scales heartbeat leaf copy
   ),
   duotone: ~w(
     graduation-cap book-open chats-circle folder-open calendar-check confetti users path

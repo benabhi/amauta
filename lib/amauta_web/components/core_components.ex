@@ -119,6 +119,45 @@ defmodule AmautaWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Botón para copiar un texto al portapapeles (por ejemplo, un código de
+  inscripción). Al copiar muestra un tilde por dos segundos y lo anuncia a
+  los lectores de pantalla. El comportamiento está en `assets/js/app.js`
+  (evento `amauta:copy`).
+
+      <.copy_button value={@course.enrollment_code} />
+  """
+  attr :value, :string, required: true
+  attr :label, :string, default: nil, doc: "por defecto, «Copiar»"
+  attr :class, :any, default: nil
+  attr :rest, :global
+
+  def copy_button(assigns) do
+    assigns = assign(assigns, :label, assigns.label || gettext("Copy"))
+
+    ~H"""
+    <button
+      type="button"
+      class={["group", button_base(), variant_classes("ghost"), square_size("sm"), @class]}
+      data-copy={@value}
+      data-copied-label={gettext("Copied")}
+      phx-click={JS.dispatch("amauta:copy")}
+      aria-label={@label}
+      title={@label}
+      {@rest}
+    >
+      <%!-- El span controla la visibilidad: el ícono trae su propio inline-block. --%>
+      <span data-icon="copy" class="flex group-data-[copied]:hidden">
+        <.icon name="copy" class="size-4" />
+      </span>
+      <span data-icon="copied" class="hidden group-data-[copied]:flex">
+        <.icon name="check" class="size-4 text-chilca-deep" />
+      </span>
+      <span class="sr-only" aria-live="polite" data-copy-status></span>
+    </button>
+    """
+  end
+
   defp button_classes(%{variant: variant, size: size}),
     do: [button_base(), variant_classes(variant), size_classes(size)]
 
