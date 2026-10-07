@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Documento | Especificación de Requisitos de Software (ERS) |
-| Versión | 1.2 — aprobada |
+| Versión | 1.3 — aprobada |
 | Estado | Aprobado. Es la base de `docs/MVP.md`; los cambios posteriores se registran como nuevas versiones |
-| Fecha | 2026-10-05 |
+| Fecha | 2026-10-07 |
 | Repositorio | <https://github.com/benabhi/amauta> |
 | Alcance del MVP | `docs/MVP.md` 1.0 (aprobado): 171 requisitos en 20 capacidades |
 
@@ -23,6 +23,7 @@
 | 1.0 | 2026-10-05 | Cierre: se aceptan las 9 propuestas pendientes (DEC-006, 014, 015, 019, 021, 022, 023, 028 y 029) y el SSO queda como conector opcional a futuro (DEC-020). Documento aprobado como base de `docs/MVP.md`. |
 | 1.1 | 2026-10-05 | Sincronización con `docs/MVP.md` 1.0: 61 requisitos pasan de MVP a V1. Los que entran de forma parcial mantienen la fase MVP y su alcance se detalla en el MVP. Se actualizan la hoja de ruta (sección 10) y DEC-034. |
 | 1.2 | 2026-10-06 | El repositorio de desarrollo vive en el disco de Windows, sin WSL; la recarga en vivo usa vigilancia por sondeo (DEC-035, RNF-DEV-004). |
+| 1.3 | 2026-10-07 | Pregunta abierta sobre materia y edición en el trayecto (DEC-036), a decidir antes de V1. Las menciones con «@» notifican a la persona mencionada: nuevo evento `feed.mentioned` en el catálogo (DEC-037, RF-TAB-004, Anexo D). |
 
 ## Cómo leer este documento
 
@@ -629,7 +630,7 @@ Los requisitos se agrupan por área. La fase indicada es tentativa: el alcance d
 - **RF-TAB-001** · Debe · MVP — Publicar con el editor de bloques (texto con formato, listas, enlaces, imágenes, código, fórmulas LaTeX y videos incrustados), con adjuntos.
 - **RF-TAB-002** · Debe · MVP — Elegir destinatarios: todo el curso, comisiones, grupos o personas concretas.
 - **RF-TAB-003** · Debe · MVP — Borradores, publicación programada, edición (con marca «editado» e historial) y eliminación.
-- **RF-TAB-004** · Debe · MVP — Respuestas en hilo: cualquier participante puede responder a una publicación y a una respuesta (un solo nivel de anidación, para que la conversación siga siendo legible), con menciones a personas. Las respuestas se pueden desactivar por publicación o por curso.
+- **RF-TAB-004** · Debe · MVP — Respuestas en hilo: cualquier participante puede responder a una publicación y a una respuesta (un solo nivel de anidación, para que la conversación siga siendo legible), con menciones a personas. La persona mencionada recibe una notificación (`feed.mentioned`, DEC-037). Las respuestas se pueden desactivar por publicación o por curso.
 - **RF-TAB-005** · Debe · MVP — Adjuntar archivos en publicaciones y respuestas (también los estudiantes, si el curso lo permite), con vista previa integrada y los mismos límites que el resto de los archivos.
 - **RF-TAB-006** · Debe · MVP — Fijar con un clic: el docente fija o desfija una publicación desde su menú o arrastrándola a la zona de destacados. Puede haber varias fijadas, ordenadas a mano y con vencimiento opcional (se desfijan solas en una fecha). Las fijadas se ven siempre arriba del tablón y en el encabezado del curso.
 - **RF-TAB-007** · Debe · MVP — Quién publica: solo docentes, todos, o todos con moderación previa (configurable por curso). Moderación: ocultar, eliminar o editar respuestas, silenciar a una persona en el tablón y denunciar contenido inapropiado.
@@ -2088,6 +2089,8 @@ Estados: ✅ decidida · 🔶 propuesta (se asume salvo objeción) · ⏳ abiert
 | DEC-033 | Correlatividades | ✅ 2026-10-05 | Pospuestas: quedan fuera del alcance actual, incluso como información visual. Se evaluarán más adelante, junto con las condiciones de acceso entre cursos (RF-TRA-017). |
 | DEC-034 | Tamaño del MVP | ✅ 2026-10-05 | Un esqueleto que dicta una materia de punta a punta con muy buena calidad. El recorte real quedó en 171 requisitos (la estimación inicial de 60 a 80 no contemplaba la granularidad de este documento); el detalle está en `docs/MVP.md` 1.0. |
 | DEC-035 | Ubicación del repositorio en desarrollo | ✅ 2026-10-05 | El repositorio vive en el disco de Windows, sin WSL; la recarga en vivo usa vigilancia por sondeo. |
+| DEC-036 | Materia y edición en el trayecto | ⏳ abierta | Hoy cada curso es a la vez la materia y su dictado en un período. Pregunta: ¿las etapas del trayecto deberían contener materias (la entidad estable) y cada curso ser una edición que apunta a su materia? Afecta el nuevo ciclo (RF-TRA-007), el historial por materia, los cursos compartidos (RF-TRA-006) y los reportes. Decidir antes de empezar V1. |
+| DEC-037 | Notificar las menciones | 🔶 2026-10-07 | Mencionar con «@» en el tablón notifica a la persona mencionada (evento `feed.mentioned`, en la app y por email según sus preferencias). Solo se avisa a quien puede ver la publicación y sin duplicar: si la mención llega en una respuesta a una publicación propia, se envía un único aviso. |
 
 ---
 
@@ -2347,6 +2350,7 @@ Con los presets, los roles toman los nombres de cada institución: en una univer
 | `course.created` / `course.published` / `course.archived` | Ciclo de vida del curso | ✔ | Al publicarse | ✔ |
 | `feed.post_published` | Nueva publicación en un tablón | — | ✔ | ✔ |
 | `feed.reply_created` | Nueva respuesta en el tablón | — | ✔ | ✔ |
+| `feed.mentioned` | Mención con «@» en una publicación o respuesta del tablón (DEC-037) | — | ✔ | — |
 | `feed.post_pinned` | Publicación fijada | — | Opcional | — |
 | `content.item_published` | Nuevo material, página, tarea o evaluación | — | ✔ | ✔ |
 | `assignment.due_soon` | Vencimiento próximo | — | ✔ | — |

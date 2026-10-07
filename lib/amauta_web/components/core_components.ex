@@ -119,6 +119,461 @@ defmodule AmautaWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Editor de bloques (RF-CON-003) para un campo de formulario de tipo
+  `Amauta.RichText.Document`. Al estilo Notion: se escribe y con «/» se
+  elige el bloque (títulos, listas, cita, recuadro, código, fórmula, video,
+  separador). El documento viaja como JSON en un input oculto y el servidor
+  lo depura al guardar. El editor (Tiptap) se carga bajo demanda.
+
+      <.rich_text_editor field={@form[:description]} label="Descripción" />
+  """
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :label, :string, required: true
+  attr :placeholder, :string, default: nil
+
+  attr :id, :string,
+    default: nil,
+    doc: "otro id vuelve a montar el editor (por ejemplo, vacío después de publicar)"
+
+  attr :debounce, :string, default: nil, doc: "demora del aviso de cambio (phx-debounce)"
+
+  attr :mentions, :list,
+    default: nil,
+    doc: "personas que se pueden mencionar con «@»: [%{id: id, label: nombre}]"
+
+  def rich_text_editor(assigns) do
+    %{field: field} = assigns
+
+    value =
+      case field.value do
+        doc when is_map(doc) -> Jason.encode!(doc)
+        json when is_binary(json) -> json
+        _ -> ""
+      end
+
+    assigns =
+      assign(assigns,
+        id: assigns.id || "#{field.id}-editor",
+        value: value,
+        errors: Enum.map(field.errors, &translate_error/1),
+        commands: Jason.encode!(rich_text_commands()),
+        mention_list: assigns.mentions && Jason.encode!(assigns.mentions),
+        labels:
+          Jason.encode!(%{
+            slash: gettext("Blocks"),
+            math: gettext("LaTeX formula"),
+            video: gettext("Video"),
+            videoUrl: gettext("Video address"),
+            videoHint: gettext("Paste a YouTube or Vimeo link and press Enter."),
+            videoInvalid: gettext("That link is not from YouTube or Vimeo."),
+            mentions: gettext("People")
+          })
+      )
+
+    ~H"""
+    <div class="mb-4">
+      <span id={"#{@id}-label"} class="mb-1 block text-sm font-semibold">{@label}</span>
+      <div
+        id={@id}
+        phx-hook="RichTextEditor"
+        phx-update="ignore"
+        data-commands={@commands}
+        data-labels={@labels}
+        data-labelledby={"#{@id}-label"}
+        data-mentions={@mention_list}
+        data-placeholder={@placeholder || gettext("Write, or type «/» to add a block…")}
+        class="rounded-control border border-line bg-surface focus-within:border-primary"
+      >
+        <input
+          type="hidden"
+          name={@field.name}
+          value={@value}
+          phx-debounce={@debounce}
+          data-editor-input
+        />
+        <div
+          role="toolbar"
+          aria-label={gettext("Text format")}
+          class="flex flex-wrap items-center gap-0.5 border-b border-line p-1"
+        >
+          <.icon_button
+            :for={
+              {command, mark, icon, label} <- [
+                {"bold", "bold", "text-b", gettext("Bold")},
+                {"italic", "italic", "text-italic", gettext("Italic")},
+                {"strike", "strike", "text-strikethrough", gettext("Strikethrough")},
+                {"code", "code", "code", gettext("Inline code")},
+                {"link", "link", "link", gettext("Link")}
+              ]
+            }
+            type="button"
+            icon={icon}
+            label={label}
+            size="sm"
+            data-command={command}
+            data-mark={mark}
+            aria-pressed="false"
+          />
+          <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
+          <.icon_button
+            type="button"
+            icon="arrow-counter-clockwise"
+            label={gettext("Undo")}
+            size="sm"
+            data-command="undo"
+          />
+          <.icon_button
+            type="button"
+            icon="arrow-clockwise"
+            label={gettext("Redo")}
+            size="sm"
+            data-command="redo"
+          />
+        </div>
+        <div data-link-panel hidden class="border-b border-line p-2">
+          <input
+            data-link-input
+            type="url"
+            placeholder="https://…"
+            aria-label={gettext("Link address (Enter to apply, empty to remove)")}
+            class="w-full rounded-control border border-line bg-surface px-3 py-1.5 text-sm"
+          />
+        </div>
+        <div data-editor-content></div>
+      </div>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
+  defp rich_text_commands do
+    [
+      {"paragraph", gettext("Text")},
+      {"heading2", gettext("Title")},
+      {"heading3", gettext("Subtitle")},
+      {"heading4", gettext("Small title")},
+      {"bulletList", gettext("Bulleted list")},
+      {"orderedList", gettext("Numbered list")},
+      {"quote", gettext("Quote")},
+      {"callout", gettext("Highlighted box")},
+      {"calloutWarning", gettext("Warning box")},
+      {"code", gettext("Code")},
+      {"math", gettext("Formula (LaTeX)")},
+      {"video", gettext("Video (YouTube or Vimeo)")},
+      {"divider", gettext("Divider")}
+    ]
+    |> Enum.map(fn {id, label} -> %{id: id, label: label} end)
+  end
+
+  @doc """
+  Contenido largo recortado a una altura máxima, con un desvanecido abajo y
+  «Ver más» para desplegarlo. El botón aparece solo si el contenido de
+  verdad no entra (lo mide el navegador, también cuando cargan imágenes o
+  fórmulas).
+
+      <.collapsible id="post-text-1"><.rich_text id="post-1" doc={@doc} /></.collapsible>
+  """
+  attr :id, :string, required: true
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def collapsible(assigns) do
+    ~H"""
+    <div id={@id} phx-hook=".Collapsible" class={["group/collapse", @class]}>
+      <div
+        id={"#{@id}-body"}
+        data-collapse-body
+        class="max-h-96 overflow-hidden group-data-overflow/collapse:mask-b-from-60% group-data-expanded/collapse:max-h-none"
+      >
+        {render_slot(@inner_block)}
+      </div>
+      <button
+        type="button"
+        data-collapse-toggle
+        aria-expanded="false"
+        aria-controls={"#{@id}-body"}
+        class="mt-1 hidden min-h-11 group-data-overflow/collapse:inline-flex group-data-expanded/collapse:inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+      >
+        <span class="group-data-expanded/collapse:hidden">{gettext("Show more")}</span>
+        <span class="hidden group-data-expanded/collapse:inline">{gettext("Show less")}</span>
+      </button>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".Collapsible">
+      // Mide si el contenido desborda; `this.js()` mantiene los atributos
+      // aunque la vista se vuelva a dibujar.
+      export default {
+        mounted() {
+          this.body = this.el.querySelector("[data-collapse-body]")
+          this.button = this.el.querySelector("[data-collapse-toggle]")
+          this.button.addEventListener("click", () => this.toggle())
+          this.observer = new ResizeObserver(() => this.measure())
+          for (const child of this.body.children) this.observer.observe(child)
+          this.measure()
+        },
+        updated() { this.measure() },
+        destroyed() { this.observer.disconnect() },
+        measure() {
+          if (this.expanded) return
+          const js = this.js()
+          // El botón se muestra por CSS cuando hay `data-overflow`.
+          if (this.body.scrollHeight > this.body.clientHeight + 1) js.setAttribute(this.el, "data-overflow", "")
+          else js.removeAttribute(this.el, "data-overflow")
+        },
+        toggle() {
+          const js = this.js()
+          const open = !this.expanded
+          this.expanded = open
+          js.setAttribute(this.button, "aria-expanded", String(open))
+          // Desplegado no hay desvanecido; el botón sigue para «Ver menos».
+          if (open) {
+            js.removeAttribute(this.el, "data-overflow")
+            js.setAttribute(this.el, "data-expanded", "")
+          } else {
+            js.removeAttribute(this.el, "data-expanded")
+            js.setAttribute(this.el, "data-overflow", "")
+            this.el.scrollIntoView({block: "nearest"})
+          }
+        }
+      }
+    </script>
+    """
+  end
+
+  @doc """
+  Archivos adjuntos con vista previa integrada (RF-TAB-005): las imágenes
+  como miniaturas; imágenes, PDF y videos se abren en un diálogo sin salir
+  de la página; el audio se escucha ahí mismo; el resto se descarga. Con
+  `remove`, cada archivo tiene un botón para quitarlo (mientras se escribe).
+
+      <.attachment_list id="post-1-files" files={@files} tenant={@current_scope} />
+  """
+  attr :id, :string, required: true
+  attr :files, :list, required: true, doc: "archivos (`Amauta.Files.StoredFile`)"
+  attr :tenant, :any, required: true, doc: "scope o institución, para las URLs"
+  attr :remove, :string, default: nil, doc: "evento para quitar un archivo (recibe `id`)"
+  attr :target, :any, default: nil
+  attr :class, :any, default: nil
+
+  def attachment_list(assigns) do
+    {images, others} = Enum.split_with(assigns.files, &(preview_kind(&1) == :image))
+    assigns = assign(assigns, images: images, others: others)
+
+    ~H"""
+    <div :if={@files != []} id={@id} phx-hook=".AttachmentPreview" class={["grid gap-2", @class]}>
+      <ul :if={@images != []} class="flex flex-wrap gap-2" aria-label={gettext("Images")}>
+        <li :for={file <- @images} class="flex items-start gap-1">
+          <button
+            type="button"
+            data-preview="image"
+            data-src={AmautaWeb.Paths.file(@tenant, file.id)}
+            data-title={file.filename}
+            class="block size-24 overflow-hidden rounded-control border border-line bg-surface-sunken focus-visible:outline-2 focus-visible:outline-primary sm:size-28"
+            aria-label={gettext("View %{name}", name: file.filename)}
+          >
+            <img
+              src={AmautaWeb.Paths.file(@tenant, file.id)}
+              alt=""
+              loading="lazy"
+              class="size-full object-cover"
+            />
+          </button>
+          <.attachment_remove :if={@remove} file={file} remove={@remove} target={@target} />
+        </li>
+      </ul>
+
+      <ul :if={@others != []} class="grid gap-2" aria-label={gettext("Files")}>
+        <li
+          :for={file <- @others}
+          class="flex min-h-14 items-center gap-3 rounded-control border border-line bg-surface px-3 py-2"
+        >
+          <.icon name={file_icon(file)} class="size-6 shrink-0 text-ink-muted" />
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold">{file.filename}</p>
+            <p class="text-xs text-ink-muted">{AmautaWeb.Format.bytes(file.size)}</p>
+            <audio
+              :if={preview_kind(file) == :audio}
+              controls
+              preload="none"
+              src={AmautaWeb.Paths.file(@tenant, file.id)}
+              class="mt-1 w-full"
+            />
+          </div>
+          <button
+            :if={preview_kind(file) in [:pdf, :video]}
+            type="button"
+            data-preview={preview_kind(file)}
+            data-src={AmautaWeb.Paths.file(@tenant, file.id)}
+            data-title={file.filename}
+            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
+            aria-label={gettext("View %{name}", name: file.filename)}
+          >
+            <.icon name="eye" class="size-5" />
+          </button>
+          <a
+            href={AmautaWeb.Paths.file_download(@tenant, file.id)}
+            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink"
+            aria-label={gettext("Download %{name}", name: file.filename)}
+          >
+            <.icon name="download-simple" class="size-5" />
+          </a>
+          <.attachment_remove :if={@remove} file={file} remove={@remove} target={@target} />
+        </li>
+      </ul>
+
+      <dialog
+        data-preview-dialog
+        aria-label={gettext("Preview")}
+        class="m-auto max-h-screen w-full max-w-4xl rounded-panel border border-line bg-surface p-0 text-ink shadow-lg backdrop:bg-ink/60"
+      >
+        <div class="flex items-center gap-2 border-b border-line px-4 py-2">
+          <p data-preview-title class="min-w-0 flex-1 truncate text-sm font-semibold"></p>
+          <button
+            type="button"
+            data-preview-close
+            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control hover:bg-surface-sunken"
+            aria-label={gettext("Close")}
+          >
+            <.icon name="x" class="size-5" />
+          </button>
+        </div>
+        <div data-preview-body class="grid aspect-video w-full place-items-center bg-surface-sunken">
+        </div>
+      </dialog>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".AttachmentPreview">
+      // Vista previa en un diálogo nativo: atrapa el foco y se cierra con Esc.
+      export default {
+        mounted() {
+          this.el.addEventListener("click", (e) => {
+            const trigger = e.target.closest("[data-preview]")
+            if (trigger) this.open(trigger)
+            if (e.target.closest("[data-preview-close]")) this.dialog().close()
+          })
+        },
+        dialog() {
+          return this.el.querySelector("[data-preview-dialog]")
+        },
+        open(trigger) {
+          const dialog = this.dialog()
+          const body = dialog.querySelector("[data-preview-body]")
+          const {preview: kind, src, title} = trigger.dataset
+          dialog.querySelector("[data-preview-title]").textContent = title
+          const tag = kind === "image" ? "img" : kind === "video" ? "video" : "iframe"
+          const media = document.createElement(tag)
+          media.className = "size-full object-contain"
+          if (kind === "image") media.alt = title
+          if (kind === "video") media.controls = true
+          if (kind === "pdf") media.title = title
+          media.src = src
+          body.replaceChildren(media)
+          dialog.addEventListener("close", () => body.replaceChildren(), {once: true})
+          dialog.showModal()
+        }
+      }
+    </script>
+    """
+  end
+
+  attr :file, :map, required: true
+  attr :remove, :string, required: true
+  attr :target, :any, default: nil
+
+  defp attachment_remove(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={@remove}
+      phx-value-id={@file.id}
+      phx-target={@target}
+      class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-cochinilla-deep"
+      aria-label={gettext("Remove %{name}", name: @file.filename)}
+    >
+      <.icon name="x" class="size-5" />
+    </button>
+    """
+  end
+
+  defp preview_kind(%{content_type: "image/" <> _}), do: :image
+  defp preview_kind(%{content_type: "application/pdf"}), do: :pdf
+  defp preview_kind(%{content_type: "video/" <> _}), do: :video
+  defp preview_kind(%{content_type: "audio/" <> _}), do: :audio
+  defp preview_kind(_file), do: :file
+
+  defp file_icon(%{content_type: "application/pdf"}), do: "file-pdf"
+  defp file_icon(%{content_type: "video/" <> _}), do: "file-video"
+  defp file_icon(%{content_type: "audio/" <> _}), do: "file-audio"
+  defp file_icon(%{content_type: "application/zip"}), do: "file-zip"
+  defp file_icon(%{content_type: "text/" <> _}), do: "file-text"
+
+  defp file_icon(%{content_type: type}) when is_binary(type) do
+    cond do
+      type =~ ~r/word|opendocument.text/ -> "file-doc"
+      type =~ ~r/sheet|excel/ -> "file-xls"
+      type =~ ~r/presentation|powerpoint/ -> "file-ppt"
+      true -> "file"
+    end
+  end
+
+  defp file_icon(_file), do: "file"
+
+  @doc """
+  Muestra contenido enriquecido ya depurado (`Amauta.RichText`): el HTML se
+  genera en el servidor y el navegador completa fórmulas y código.
+
+      <.rich_text id="pathway-description" doc={@pathway.description} />
+  """
+  attr :id, :string, required: true
+  attr :doc, :map, default: nil
+  attr :class, :any, default: nil
+
+  def rich_text(assigns) do
+    ~H"""
+    <div :if={@doc} id={@id} phx-hook="RichContent" class={["rich-text", @class]}>
+      {Amauta.RichText.to_html(@doc)}
+    </div>
+    """
+  end
+
+  @doc """
+  Botón para copiar un texto al portapapeles (por ejemplo, un código de
+  inscripción). Al copiar muestra un tilde por dos segundos y lo anuncia a
+  los lectores de pantalla. El comportamiento está en `assets/js/app.js`
+  (evento `amauta:copy`).
+
+      <.copy_button value={@course.enrollment_code} />
+  """
+  attr :value, :string, required: true
+  attr :label, :string, default: nil, doc: "por defecto, «Copiar»"
+  attr :class, :any, default: nil
+  attr :rest, :global
+
+  def copy_button(assigns) do
+    assigns = assign(assigns, :label, assigns.label || gettext("Copy"))
+
+    ~H"""
+    <button
+      type="button"
+      class={["group", button_base(), variant_classes("ghost"), square_size("sm"), @class]}
+      data-copy={@value}
+      data-copied-label={gettext("Copied")}
+      phx-click={JS.dispatch("amauta:copy")}
+      aria-label={@label}
+      title={@label}
+      {@rest}
+    >
+      <%!-- El span controla la visibilidad: el ícono trae su propio inline-block. --%>
+      <span data-icon="copy" class="flex group-data-[copied]:hidden">
+        <.icon name="copy" class="size-4" />
+      </span>
+      <span data-icon="copied" class="hidden group-data-[copied]:flex">
+        <.icon name="check" class="size-4 text-chilca-deep" />
+      </span>
+      <span class="sr-only" aria-live="polite" data-copy-status></span>
+    </button>
+    """
+  end
+
   defp button_classes(%{variant: variant, size: size}),
     do: [button_base(), variant_classes(variant), size_classes(size)]
 
@@ -160,6 +615,43 @@ defmodule AmautaWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Barra de avance (por ejemplo, cuánto de una unidad está hecho). Con
+  `label` la leen los lectores de pantalla.
+
+      <.progress_bar value={2} max={4} label="2 de 4 hechos" />
+  """
+  attr :value, :integer, required: true
+  attr :max, :integer, required: true
+  attr :label, :string, required: true
+  attr :class, :any, default: nil
+
+  def progress_bar(assigns) do
+    assigns =
+      assign(assigns,
+        percent: if(assigns.max > 0, do: round(assigns.value * 100 / assigns.max), else: 0)
+      )
+
+    ~H"""
+    <div
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax={@max}
+      aria-valuenow={@value}
+      aria-label={@label}
+      class={["h-1.5 overflow-hidden rounded-full bg-surface-sunken", @class]}
+    >
+      <div
+        class={[
+          "h-full rounded-full motion-safe:transition-[width] motion-safe:duration-base",
+          if(@percent == 100, do: "bg-chilca-deep", else: "bg-primary")
+        ]}
+        style={"width: #{@percent}%"}
+      />
+    </div>
+    """
+  end
+
   ## Insignias, avatares y detalles
 
   @doc """
@@ -194,7 +686,8 @@ defmodule AmautaWeb.CoreComponents do
 
   @doc """
   Avatar con iniciales (o foto). El color sale del nombre, así cada persona
-  conserva el suyo.
+  conserva el suyo. La foto va encima de las iniciales: si no carga, quedan
+  las iniciales (y no el texto alternativo cortado).
   """
   attr :name, :string, required: true
   attr :src, :string, default: nil
@@ -208,16 +701,16 @@ defmodule AmautaWeb.CoreComponents do
     ~H"""
     <span
       class={[
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
         avatar_size(@size),
         family_classes(@family),
         @class
       ]}
       title={@name}
     >
-      <img :if={@src} src={@src} alt={@name} class="size-full object-cover" />
-      <span :if={!@src} aria-hidden="true">{@initials}</span>
-      <span :if={!@src} class="sr-only">{@name}</span>
+      <span aria-hidden="true">{@initials}</span>
+      <span class="sr-only">{@name}</span>
+      <img :if={@src} src={@src} alt="" class="absolute inset-0 size-full object-cover" />
     </span>
     """
   end
@@ -615,7 +1108,9 @@ defmodule AmautaWeb.CoreComponents do
         </h1>
         <p :if={@subtitle != []} class="mt-1 text-ink-muted">{render_slot(@subtitle)}</p>
       </div>
-      <div :if={@actions != []} class="flex flex-wrap gap-2">{render_slot(@actions)}</div>
+      <div :if={@actions != []} class="flex flex-wrap items-center gap-2">
+        {render_slot(@actions)}
+      </div>
     </header>
     """
   end
@@ -694,6 +1189,7 @@ defmodule AmautaWeb.CoreComponents do
   attr :options, :list, doc: "opciones del select (Phoenix.HTML.Form.options_for_select/2)"
   attr :multiple, :boolean, default: false
   attr :class, :any, default: nil
+  attr :inline, :boolean, default: false, doc: "etiqueta al costado y sin margen inferior"
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -782,8 +1278,8 @@ defmodule AmautaWeb.CoreComponents do
 
   def input(assigns) do
     ~H"""
-    <div class="mb-4">
-      <.field_label for={@id} label={@label} />
+    <div class={if @inline, do: "flex items-center gap-2", else: "mb-4"}>
+      <.field_label for={@id} label={@label} inline={@inline} />
       <input
         type={@type}
         name={@name}
@@ -811,10 +1307,15 @@ defmodule AmautaWeb.CoreComponents do
 
   attr :for, :any, default: nil
   attr :label, :string, default: nil
+  attr :inline, :boolean, default: false
 
   defp field_label(assigns) do
     ~H"""
-    <label :if={@label} for={@for} class="mb-1.5 block text-sm font-semibold text-ink">
+    <label
+      :if={@label}
+      for={@for}
+      class={["text-sm font-semibold text-ink", if(@inline, do: "shrink-0", else: "mb-1.5 block")]}
+    >
       {@label}
     </label>
     """

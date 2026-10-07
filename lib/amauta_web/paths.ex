@@ -57,11 +57,30 @@ defmodule AmautaWeb.Paths do
   def course(tenant, course, tab, params),
     do: course(tenant, course, tab) <> "?" <> URI.encode_query(params)
 
+  @doc "Un elemento del contenido del curso (página o material)."
+  def course_item(tenant, course, item),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/content/#{item.id}"
+
+  def edit_course_item(tenant, course, item),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/content/#{item.id}/edit"
+
+  @doc "Crear un elemento de ese tipo (`page` o `material`) en una unidad."
+  def new_course_item(tenant, course, unit, kind),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/content/new?#{[unit: unit.id, kind: kind]}"
+
+  @doc "Página de una publicación del tablón, con toda su conversación."
+  def course_post(tenant, course, post),
+    do: ~p"/#{slug(tenant)}/c/#{course.slug}/posts/#{post.id}"
+
   def import_enrollments(tenant, course), do: ~p"/#{slug(tenant)}/c/#{course.slug}/people/import"
   def join(tenant), do: ~p"/#{slug(tenant)}/join"
 
   @doc "Archivo (redirige a una URL prefirmada después de verificar el permiso)."
   def file(tenant, file_id), do: ~p"/#{slug(tenant)}/files/#{file_id}"
+
+  @doc "Archivo para guardar con su nombre original."
+  def file_download(tenant, file_id),
+    do: ~p"/#{slug(tenant)}/files/#{file_id}?#{[download: 1]}"
 
   @doc "Foto de perfil de la persona, o `nil` si no tiene."
   def avatar(_tenant, %{avatar_file_id: nil}), do: nil
@@ -77,6 +96,30 @@ defmodule AmautaWeb.Paths do
 
   @doc "URL absoluta del enlace mágico (la usa el dominio para las invitaciones)."
   def absolute_log_in(tenant, token), do: absolute(log_in(tenant, token))
+
+  @doc "Centro de notificaciones (RF-NOT-001)."
+  def notifications(tenant), do: ~p"/#{slug(tenant)}/notifications"
+  def notifications(tenant, params), do: ~p"/#{slug(tenant)}/notifications?#{params}"
+
+  @doc "Preferencias de notificación (RF-NOT-004, RF-EML-005)."
+  def notification_settings(tenant), do: ~p"/#{slug(tenant)}/settings/notifications"
+
+  @doc "Baja de los emails de notificación con un clic (RF-EML-009)."
+  def unsubscribe(tenant, token), do: ~p"/#{slug(tenant)}/unsubscribe/#{token}"
+
+  @doc """
+  Adónde lleva una notificación: la publicación, el elemento del contenido
+  o el curso.
+  """
+  def notification_target(tenant, %{course: course, data: data}) when not is_nil(course) do
+    cond do
+      data["post_id"] -> course_post(tenant, course, %{id: data["post_id"]})
+      data["item_id"] -> course_item(tenant, course, %{id: data["item_id"]})
+      true -> course(tenant, course)
+    end
+  end
+
+  def notification_target(tenant, _notification), do: notifications(tenant)
 
   @doc "URL absoluta, para emails y enlaces que salen de la plataforma."
   def absolute(path) when is_binary(path), do: AmautaWeb.Endpoint.url() <> path

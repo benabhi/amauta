@@ -20,7 +20,7 @@ defmodule Amauta.Pathways.Pathway do
     field :name, :string
     field :code, :string
     field :slug, :string
-    field :description, :string
+    field :description, Amauta.RichText.Document
     field :status, :string, default: "draft"
     field :archived_at, :utc_datetime_usec
 
@@ -45,7 +45,6 @@ defmodule Amauta.Pathways.Pathway do
       message: "only lowercase letters, digits and hyphens"
     )
     |> validate_exclusion(:slug, ~w(new), message: "is reserved")
-    |> validate_length(:description, max: 5000)
     |> unique_constraint(:slug, message: "already in use")
     |> unique_constraint(:code, message: "already in use")
   end

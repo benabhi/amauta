@@ -27,6 +27,7 @@ config :amauta, AmautaWeb.Endpoint,
   secret_key_base: "6Q7KReo4Dvp2SXVARgLUXmWQ0PJjjMo3jUn3WhbI+wmVzhYuv6L3+Jbpw+/TKP4b",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:amauta, ~w(--sourcemap=inline --watch)]},
+    esbuild_storybook: {Esbuild, :install_and_run, [:storybook, ~w(--sourcemap=inline --watch)]},
     # --poll: los eventos de archivos no cruzan el bind mount desde Windows (RNF-DEV-004).
     tailwind: {Tailwind, :install_and_run, [:amauta, ~w(--watch --poll)]}
   ]
@@ -56,6 +57,11 @@ config :amauta, AmautaWeb.Endpoint,
 
 # Enable dev routes for dashboard and mailbox
 config :amauta, dev_routes: true
+
+# Sin respaldo de long-poll: en desarrollo el WebSocket puede tardar en
+# conectar mientras la app se reinicia, y quedar en long-poll volvía lenta
+# cada acción hasta cerrar el navegador.
+config :amauta, :longpoll_fallback_ms, nil
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
@@ -91,7 +97,12 @@ config :amauta, Amauta.Mailer,
 # no atraviesan de forma confiable el montaje desde Windows (RNF-DEV-004).
 config :phoenix_live_reload,
   backend: :fs_poll,
-  backend_opts: [interval: 500]
+  backend_opts: [interval: 500],
+  # Solo las carpetas de los patrones de recarga (config/runtime.exs). Por
+  # defecto vigila la raíz entera, con _build, deps y node_modules: decenas
+  # de miles de archivos revisados cada medio segundo, que frenaban cada
+  # pedido en desarrollo.
+  dirs: ["priv/static", "priv/gettext", "lib", "storybook"]
 
 # Inicio de sesión rápido con las personas de ejemplo (RNF-DEV-009).
 config :amauta, dev_login: true

@@ -55,9 +55,11 @@ defmodule AmautaWeb.CourseLive do
      socket
      |> assign(page_title: course.name, form: nil, settings_form: nil)
      |> assign(periods: [], pathways: [], stages: [], standalone: true)
-     |> assign(section_filter: nil, section_form: nil, editing_section: nil)
+     |> assign(section_filter: nil, section_form: nil, editing_section: nil, pinned: [])
+     |> assign(post_id: nil)
      |> assign(people_query: "", people_results: [], enroll_form: enroll_form())
-     |> assign_course(course)}
+     |> assign_course(course)
+     |> subscribe_feed(course)}
   end
 
   defp assign_course(socket, course) do
@@ -77,7 +79,9 @@ defmodule AmautaWeb.CourseLive do
       can_update: open and can.("course.update"),
       can_archive: can.("course.archive"),
       can_settings: can.("course.update") or can.("course.archive"),
-      can_see_code: can.("course.people.enroll") or can.("course.update")
+      # El código es para todo el equipo docente (RF-CUR-003), también el de
+      # una comisión: quien ve el contenido oculto, en el curso o en la suya.
+      can_see_code: Enrollments.can_in_course?(scope, "course.content.view_hidden", course)
     )
   end
 
@@ -94,11 +98,30 @@ defmodule AmautaWeb.CourseLive do
           unless socket.assigns.can_settings, do: raise(AmautaWeb.ForbiddenError)
           assign_settings_forms(socket)
 
+        # Una publicación con toda su conversación: tiene que existir y
+        # poder verla esta persona (si no, ni se sabe que existe).
+        :post ->
+          %{current_scope: scope, course: course} = socket.assigns
+
+          with {:ok, id} <- Ecto.UUID.cast(params["post_id"]),
+               %{} = post <- Amauta.Feed.get_visible(scope, course, id) do
+            # La tarjeta de un elemento del contenido lleva al elemento.
+            if post.kind == "content",
+              do: push_navigate(socket, to: Paths.course_item(scope, course, post.item)),
+              else: assign(socket, post_id: id)
+          else
+            _ -> raise AmautaWeb.NotFoundError
+          end
+
         _tab ->
           socket
       end
 
-    {:noreply, socket |> assign_section_filter(params["section"]) |> load_people()}
+    {:noreply,
+     socket
+     |> assign_section_filter(params["section"])
+     |> assign_pinned()
+     |> load_people()}
   end
 
   # Filtro de comisión (RF-COM-003). Quien está limitado a sus comisiones
@@ -115,6 +138,12 @@ defmodule AmautaWeb.CourseLive do
       end
 
     assign(socket, section_filter: filter)
+  end
+
+  # Fijadas del tablón en el encabezado del curso (RF-TAB-006).
+  defp assign_pinned(socket) do
+    %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
+    assign(socket, pinned: Amauta.Feed.list_pinned(scope, course, %{"section" => filter}))
   end
 
   defp load_people(%{assigns: %{live_action: :people}} = socket) do
@@ -414,7 +443,53 @@ defmodule AmautaWeb.CourseLive do
   defp blank_to_nil(""), do: nil
   defp blank_to_nil(value), do: value
 
+  ## Tablón en tiempo real (RF-TAB-008)
+
+  defp subscribe_feed(socket, course) do
+    if connected?(socket), do: Phoenix.PubSub.subscribe(Amauta.PubSub, Amauta.Feed.topic(course))
+    socket
+  end
+
+  @impl true
+  # Borraron la publicación que se está mirando en su página: al tablón.
+  def handle_info(
+        {:feed, :deleted, %{id: id}},
+        %{assigns: %{live_action: :post, post_id: id}} = socket
+      ) do
+    %{current_scope: scope, course: course} = socket.assigns
+    {:noreply, push_navigate(socket, to: Paths.course(scope, course))}
+  end
+
+  def handle_info({:feed, event, post}, socket) do
+    if socket.assigns.live_action in [:feed, :post] do
+      send_update(AmautaWeb.CourseFeed, id: "course-feed", feed_event: {event, post})
+    end
+
+    {:noreply,
+     if(event in [:pinned, :updated, :deleted], do: assign_pinned(socket), else: socket)}
+  end
+
+  # Un archivo terminó de subir en un formulario del tablón (RF-TAB-005).
+  def handle_info(
+        {AmautaWeb.Components.DirectUpload, "feed-upload-" <> _ = id, {:uploaded, file}},
+        socket
+      ) do
+    send_update(AmautaWeb.CourseFeed, id: "course-feed", uploaded: {id, file})
+    {:noreply, socket}
+  end
+
+  def handle_info({:put_flash, kind, message}, socket),
+    do: {:noreply, put_flash(socket, kind, message)}
+
   ## Vista
+
+  # Primera línea del texto de una fijada, para el encabezado.
+  defp pin_summary(post) do
+    post.body
+    |> Amauta.RichText.to_text()
+    |> String.split("\n", trim: true)
+    |> List.first("")
+  end
 
   @impl true
   def render(assigns) do
@@ -464,9 +539,37 @@ defmodule AmautaWeb.CourseLive do
           >
             <span class="text-ink-muted">{gettext("Enrollment code")}</span>
             <.kbd>{@course.enrollment_code}</.kbd>
+            <.copy_button
+              value={@course.enrollment_code}
+              label={gettext("Copy the enrollment code")}
+              class="-me-2"
+            />
           </div>
         </:actions>
       </.header>
+
+      <nav
+        :if={@pinned != []}
+        id="course-pinned"
+        aria-label={gettext("Pinned posts")}
+        class="mb-4 flex flex-wrap gap-2"
+      >
+        <.link
+          :for={post <- Enum.take(@pinned, 3)}
+          patch={Paths.course_post(@current_scope, @course, post)}
+          class="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full bg-anil-soft px-4 text-sm text-anil-deep transition-opacity duration-fast hover:opacity-80"
+        >
+          <.icon name="push-pin" class="size-4 shrink-0" />
+          <span class="truncate">{pin_summary(post)}</span>
+        </.link>
+        <.link
+          :if={length(@pinned) > 3}
+          patch={Paths.course(@current_scope, @course)}
+          class="inline-flex min-h-11 items-center px-2 text-sm text-ink-muted hover:text-ink"
+        >
+          {gettext("+%{count} more", count: length(@pinned) - 3)}
+        </.link>
+      </nav>
 
       <.form
         :if={@sections != []}
@@ -492,15 +595,30 @@ defmodule AmautaWeb.CourseLive do
         <:tab
           :for={{action, icon, label} <- course_tabs(@can_settings)}
           patch={Paths.course(@current_scope, @course, action, tab_params(@section_filter))}
-          active={@live_action == action}
+          active={@live_action == action or (@live_action == :post and action == :feed)}
           icon={icon}
         >
           {label}
         </:tab>
       </.tabs>
 
-      <.feed :if={@live_action == :feed} current_scope={@current_scope} />
-      <.content :if={@live_action == :content} current_scope={@current_scope} />
+      <.live_component
+        :if={@live_action in [:feed, :post]}
+        module={AmautaWeb.CourseFeed}
+        id="course-feed"
+        current_scope={@current_scope}
+        course={@course}
+        sections={@sections}
+        section_filter={@section_filter}
+        post_id={if @live_action == :post, do: @post_id}
+      />
+      <.live_component
+        :if={@live_action == :content}
+        module={AmautaWeb.CourseContent}
+        id="course-content"
+        current_scope={@current_scope}
+        course={@course}
+      />
       <.people :if={@live_action == :people} {people_assigns(assigns)} />
       <.grades :if={@live_action == :grades} />
       <.settings
@@ -527,34 +645,6 @@ defmodule AmautaWeb.CourseLive do
       {:people, "users", gettext("People")},
       {:grades, "clipboard-text", gettext("Grades")}
     ] ++ if(can_settings, do: [{:settings, "gear", gettext("Settings")}], else: [])
-  end
-
-  attr :current_scope, :map, required: true
-
-  defp feed(assigns) do
-    ~H"""
-    <.empty_state icon="chats-circle" title={gettext("Nothing posted yet")}>
-      {gettext_term(
-        @current_scope,
-        :course,
-        "Announcements and conversations of the %{term} will appear here."
-      )}
-    </.empty_state>
-    """
-  end
-
-  attr :current_scope, :map, required: true
-
-  defp content(assigns) do
-    ~H"""
-    <.empty_state icon="book-open" title={gettext("There is no content yet")}>
-      {gettext_term(
-        @current_scope,
-        :unit,
-        "Content is organized in %{terms}, with pages, materials and assignments."
-      )}
-    </.empty_state>
-    """
   end
 
   defp tab_params(nil), do: %{}
@@ -995,6 +1085,11 @@ defmodule AmautaWeb.CourseLive do
             label={gettext("Allow comments on posts")}
           />
           <.input
+            field={@settings_form[:student_attachments]}
+            type="checkbox"
+            label={gettext("Let students attach files in the feed")}
+          />
+          <.input
             field={@settings_form[:enrollment_code_enabled]}
             type="checkbox"
             label={gettext("Allow joining with the enrollment code")}
@@ -1007,6 +1102,10 @@ defmodule AmautaWeb.CourseLive do
         <:header>{gettext("Enrollment code")}</:header>
         <div class="flex flex-wrap items-center gap-3">
           <.kbd>{@course.enrollment_code}</.kbd>
+          <.copy_button
+            value={@course.enrollment_code}
+            label={gettext("Copy the enrollment code")}
+          />
           <.button
             variant="secondary"
             size="sm"

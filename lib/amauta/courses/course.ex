@@ -86,6 +86,14 @@ defmodule Amauta.Courses.Course do
     |> foreign_key_constraint(:stage_id)
   end
 
+  @doc """
+  Ajustes por defecto de un curso nuevo. Además, el struct literal hace que
+  este módulo dependa de los campos de `Settings` al compilar:
+  `defaults_to_struct` copia ese struct en `%Course{}`, y sin la dependencia
+  un ajuste nuevo quedaba en `nil` hasta recompilar todo.
+  """
+  def default_settings, do: %Settings{}
+
   @doc "Ajustes del curso (RF-CUR-007)."
   def settings_changeset(course, attrs) do
     course

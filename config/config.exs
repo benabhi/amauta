@@ -50,6 +50,11 @@ config :tzdata, :autoupdate, :disabled
 
 # URL del enlace mágico para los emails que arma el dominio (invitaciones).
 config :amauta, :login_url, {AmautaWeb.Paths, :absolute_log_in}
+config :amauta, :notification_links, AmautaWeb.NotificationLinks
+
+# Si el WebSocket no conecta en este tiempo, LiveView pasa a long-poll y lo
+# recuerda por la sesión del navegador. `nil` lo desactiva (desarrollo).
+config :amauta, :longpoll_fallback_ms, 2500
 
 # Remitente de los emails de la plataforma. El remitente por institución
 # (RF-INS-012) llega con su configuración.
@@ -109,12 +114,26 @@ config :ex_aws, http_client: ExAws.Request.Req, json_codec: Jason
 # at the `config/runtime.exs`.
 config :amauta, Amauta.Mailer, adapter: Swoosh.Adapters.Local
 
+# Correo (C13): límite de tasa de la instancia (RF-EML-002; `nil` no aplica)
+# y ventana de agrupación de las notificaciones por email (RF-EML-004).
+config :amauta, Amauta.Mail, rate_limits: [second: 5, minute: 120, hour: 2000, day: 20_000]
+config :amauta, Amauta.Notifications, email_window: 600
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",
+  # app.js es un módulo ES con división de código: las piezas pesadas (el
+  # editor de bloques, KaTeX, el resaltado de código) se cargan bajo demanda
+  # con import() (ERS 8.x, sección de JavaScript).
   amauta: [
     args:
-      ~w(js/app.js js/storybook.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+      ~w(js/app.js --bundle --splitting --format=esm --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
+  ],
+  storybook: [
+    args:
+      ~w(js/storybook.js --bundle --target=es2022 --outdir=../priv/static/assets/js --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]

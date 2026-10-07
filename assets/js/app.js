@@ -24,22 +24,46 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/amauta"
 import topbar from "../vendor/topbar"
+import {RichTextEditor, RichContent} from "./rich_text/hooks"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+// El servidor decide si hay respaldo de long-poll (vacío: sin respaldo, como
+// en desarrollo). Sin respaldo, Phoenix tampoco usa el que haya quedado
+// recordado en la sesión del navegador.
+const fallbackMs = Number(document.querySelector("meta[name='longpoll-fallback-ms']")?.content) || undefined
 const liveSocket = new LiveSocket("/live", Socket, {
-  longPollFallbackMs: 2500,
+  longPollFallbackMs: fallbackMs,
   // Esperar antes de dar la conexión por perdida: evita que el aviso de
   // desconexión parpadee al recargar (en desarrollo cada pedido tarda) o en
   // cortes de un segundo en el celular.
   disconnectedTimeout: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, RichTextEditor, RichContent},
 })
 
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+
+// Copiar al portapapeles (componente copy_button): muestra un tilde por dos
+// segundos y lo anuncia a los lectores de pantalla.
+window.addEventListener("amauta:copy", async (e) => {
+  const button = e.target
+  try {
+    await navigator.clipboard.writeText(button.dataset.copy)
+  } catch (_error) {
+    return
+  }
+  const status = button.querySelector("[data-copy-status]")
+  button.dataset.copied = ""
+  if (status) status.textContent = button.dataset.copiedLabel
+  clearTimeout(button.copyTimer)
+  button.copyTimer = setTimeout(() => {
+    delete button.dataset.copied
+    if (status) status.textContent = ""
+  }, 2000)
+})
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

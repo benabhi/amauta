@@ -18,7 +18,9 @@ defmodule AmautaWeb.ErrorMessages do
       dgettext_noop("errors", "already in use"),
       dgettext_noop("errors", "is reserved"),
       dgettext_noop("errors", "must be after the start"),
-      dgettext_noop("errors", "only lowercase letters, digits and hyphens")
+      dgettext_noop("errors", "only lowercase letters, digits and hyphens"),
+      dgettext_noop("errors", "write something first"),
+      dgettext_noop("errors", "must be in the future")
     ]
   end
 end

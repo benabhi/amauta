@@ -11,9 +11,28 @@ defmodule AmautaWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  # En los tests en navegador, el sandbox de Ecto viaja en el user agent y
+  # cada pedido (y cada LiveView) usa la transacción del test.
+  if Application.compile_env(:amauta, :sql_sandbox) do
+    plug Phoenix.Ecto.SQL.Sandbox
+  end
+
+  @doc "Opciones de la cookie de sesión (las usan las pruebas en navegador)."
+  def session_options, do: @session_options
+
+  # Sin recargador de código al conectar: el pedido HTTP de la página ya lo
+  # pasó, y repetirlo demoraba cada conexión en desarrollo (por el bind
+  # mount, ~1,5 s). Los cambios de código recargan la página (live_reload).
+  # Es una opción de cada transporte: a nivel del socket se ignora.
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [
+      code_reloader: false,
+      connect_info: [:user_agent, session: @session_options]
+    ],
+    longpoll: [
+      code_reloader: false,
+      connect_info: [:user_agent, session: @session_options]
+    ]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -32,7 +51,7 @@ defmodule AmautaWeb.Endpoint do
   if code_reloading? do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
-    plug Phoenix.CodeReloader
+    plug AmautaWeb.DevCodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :amauta
   end
 

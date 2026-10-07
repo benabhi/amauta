@@ -11,62 +11,62 @@
 msgid ""
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:131
+#: lib/amauta/accounts/user_notifier.ex:128
 #, elixir-autogen, elixir-format
 msgid "Confirmation instructions"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:31
+#: lib/amauta/accounts/user_notifier.ex:28
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nYou can change your email by visiting the URL below:\n\n%{url}\n\nIf you didn't request this change, please ignore this.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:132
+#: lib/amauta/accounts/user_notifier.ex:129
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nYou can confirm your account by visiting the URL below:\n\n%{url}\n\nIf you were not expecting this email, please ignore it.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:155
+#: lib/amauta/accounts/user_notifier.ex:152
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nYou can log into your account by visiting the URL below:\n\n%{url}\n\nIf you didn't request this email, please ignore this.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:154
+#: lib/amauta/accounts/user_notifier.ex:151
 #, elixir-autogen, elixir-format
 msgid "Log in instructions"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:30
+#: lib/amauta/accounts/user_notifier.ex:27
 #, elixir-autogen, elixir-format
 msgid "Update email instructions"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:82
+#: lib/amauta/accounts/user_notifier.ex:79
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nSomeone just signed in to your account from a new device:\n\n%{device}\n\nIf it was you, you can ignore this message. If it wasn't, change your\npassword right away.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:107
+#: lib/amauta/accounts/user_notifier.ex:104
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\nWe blocked sign-ins to your account for a few minutes because there\nwere too many failed attempts.\n\nIf it wasn't you, someone may be trying to guess your password.\nYou can always sign in with a link sent to this email.\n"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:81
+#: lib/amauta/accounts/user_notifier.ex:78
 #, elixir-autogen, elixir-format
 msgid "New sign-in to your account"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:106
+#: lib/amauta/accounts/user_notifier.ex:103
 #, elixir-autogen, elixir-format
 msgid "Too many failed sign-in attempts"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:54
+#: lib/amauta/accounts/user_notifier.ex:51
 #, elixir-autogen, elixir-format
 msgid "You are invited to %{institution}"
 msgstr ""
 
-#: lib/amauta/accounts/user_notifier.ex:55
+#: lib/amauta/accounts/user_notifier.ex:52
 #, elixir-autogen, elixir-format
 msgid "Hi %{name},\n\n%{institution} invited you to Amauta, its learning platform.\nTo enter, use the link below:\n\n%{url}\n\nThe link is valid for 7 days. If it expires, ask for a new one from\nthe login page using this email.\n"
 msgstr ""

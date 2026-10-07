@@ -7,6 +7,12 @@ Amauta.TenantMigrationsHelper.with_real_connection(fn ->
   end
 end)
 
-# Las pruebas contra servicios reales (Garage) se corren aparte:
-# mix test --only integration
-ExUnit.start(exclude: [:integration])
+# Se corren aparte:
+#   * contra servicios reales (Garage): mix test --only integration
+#   * en navegador (Playwright): bin/dev e2e (mix test --only e2e)
+if System.get_env("E2E") == "1" do
+  {:ok, _} = PhoenixTest.Playwright.Supervisor.start_link()
+  Application.put_env(:phoenix_test, :base_url, AmautaWeb.Endpoint.url())
+end
+
+ExUnit.start(exclude: [:integration, :e2e])

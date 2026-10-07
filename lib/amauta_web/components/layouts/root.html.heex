@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      name="longpoll-fallback-ms"
+      content={Application.get_env(:amauta, :longpoll_fallback_ms)}
+    />
     <.live_title default="Amauta" phx-no-format>{assigns[:page_title]}</.live_title>
     <link
       rel="preload"
@@ -13,7 +17,7 @@
       crossorigin
     />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
-    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+    <script defer phx-track-static type="module" src={~p"/assets/js/app.js"}>
     </script>
     <%!-- Tema claro, oscuro o del sistema, aplicado antes de pintar para evitar el parpadeo. --%>
     <script>

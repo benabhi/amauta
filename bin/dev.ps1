@@ -34,6 +34,7 @@ Uso: bin\dev.ps1 <comando> [argumentos]
   lint        Verifica formato y advertencias de compilación
   precommit   Lo que corre antes de cada commit
   ci          Los mismos pasos que la integración continua, en MIX_ENV=test
+  e2e         Pruebas en navegador (levanta Playwright en su contenedor)
   destroy     Detiene el entorno y BORRA sus volúmenes (base, archivos, deps)
 '@
 }
@@ -58,6 +59,15 @@ switch ($Command) {
   'lint'      { Invoke-InApp @('mix', 'do', 'format', '--check-formatted', '+', 'compile', '--warnings-as-errors', '--force') }
   'precommit' { Invoke-InApp @('mix', 'precommit') }
   'ci'        { docker compose exec -e MIX_ENV=test app bash -c 'mix deps.unlock --check-unused && mix compile --warnings-as-errors && mix format --check-formatted && mix gettext.extract --check-up-to-date && mix amauta.gettext.check && mix test --warnings-as-errors' }
+  'e2e'       {
+    # Playwright comparte la red de la app: se recrea por si la app se
+    # reinició, y se espera a que su servidor responda.
+    docker compose --profile e2e up -d --force-recreate playwright
+    if ($LASTEXITCODE -eq 0) {
+      docker compose exec app bash -c 'until curl -s localhost:3000 >/dev/null; do sleep 1; done'
+      docker compose exec -e MIX_ENV=test -e E2E=1 app mix test --only e2e @Rest
+    }
+  }
   'destroy'   { docker compose down --volumes }
   { $_ -in 'help', '-h', '--help' } { Show-Usage }
   default {
