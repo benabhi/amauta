@@ -29,6 +29,9 @@ defmodule Amauta.Content.Item do
     field :visibility, :string, default: "visible"
     field :publish_at, :utc_datetime_usec
     field :position, :integer, default: 0
+    # Avisar en el tablón cuando el estudiantado empiece a verlo; cuándo se avisó.
+    field :announce, :boolean, default: false
+    field :announced_at, :utc_datetime_usec
 
     belongs_to :course, Course
     belongs_to :unit, Unit
@@ -51,7 +54,7 @@ defmodule Amauta.Content.Item do
 
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:title, :body, :url, :visibility, :publish_at])
+    |> cast(attrs, [:title, :body, :url, :visibility, :publish_at, :announce])
     |> update_change(:title, &trim/1)
     |> update_change(:url, &trim/1)
     |> validate_required([:title])

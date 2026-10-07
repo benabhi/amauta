@@ -104,8 +104,11 @@ defmodule AmautaWeb.CourseLive do
           %{current_scope: scope, course: course} = socket.assigns
 
           with {:ok, id} <- Ecto.UUID.cast(params["post_id"]),
-               %{} <- Amauta.Feed.get_visible(scope, course, id) do
-            assign(socket, post_id: id)
+               %{} = post <- Amauta.Feed.get_visible(scope, course, id) do
+            # La tarjeta de un elemento del contenido lleva al elemento.
+            if post.kind == "content",
+              do: push_navigate(socket, to: Paths.course_item(scope, course, post.item)),
+              else: assign(socket, post_id: id)
           else
             _ -> raise AmautaWeb.NotFoundError
           end

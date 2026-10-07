@@ -1,6 +1,7 @@
 defmodule Amauta.ContentTest do
   @moduledoc "Contenido: unidades, elementos, visibilidad, orden, archivos y permisos (RF-CON-001, 002, 004 y 005)."
   use Amauta.DataCase, async: true
+  use Oban.Testing, repo: Amauta.Repo, prefix: "global"
 
   import Amauta.AccountsFixtures
   import Amauta.AuthorizationFixtures
@@ -347,6 +348,98 @@ defmodule Amauta.ContentTest do
       assert b_id == b.id
       assert {%{id: a_id}, nil} = Content.neighbors(units, b.id)
       assert a_id == a.id
+    end
+  end
+
+  describe "tarjetas en el tablón" do
+    defp cards(scope, course),
+      do: scope |> Amauta.Feed.list_posts(course) |> Enum.filter(&(&1.kind == "content"))
+
+    test "lo que se publica visible y avisa deja su tarjeta; sin avisar, no", %{
+      course: course,
+      teacher: t
+    } do
+      student = member(course, "student")
+      u = unit(t, course, "Unidad")
+      item = page(t, u, "Apunte", %{"announce" => true})
+      page(t, u, "Sin aviso")
+
+      assert [%{item: %{id: id}, kind: "content"}] = cards(student, course)
+      assert id == item.id
+    end
+
+    test "mostrar y ocultar crea y retira la tarjeta, una sola vez", %{course: course, teacher: t} do
+      student = member(course, "student")
+
+      item =
+        page(t, unit(t, course, "Unidad"), "Apunte", %{
+          "announce" => true,
+          "visibility" => "hidden"
+        })
+
+      assert [] = cards(student, course)
+
+      {:ok, _} = Actions.run(UpdateItem, t, %{"item_id" => item.id, "visibility" => "visible"})
+      {:ok, _} = Actions.run(UpdateItem, t, %{"item_id" => item.id, "title" => "Apunte 1"})
+      assert [_] = cards(student, course)
+
+      {:ok, _} = Actions.run(UpdateItem, t, %{"item_id" => item.id, "visibility" => "hidden"})
+      assert [] = cards(student, course)
+    end
+
+    test "en una unidad oculta no avisa hasta que la unidad se muestra", %{
+      course: course,
+      teacher: t
+    } do
+      student = member(course, "student")
+      u = unit(t, course, "Unidad", %{"visibility" => "hidden"})
+      page(t, u, "Apunte", %{"announce" => true})
+      assert [] = cards(student, course)
+
+      {:ok, _} = Actions.run(UpdateUnit, t, %{"unit_id" => u.id, "visibility" => "visible"})
+      assert [_] = cards(student, course)
+    end
+
+    test "lo programado se avisa a su hora, con un trabajo", %{course: course, teacher: t} do
+      student = member(course, "student")
+      at = DateTime.add(DateTime.utc_now(), 3600)
+
+      item =
+        page(t, unit(t, course, "Unidad"), "Parcial", %{
+          "announce" => true,
+          "visibility" => "scheduled",
+          "publish_at" => at
+        })
+
+      assert [] = cards(student, course)
+
+      assert_enqueued(
+        worker: Amauta.Content.PublishWorker,
+        args: %{"item_id" => item.id},
+        scheduled_at: at
+      )
+
+      # Llegó la hora.
+      item
+      |> Ecto.Changeset.change(publish_at: DateTime.add(DateTime.utc_now(), -1))
+      |> Amauta.Repo.update!(Amauta.Tenancy.opts(t))
+
+      assert :ok =
+               perform_job(Amauta.Content.PublishWorker, %{
+                 "institution_id" => institution().id,
+                 "item_id" => item.id
+               })
+
+      assert [_] = cards(student, course)
+    end
+
+    test "borrar el elemento borra su tarjeta", %{course: course, teacher: t} do
+      student = member(course, "student")
+      item = page(t, unit(t, course, "Unidad"), "Apunte", %{"announce" => true})
+      assert [_] = cards(student, course)
+
+      {:ok, _} = Actions.run(DeleteItem, t, %{"item_id" => item.id})
+      assert [] = cards(student, course)
     end
   end
 end

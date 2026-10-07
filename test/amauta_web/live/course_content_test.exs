@@ -296,4 +296,33 @@ defmodule AmautaWeb.CourseContentTest do
       refute has_element?(view, "#content-item-done")
     end
   end
+
+  describe "tarjeta en el tablón" do
+    test "aparece en el tablón y lleva al elemento", %{
+      conn: conn,
+      course: course,
+      teacher: t,
+      student: s
+    } do
+      item = page(t, unit(t, course, "Unidad"), "Apunte de la unidad", %{"announce" => true})
+      [card] = Amauta.Feed.list_posts(scope(s), course)
+      conn = log_in_user(conn, s)
+
+      {:ok, feed, _html} = live(conn, Paths.course(institution(), course))
+      assert has_element?(feed, "#content-card-#{card.id}", "Apunte de la unidad")
+      refute has_element?(feed, "#content-card-#{card.id} [phx-click=toggle_replies]")
+
+      {:ok, show, _html} =
+        feed |> element("#post-open-#{card.id}") |> render_click() |> follow_redirect(conn)
+
+      assert has_element?(show, "#content-item", "")
+      assert page_title(show) =~ "Apunte de la unidad"
+
+      # La página de la tarjeta, si se abre directo, lleva al elemento.
+      assert {:error, {:live_redirect, %{to: to}}} =
+               live(conn, Paths.course_post(institution(), course, card))
+
+      assert to == Paths.course_item(institution(), course, item)
+    end
+  end
 end

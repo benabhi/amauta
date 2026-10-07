@@ -81,6 +81,9 @@ defmodule Amauta.Content.Actions.CreateUnit do
     |> Unit.changeset(Map.delete(input, :course_id))
     |> Repo.insert(Tenancy.opts(scope))
   end
+
+  @impl true
+  def effects(scope, _input, unit), do: Content.publication_jobs(scope, unit)
 end
 
 defmodule Amauta.Content.Actions.UpdateUnit do
@@ -98,6 +101,7 @@ defmodule Amauta.Content.Actions.UpdateUnit do
       publish_at: :utc_datetime_usec
     ]
 
+  alias Amauta.Content
   alias Amauta.Content.Actions.Helpers
   alias Amauta.Content.Unit
   alias Amauta.{Repo, Tenancy}
@@ -112,6 +116,19 @@ defmodule Amauta.Content.Actions.UpdateUnit do
       |> Unit.changeset(Map.delete(input, :unit_id))
       |> Repo.update(Tenancy.opts(scope))
     end
+  end
+
+  @impl true
+  def effects(scope, _input, unit), do: Content.publication_jobs(scope, unit)
+
+  # Mostrar u ocultar la unidad cambia lo que ve el estudiantado de todos sus
+  # elementos: sus tarjetas en el tablón se ponen al día.
+  @impl true
+  def after_commit(scope, _input, unit) do
+    for id <- Content.item_ids(scope, unit),
+        do: scope |> Content.sync_announcement(id) |> Content.broadcast_announcement()
+
+    :ok
   end
 end
 
@@ -142,9 +159,22 @@ defmodule Amauta.Content.Actions.DeleteUnit do
         from(i in Item, where: i.unit_id == ^unit.id, select: i.id)
         |> Repo.all(Tenancy.opts(scope))
 
+      cards = Content.cards(scope, item_ids)
       Content.discard_files(scope, item_ids)
-      Repo.delete(unit, Tenancy.opts(scope))
+
+      with {:ok, unit} <- Repo.delete(unit, Tenancy.opts(scope)),
+           do: {:ok, %{unit: unit, cards: cards}}
     end
+  end
+
+  @impl true
+  def audit(_scope, input, %{unit: unit}), do: {unit, input}
+
+  # Sus tarjetas se borraron con los elementos: fuera del tablón abierto.
+  @impl true
+  def after_commit(_scope, _input, %{cards: cards}) do
+    for card <- cards, do: Amauta.Feed.broadcast(card.course, :deleted, card)
+    :ok
   end
 end
 
@@ -205,6 +235,7 @@ defmodule Amauta.Content.Actions.CreateItem do
       url: :string,
       visibility: :string,
       publish_at: :utc_datetime_usec,
+      announce: :boolean,
       file_ids: {{:array, Ecto.UUID}, []}
     ]
 
@@ -235,6 +266,14 @@ defmodule Amauta.Content.Actions.CreateItem do
 
   @impl true
   def audit(_scope, input, item), do: {item, Helpers.audit_input(input)}
+
+  @impl true
+  def effects(scope, _input, item), do: Content.publication_jobs(scope, item)
+
+  @impl true
+  def after_commit(scope, _input, item) do
+    scope |> Content.sync_announcement(item) |> Content.broadcast_announcement()
+  end
 end
 
 defmodule Amauta.Content.Actions.UpdateItem do
@@ -249,6 +288,7 @@ defmodule Amauta.Content.Actions.UpdateItem do
       url: :string,
       visibility: :string,
       publish_at: :utc_datetime_usec,
+      announce: :boolean,
       file_ids: {{:array, Ecto.UUID}, []}
     ]
 
@@ -274,6 +314,14 @@ defmodule Amauta.Content.Actions.UpdateItem do
 
   @impl true
   def audit(_scope, input, item), do: {item, Helpers.audit_input(input)}
+
+  @impl true
+  def effects(scope, _input, item), do: Content.publication_jobs(scope, item)
+
+  @impl true
+  def after_commit(scope, _input, item) do
+    scope |> Content.sync_announcement(item) |> Content.broadcast_announcement()
+  end
 end
 
 defmodule Amauta.Content.Actions.DeleteItem do
@@ -293,9 +341,21 @@ defmodule Amauta.Content.Actions.DeleteItem do
   @impl true
   def run(scope, %{item_id: id}) do
     with {:ok, item} <- Helpers.fetch_item(scope, id) do
+      cards = Content.cards(scope, [item.id])
       Content.discard_files(scope, [item.id])
-      Repo.delete(item, Tenancy.opts(scope))
+
+      with {:ok, item} <- Repo.delete(item, Tenancy.opts(scope)),
+           do: {:ok, %{item: item, cards: cards}}
     end
+  end
+
+  @impl true
+  def audit(_scope, input, %{item: item}), do: {item, input}
+
+  @impl true
+  def after_commit(_scope, _input, %{cards: cards}) do
+    for card <- cards, do: Amauta.Feed.broadcast(card.course, :deleted, card)
+    :ok
   end
 end
 
@@ -352,6 +412,12 @@ defmodule Amauta.Content.Actions.MoveItem do
 
   @impl true
   def audit(_scope, input, item), do: {item, input}
+
+  # En otra unidad puede cambiar lo que ve el estudiantado.
+  @impl true
+  def after_commit(scope, _input, item) do
+    scope |> Content.sync_announcement(item) |> Content.broadcast_announcement()
+  end
 end
 
 defmodule Amauta.Content.Actions.SetItemDone do

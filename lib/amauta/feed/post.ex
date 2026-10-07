@@ -19,6 +19,8 @@ defmodule Amauta.Feed.Post do
   schema "posts" do
     field :body, Amauta.RichText.Document
     field :status, :string, default: "draft"
+    # `post` o `content` (tarjeta de un elemento del contenido, `item`).
+    field :kind, :string, default: "post"
     field :published_at, :utc_datetime_usec
     field :edited_at, :utc_datetime_usec
     field :replies_enabled, :boolean, default: true
@@ -34,6 +36,7 @@ defmodule Amauta.Feed.Post do
     belongs_to :course, Course
     belongs_to :author, User
     belongs_to :section, Section
+    belongs_to :item, Amauta.Content.Item
     has_many :replies, Amauta.Feed.Reply
     has_many :attachments, Amauta.Feed.Attachment, preload_order: [asc: :position]
 

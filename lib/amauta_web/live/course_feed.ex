@@ -1133,6 +1133,8 @@ defmodule AmautaWeb.CourseFeed do
 
   # Una publicación en el tablón, compacta: el comienzo del texto, los
   # adjuntos y cómo va la conversación. Toda la tarjeta lleva a su página.
+  defp post_card(%{post: %{kind: "content"}} = assigns), do: content_card(assigns)
+
   defp post_card(assigns) do
     %{post: post} = assigns
 
@@ -1219,6 +1221,51 @@ defmodule AmautaWeb.CourseFeed do
     """
   end
 
+  # Tarjeta de un elemento del contenido que se empezó a ver (ERS 4.3): quién
+  # lo publicó y qué. Toda la tarjeta lleva al elemento; no tiene respuestas.
+  defp content_card(assigns) do
+    %{post: %{author: author, item: item}} = assigns
+    name = (author && User.display_name(author)) || gettext("Former member")
+
+    assigns =
+      assign(assigns,
+        line:
+          case item.kind do
+            "page" -> gettext("%{name} published a page", name: name)
+            "material" -> gettext("%{name} published a material", name: name)
+          end
+      )
+
+    ~H"""
+    <article
+      id={"content-card-#{@post.id}"}
+      class="relative flex items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-sm transition-colors duration-fast hover:border-ink-muted has-[a[data-open]:focus-visible]:outline-2 has-[a[data-open]:focus-visible]:outline-primary"
+    >
+      <.drag_handle :if={@ui.can_moderate} />
+      <AmautaWeb.ContentComponents.kind_icon kind={@post.item.kind} />
+      <div class="min-w-0 flex-1">
+        <p class="text-sm text-ink-muted">
+          {@line} ·
+          <time datetime={DateTime.to_iso8601(@post.published_at)}>
+            {Format.datetime(@post.published_at, @ui.timezone, :short)}
+          </time>
+        </p>
+        <.link
+          navigate={post_path(@ui, @post)}
+          id={"post-open-#{@post.id}"}
+          data-open
+          class="block truncate font-semibold outline-none after:absolute after:inset-0 after:rounded-card"
+        >
+          {@post.item.title}
+        </.link>
+      </div>
+      <div class="relative z-10">
+        <.post_menu post={@post} ui={@ui} />
+      </div>
+    </article>
+    """
+  end
+
   attr :post, :map, required: true
   attr :ui, :map, required: true
   attr :pin, :map, required: true
@@ -1234,7 +1281,7 @@ defmodule AmautaWeb.CourseFeed do
         <.drag_handle :if={@ui.can_moderate} />
         <.icon name="push-pin" class="size-4 shrink-0 text-anil-deep" />
         <.link
-          navigate={Paths.course_post(@ui.current_scope, @ui.course, @post)}
+          navigate={post_path(@ui, @post)}
           class="min-w-0 flex-1 truncate font-semibold outline-none after:absolute after:inset-0 after:rounded-card"
         >
           {if @excerpt == "", do: gettext("Open post"), else: @excerpt}
@@ -1254,7 +1301,16 @@ defmodule AmautaWeb.CourseFeed do
     """
   end
 
+  # Adónde lleva una publicación del tablón: a su página o, si es la tarjeta
+  # de un elemento del contenido, al elemento.
+  defp post_path(ui, %{kind: "content", item: item}),
+    do: Paths.course_item(ui.current_scope, ui.course, item)
+
+  defp post_path(ui, post), do: Paths.course_post(ui.current_scope, ui.course, post)
+
   # El comienzo del texto, en una línea, para las vistas compactas.
+  defp excerpt(%{kind: "content", item: item}), do: item.title
+
   defp excerpt(post) do
     post.body
     |> Amauta.RichText.to_text()
@@ -1293,7 +1349,8 @@ defmodule AmautaWeb.CourseFeed do
         mine: mine,
         author: post.author,
         can_edit: mine and is_binary(ui.post_id),
-        can_toggle: mine or ui.can_moderate
+        # Las tarjetas del contenido no llevan respuestas.
+        can_toggle: post.kind == "post" and (mine or ui.can_moderate)
       )
 
     ~H"""
