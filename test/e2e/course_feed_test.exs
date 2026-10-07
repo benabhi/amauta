@@ -62,6 +62,58 @@ defmodule AmautaWeb.E2E.CourseFeedTest do
     |> assert_has("#feed-post-page article .rich-mention", text: "@Grace Hopper")
   end
 
+  @video_input "#feed-composer .rich-video-edit input"
+  @video "#feed-post-page article .rich-video iframe[src$='/embed/dQw4w9WgXcQ']"
+
+  defp insert_video_block(session) do
+    session
+    |> click(@editor)
+    |> type(@editor, "Mirar este video:")
+    |> press(@editor, "Enter")
+    |> type(@editor, "/video")
+    |> assert_has(".rich-slash-item", text: "Video")
+    |> press(@editor, "Enter")
+    |> assert_has(@video_input)
+  end
+
+  test "un video con el enlace escrito se publica aunque no se apriete Enter", %{
+    conn: conn,
+    teacher: teacher,
+    course: course
+  } do
+    conn
+    |> log_in(teacher, Paths.course(institution(), course))
+    |> open_composer()
+    |> insert_video_block()
+    |> type(@video_input, "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    |> click_button("Publish")
+    |> click("#feed-posts article a[data-open]")
+    |> assert_has(@video)
+  end
+
+  test "un video se toma apenas se pega el enlace", %{
+    conn: conn,
+    teacher: teacher,
+    course: course
+  } do
+    paste = """
+    const input = document.querySelector("#{@video_input}")
+    input.value = "https://youtu.be/dQw4w9WgXcQ"
+    input.dispatchEvent(new InputEvent("input", {inputType: "insertFromPaste", bubbles: true}))
+    """
+
+    conn
+    |> log_in(teacher, Paths.course(institution(), course))
+    |> open_composer()
+    |> insert_video_block()
+    |> evaluate(paste)
+    |> assert_has("#feed-composer .rich-video-edit .rich-video iframe")
+    |> refute_has(@video_input)
+    |> click_button("Publish")
+    |> click("#feed-posts article a[data-open]")
+    |> assert_has(@video)
+  end
+
   test "en su página, una publicación larga se recorta y se despliega con «Ver más»", %{
     conn: conn,
     teacher: teacher,
