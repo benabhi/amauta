@@ -47,6 +47,17 @@ defmodule AmautaWeb.Paths do
   def course(tenant, course, :grades), do: ~p"/#{slug(tenant)}/c/#{course.slug}/grades"
   def course(tenant, course, :settings), do: ~p"/#{slug(tenant)}/c/#{course.slug}/settings"
 
+  @doc "Pestaña de un curso con parámetros, por ejemplo el filtro de comisión."
+  def course(tenant, course, tab, params) when map_size(params) == 0,
+    do: course(tenant, course, tab)
+
+  def course(tenant, course, tab, params),
+    do: course(tenant, course, tab) <> "?" <> URI.encode_query(params)
+
+  def import_enrollments(tenant, course), do: ~p"/#{slug(tenant)}/c/#{course.slug}/people/import"
+  def join(tenant), do: ~p"/#{slug(tenant)}/join"
+  def enroll_pathway(tenant, pathway), do: ~p"/#{slug(tenant)}/pathways/#{pathway.slug}/enroll"
+
   @doc """
   Inicio de sesión rápido de desarrollo (RNF-DEV-009). Sin rutas
   verificadas: la ruta solo existe con `config :amauta, dev_login: true`.

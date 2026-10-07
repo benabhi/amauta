@@ -2,7 +2,7 @@
 # Uso: bin/dev seed, o bin/dev reset para empezar de cero.
 #
 # La contraseña de todas las personas de ejemplo es solo para desarrollo.
-alias Amauta.{Accounts, Authorization, Courses, Pathways, Periods, Platform, Tenancy}
+alias Amauta.{Accounts, Authorization, Courses, Enrollments, Pathways, Periods, Platform, Tenancy}
 
 password = "amauta-dev-1234"
 
@@ -138,20 +138,72 @@ for {slug, name, short_name} <- institutions do
         |> Amauta.Repo.update!(Tenancy.opts(institution))
       end
 
-  for {handle, role} <- [{"docente", "course_lead"}, {"estudiante", "student"}] do
-    user = Accounts.get_user_by_email(institution, "#{handle}@#{slug}.test")
+  # Dos comisiones (RF-COM-001) y estudiantes repartidos (RF-MAT-002): el
+  # criterio de cierre de H1 en pequeño.
+  sections =
+    case Enrollments.list_sections(institution, course) do
+      [] ->
+        for {name, schedule} <- [
+              {"Comisión A · Mañana", "Lunes y miércoles, 8 a 10"},
+              {"Comisión B · Noche", "Martes y jueves, 19 a 21"}
+            ] do
+          {:ok, section} =
+            Enrollments.create_section(institution, course, %{name: name, schedule: schedule})
 
-    unless Enum.any?(
-             Authorization.list_assignments(institution, user.id),
-             &(&1.scope_type == "course" and &1.scope_id == course.id)
-           ) do
-      {:ok, _} =
-        Authorization.create_assignment(institution, %{
-          user_id: user.id,
-          role: role,
-          scope_type: "course",
-          scope_id: course.id
-        })
+          section
+        end
+
+      sections ->
+        sections
+    end
+
+  [section_a, section_b] = sections
+
+  extra_students =
+    for i <- 1..8 do
+      email = "estudiante#{i}@#{slug}.test"
+
+      Accounts.get_user_by_email(institution, email) ||
+        (
+          {:ok, user} =
+            Accounts.register_user(institution, %{
+              first_name:
+                Enum.at(~w(Lucía Mateo Sofía Tomás Valentina Joaquín Camila Bruno), i - 1),
+              last_name: "Ejemplo",
+              email: email
+            })
+
+          user = Amauta.Repo.update!(Accounts.User.confirm_changeset(user))
+
+          {:ok, {user, _}} =
+            Accounts.update_user_password(institution, user, %{password: password})
+
+          user
+        )
+    end
+
+  people_in_course =
+    [
+      {"docente@#{slug}.test", "course_lead", nil},
+      {"estudiante@#{slug}.test", "student", section_a}
+    ] ++
+      for {user, i} <- Enum.with_index(extra_students),
+          do: {user.email, "student", if(rem(i, 2) == 0, do: section_a, else: section_b)}
+
+  for {email, role, section} <- people_in_course do
+    user = Accounts.get_user_by_email(institution, email)
+
+    case Enrollments.get_by_user(institution, course, user.id) do
+      nil ->
+        {:ok, _} =
+          Enrollments.enroll(institution, course, user.id, %{
+            role: role,
+            origin: "manual",
+            section_id: section && section.id
+          })
+
+      _enrolled ->
+        :ok
     end
   end
 

@@ -14,8 +14,8 @@ defmodule AmautaWeb.CourseLive do
   """
   use AmautaWeb, :live_view
 
-  alias Amauta.Accounts.User
-  alias Amauta.{Actions, Authorization, Courses, Pathways, Periods}
+  alias Amauta.Accounts.{Directory, User}
+  alias Amauta.{Actions, Authorization, Courses, Enrollments, Pathways, Periods}
   alias Amauta.Authorization.Roles
 
   alias Amauta.Courses.Actions.{
@@ -28,6 +28,17 @@ defmodule AmautaWeb.CourseLive do
   }
 
   alias Amauta.Courses.{Course, Settings}
+
+  alias Amauta.Enrollments.Actions.{
+    CreateSection,
+    DeleteSection,
+    EndEnrollment,
+    EnrollUser,
+    UpdateEnrollment,
+    UpdateSection
+  }
+
+  alias Amauta.Enrollments.Enrollment
   alias AmautaWeb.Paths
 
   @impl true
@@ -35,7 +46,7 @@ defmodule AmautaWeb.CourseLive do
     scope = socket.assigns.current_scope
     course = Courses.get_by_slug(scope, slug) || raise AmautaWeb.NotFoundError
 
-    unless Authorization.can?(scope, "course.view", course) and
+    unless Enrollments.can_in_course?(scope, "course.view", course) and
              (course.status != "draft" or Authorization.can?(scope, "course.update", course)) do
       raise AmautaWeb.ForbiddenError
     end
@@ -44,6 +55,8 @@ defmodule AmautaWeb.CourseLive do
      socket
      |> assign(page_title: course.name, form: nil, settings_form: nil)
      |> assign(periods: [], pathways: [], stages: [], standalone: true)
+     |> assign(section_filter: nil, section_form: nil, editing_section: nil)
+     |> assign(people_query: "", people_results: [], enroll_form: enroll_form())
      |> assign_course(course)}
   end
 
@@ -51,12 +64,16 @@ defmodule AmautaWeb.CourseLive do
     scope = socket.assigns.current_scope
     can = &Authorization.can?(scope, &1, course)
     open = course.status != "archived"
-    {teaching, students} = Courses.participants(scope, course)
+    {teaching, _students} = Enrollments.participants(scope, course)
+    sections = Enrollments.list_sections(scope, course)
 
     assign(socket,
       course: course,
       teaching: teaching,
-      students: students,
+      sections: sections,
+      own_section_ids: scope |> Enrollments.own_sections(course) |> Enum.map(& &1.id),
+      can_enroll: open and can.("course.people.enroll"),
+      can_manage_sections: open and can.("course.sections.manage"),
       can_update: open and can.("course.update"),
       can_archive: can.("course.archive"),
       can_settings: can.("course.update") or can.("course.archive"),
@@ -70,17 +87,45 @@ defmodule AmautaWeb.CourseLive do
   end
 
   @impl true
-  def handle_params(_params, _url, socket) do
+  def handle_params(params, _url, socket) do
     socket =
-      if socket.assigns.live_action == :settings do
-        unless socket.assigns.can_settings, do: raise(AmautaWeb.ForbiddenError)
-        assign_settings_forms(socket)
-      else
-        socket
+      case socket.assigns.live_action do
+        :settings ->
+          unless socket.assigns.can_settings, do: raise(AmautaWeb.ForbiddenError)
+          assign_settings_forms(socket)
+
+        _tab ->
+          socket
       end
 
-    {:noreply, socket}
+    {:noreply, socket |> assign_section_filter(params["section"]) |> load_people()}
   end
+
+  # Filtro de comisión (RF-COM-003). Quien está limitado a sus comisiones
+  # (RF-COM-002) solo puede elegir entre ellas.
+  defp assign_section_filter(socket, value) do
+    filter =
+      case socket.assigns.own_section_ids do
+        [] ->
+          if value == "none" or Enum.any?(socket.assigns.sections, &(&1.id == value)),
+            do: value
+
+        [first | _] = own ->
+          if value in own, do: value, else: first
+      end
+
+    assign(socket, section_filter: filter)
+  end
+
+  defp load_people(%{assigns: %{live_action: :people}} = socket) do
+    %{current_scope: scope, course: course, section_filter: filter} = socket.assigns
+    enrollments = Enrollments.list(scope, course, %{"section" => filter})
+    assign(socket, enrollments: enrollments)
+  end
+
+  defp load_people(socket), do: assign(socket, enrollments: [])
+
+  defp enroll_form, do: to_form(%{"role" => "student", "section_id" => ""}, as: "enroll")
 
   defp assign_settings_forms(socket) do
     %{course: course, current_scope: scope} = socket.assigns
@@ -192,6 +237,144 @@ defmodule AmautaWeb.CourseLive do
     do:
       run(socket, ReopenCourse, gettext_term(socket.assigns.current_scope, :course, "Reopened."))
 
+  ## Comisiones
+
+  def handle_event("select_section", %{"section" => value}, socket) do
+    %{current_scope: scope, course: course, live_action: tab} = socket.assigns
+    params = if value == "", do: %{}, else: %{section: value}
+    {:noreply, push_patch(socket, to: Paths.course(scope, course, tab, params))}
+  end
+
+  def handle_event("new_section", _params, socket),
+    do: {:noreply, assign(socket, section_form: section_form(%{}), editing_section: nil)}
+
+  def handle_event("edit_section", %{"id" => id}, socket) do
+    section = Enum.find(socket.assigns.sections, &(&1.id == id))
+
+    form =
+      section_form(%{
+        "name" => section.name,
+        "schedule" => section.schedule,
+        "room" => section.room
+      })
+
+    {:noreply, assign(socket, section_form: form, editing_section: section)}
+  end
+
+  def handle_event("cancel_section", _params, socket),
+    do: {:noreply, assign(socket, section_form: nil, editing_section: nil)}
+
+  def handle_event("save_section", %{"section" => params}, socket) do
+    {action, params} =
+      case socket.assigns.editing_section do
+        nil -> {CreateSection, Map.put(params, "course_id", socket.assigns.course.id)}
+        section -> {UpdateSection, Map.put(params, "section_id", section.id)}
+      end
+
+    case Actions.run(action, socket.assigns.current_scope, params) do
+      {:ok, _section} ->
+        {:noreply,
+         socket |> reload() |> load_people() |> assign(section_form: nil, editing_section: nil)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, section_form: to_form(changeset, as: "section"))}
+
+      {:error, reason} ->
+        {:noreply, error_flash(socket, reason)}
+    end
+  end
+
+  def handle_event("delete_section", %{"id" => id}, socket),
+    do: run_people(socket, DeleteSection, %{"section_id" => id})
+
+  ## Matrículas
+
+  def handle_event("enroll_change", %{"enroll" => params}, socket) do
+    q = String.trim(params["q"] || "")
+
+    results =
+      if String.length(q) < 2 do
+        []
+      else
+        enrolled =
+          socket.assigns.current_scope
+          |> Enrollments.list(socket.assigns.course, %{"status" => "active"})
+          |> MapSet.new(& &1.user_id)
+
+        Directory.list(socket.assigns.current_scope, %{"q" => q, "status" => "active"}).entries
+        |> Enum.reject(&MapSet.member?(enrolled, &1.id))
+        |> Enum.take(6)
+      end
+
+    {:noreply,
+     assign(socket,
+       enroll_form: to_form(params, as: "enroll"),
+       people_query: q,
+       people_results: results
+     )}
+  end
+
+  def handle_event("enroll", %{"id" => user_id}, socket) do
+    form = socket.assigns.enroll_form
+
+    params = %{
+      "course_id" => socket.assigns.course.id,
+      "user_id" => user_id,
+      "role" => form[:role].value || "student",
+      "section_id" => form[:section_id].value
+    }
+
+    case Actions.run(EnrollUser, socket.assigns.current_scope, params) do
+      {:ok, _enrollment} ->
+        {:noreply,
+         socket
+         |> reload()
+         |> load_people()
+         |> assign(people_query: "", people_results: [])
+         |> assign(enroll_form: to_form(Map.put(form.params, "q", ""), as: "enroll"))
+         |> put_flash(:info, gettext("Enrolled."))}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, gettext("That person could not be enrolled."))}
+
+      {:error, reason} ->
+        {:noreply, error_flash(socket, reason)}
+    end
+  end
+
+  def handle_event(
+        "move_enrollment",
+        %{"enrollment_id" => id, "section_id" => section_id},
+        socket
+      ),
+      do:
+        run_people(socket, UpdateEnrollment, %{"enrollment_id" => id, "section_id" => section_id})
+
+  def handle_event("suspend_enrollment", %{"id" => id}, socket),
+    do: run_people(socket, UpdateEnrollment, %{"enrollment_id" => id, "status" => "suspended"})
+
+  def handle_event("reactivate_enrollment", %{"id" => id}, socket),
+    do: run_people(socket, UpdateEnrollment, %{"enrollment_id" => id, "status" => "active"})
+
+  def handle_event("end_enrollment", %{"id" => id}, socket),
+    do: run_people(socket, EndEnrollment, %{"enrollment_id" => id})
+
+  defp run_people(socket, action, params) do
+    case Actions.run(action, socket.assigns.current_scope, params) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> reload()
+         |> assign_section_filter(socket.assigns.section_filter)
+         |> load_people()}
+
+      {:error, reason} ->
+        {:noreply, error_flash(socket, reason)}
+    end
+  end
+
+  defp section_form(params), do: to_form(params, as: "section")
+
   defp run(socket, action, info) do
     params = %{"course_id" => socket.assigns.course.id}
 
@@ -267,8 +450,8 @@ defmodule AmautaWeb.CourseLive do
         <:actions>
           <div :if={@teaching != []} id="teaching-team" class="flex -space-x-2">
             <.avatar
-              :for={{user, _role} <- Enum.take(@teaching, 4)}
-              name={User.display_name(user)}
+              :for={enrollment <- Enum.take(@teaching, 4)}
+              name={User.display_name(enrollment.user)}
               size="sm"
               class="ring-2 ring-paper"
             />
@@ -284,10 +467,30 @@ defmodule AmautaWeb.CourseLive do
         </:actions>
       </.header>
 
+      <.form
+        :if={@sections != []}
+        for={%{}}
+        as={:section_filter}
+        id="section_selector"
+        phx-change="select_section"
+        class="mb-4 max-w-xs"
+      >
+        <.input
+          name="section"
+          type="select"
+          value={@section_filter}
+          prompt={
+            if @own_section_ids == [], do: gettext_term(@current_scope, :section, "All %{terms}")
+          }
+          options={section_options(@current_scope, @sections, @own_section_ids)}
+          aria-label={term_title(@current_scope, :section)}
+        />
+      </.form>
+
       <.tabs label={term_title(@current_scope, :course)} class="mb-6">
         <:tab
           :for={{action, icon, label} <- course_tabs(@can_settings)}
-          patch={Paths.course(@current_scope, @course, action)}
+          patch={Paths.course(@current_scope, @course, action, tab_params(@section_filter))}
           active={@live_action == action}
           icon={icon}
         >
@@ -297,12 +500,7 @@ defmodule AmautaWeb.CourseLive do
 
       <.feed :if={@live_action == :feed} current_scope={@current_scope} />
       <.content :if={@live_action == :content} current_scope={@current_scope} />
-      <.people
-        :if={@live_action == :people}
-        teaching={@teaching}
-        students={@students}
-        current_scope={@current_scope}
-      />
+      <.people :if={@live_action == :people} {people_assigns(assigns)} />
       <.grades :if={@live_action == :grades} />
       <.settings
         :if={@live_action == :settings}
@@ -358,39 +556,324 @@ defmodule AmautaWeb.CourseLive do
     """
   end
 
-  attr :teaching, :list, required: true
-  attr :students, :list, required: true
+  defp tab_params(nil), do: %{}
+  defp tab_params(section), do: %{section: section}
+
+  defp section_options(scope, sections, []) do
+    Enum.map(sections, &{&1.name, &1.id}) ++
+      [{gettext_term(scope, :section, "No %{term}"), "none"}]
+  end
+
+  defp section_options(_scope, sections, own) do
+    for section <- sections, section.id in own, do: {section.name, section.id}
+  end
+
+  defp people_assigns(assigns) do
+    Map.take(assigns, [
+      :current_scope,
+      :course,
+      :sections,
+      :enrollments,
+      :section_filter,
+      :can_enroll,
+      :can_manage_sections,
+      :section_form,
+      :editing_section,
+      :enroll_form,
+      :people_results
+    ])
+  end
+
   attr :current_scope, :map, required: true
+  attr :course, Course, required: true
+  attr :sections, :list, required: true
+  attr :enrollments, :list, required: true
+  attr :section_filter, :string, default: nil
+  attr :can_enroll, :boolean, required: true
+  attr :can_manage_sections, :boolean, required: true
+  attr :section_form, :any, default: nil
+  attr :editing_section, :any, default: nil
+  attr :enroll_form, :any, required: true
+  attr :people_results, :list, required: true
 
   defp people(assigns) do
+    {teaching, others} =
+      Enum.split_with(assigns.enrollments, &(&1.role in Enrollment.teaching_roles()))
+
+    assigns = assign(assigns, teaching: teaching, others: others)
+
     ~H"""
-    <div class="grid gap-6 lg:grid-cols-2">
+    <div class="grid gap-6">
+      <.card :if={@can_enroll}>
+        <:header>{gettext("Enroll")}</:header>
+        <.form
+          for={@enroll_form}
+          id="enroll_form"
+          phx-change="enroll_change"
+          phx-submit="enroll_change"
+        >
+          <div class="grid gap-x-4 sm:grid-cols-3">
+            <div class="sm:col-span-3">
+              <.input
+                field={@enroll_form[:q]}
+                type="search"
+                placeholder={gettext("Search by name or email")}
+                aria-label={gettext("Search")}
+                phx-debounce="300"
+                autocomplete="off"
+              />
+            </div>
+            <.input
+              field={@enroll_form[:role]}
+              type="select"
+              label={gettext("Role")}
+              options={Enum.map(Enrollment.roles(), &{Roles.name(&1), &1})}
+            />
+            <.input
+              :if={@sections != []}
+              field={@enroll_form[:section_id]}
+              type="select"
+              label={term_title(@current_scope, :section)}
+              prompt={gettext_term(@current_scope, :section, "No %{term}")}
+              options={Enum.map(@sections, &{&1.name, &1.id})}
+            />
+          </div>
+        </.form>
+
+        <ul :if={@people_results != []} id="enroll_results" class="divide-y divide-line">
+          <li :for={user <- @people_results} class="flex items-center gap-3 py-2">
+            <.avatar name={User.display_name(user)} size="sm" />
+            <span class="min-w-0 flex-1">
+              <span class="block truncate">{User.display_name(user)}</span>
+              <span class="block truncate text-sm text-ink-muted">{user.email}</span>
+            </span>
+            <.button
+              size="sm"
+              variant="secondary"
+              icon="plus"
+              phx-click="enroll"
+              phx-value-id={user.id}
+            >
+              {gettext("Enroll")}
+            </.button>
+          </li>
+        </ul>
+
+        <:footer>
+          <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-ink-muted">
+            <span>{gettext("Many at once? Use a CSV file.")}</span>
+            <.button
+              size="sm"
+              variant="ghost"
+              icon="upload-simple"
+              navigate={Paths.import_enrollments(@current_scope, @course)}
+            >
+              {gettext("Import CSV")}
+            </.button>
+          </div>
+        </:footer>
+      </.card>
+
+      <.card :if={@can_manage_sections or @sections != []}>
+        <:header>{term_title(@current_scope, :section, 2)}</:header>
+
+        <p :if={@sections == []} class="text-ink-muted">
+          {gettext_term(
+            @current_scope,
+            :section,
+            "Split the students into %{terms}, each with its teachers, schedule and room."
+          )}
+        </p>
+
+        <ul :if={@sections != []} id="sections" class="divide-y divide-line">
+          <li
+            :for={section <- @sections}
+            id={"section-#{section.id}"}
+            class="flex items-center gap-3 py-2"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block font-semibold">{section.name}</span>
+              <span :if={section.schedule || section.room} class="block text-sm text-ink-muted">
+                {[section.schedule, section.room] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")}
+              </span>
+            </span>
+            <.icon_button
+              :if={@can_manage_sections}
+              icon="pencil-simple"
+              label={gettext("Edit")}
+              size="sm"
+              phx-click="edit_section"
+              phx-value-id={section.id}
+            />
+            <.icon_button
+              :if={@can_manage_sections}
+              icon="trash"
+              label={gettext("Delete")}
+              size="sm"
+              variant="danger"
+              phx-click="delete_section"
+              phx-value-id={section.id}
+              data-confirm={
+                gettext_term(
+                  @current_scope,
+                  :section,
+                  "Delete «%{name}»? Its students stay enrolled, without a %{term}.",
+                  name: section.name
+                )
+              }
+            />
+          </li>
+        </ul>
+
+        <.form
+          :if={@section_form}
+          for={@section_form}
+          id="section_form"
+          phx-submit="save_section"
+          class="mt-4"
+        >
+          <div class="grid gap-x-4 sm:grid-cols-3">
+            <.input
+              field={@section_form[:name]}
+              label={gettext("Name")}
+              placeholder={gettext("Section A · Morning")}
+              required
+            />
+            <.input
+              field={@section_form[:schedule]}
+              label={gettext("Schedule")}
+              placeholder={gettext("Mon and Wed, 8 to 10")}
+            />
+            <.input field={@section_form[:room]} label={gettext("Room")} placeholder="Aula 12" />
+          </div>
+          <div class="flex gap-2">
+            <.button phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
+            <.button type="button" variant="ghost" phx-click="cancel_section">
+              {gettext("Cancel")}
+            </.button>
+          </div>
+        </.form>
+
+        <.button
+          :if={@can_manage_sections and !@section_form}
+          variant="secondary"
+          size="sm"
+          icon="plus"
+          phx-click="new_section"
+          class="mt-4"
+        >
+          {gettext_term(@current_scope, :section, "New %{term}")}
+        </.button>
+      </.card>
+
       <.card>
         <:header>{gettext("Teaching team")}</:header>
         <p :if={@teaching == []} class="text-ink-muted">{gettext("Nobody assigned yet.")}</p>
-        <.person_list :if={@teaching != []} id="teaching" people={@teaching} />
+        <.enrollment_table
+          :if={@teaching != []}
+          id="teaching"
+          enrollments={@teaching}
+          sections={@sections}
+          can_enroll={@can_enroll}
+          current_scope={@current_scope}
+        />
       </.card>
+
       <.card>
-        <:header>{gettext("Students")}</:header>
-        <p :if={@students == []} class="text-ink-muted">{gettext("Nobody enrolled yet.")}</p>
-        <.person_list :if={@students != []} id="students" people={@students} />
+        <:header>
+          {gettext("Students")}
+          <span class="ms-1 font-normal text-ink-muted">({length(@others)})</span>
+        </:header>
+        <p :if={@others == []} class="text-ink-muted">{gettext("Nobody enrolled yet.")}</p>
+        <.enrollment_table
+          :if={@others != []}
+          id="students"
+          enrollments={@others}
+          sections={@sections}
+          can_enroll={@can_enroll}
+          current_scope={@current_scope}
+        />
       </.card>
     </div>
     """
   end
 
   attr :id, :string, required: true
-  attr :people, :list, required: true
+  attr :enrollments, :list, required: true
+  attr :sections, :list, required: true
+  attr :can_enroll, :boolean, required: true
+  attr :current_scope, :map, required: true
 
-  defp person_list(assigns) do
+  defp enrollment_table(assigns) do
     ~H"""
-    <ul id={@id} class="divide-y divide-line">
-      <li :for={{user, role} <- @people} id={"#{@id}-#{user.id}"} class="flex items-center gap-3 py-2">
-        <.avatar name={User.display_name(user)} size="sm" />
-        <span class="min-w-0 flex-1 truncate">{User.display_name(user)}</span>
-        <.badge family="anil">{Roles.name(role)}</.badge>
-      </li>
-    </ul>
+    <.table id={@id} rows={@enrollments} row_id={&"enrollment-#{&1.id}"}>
+      <:col :let={enrollment} label={gettext("Name")}>
+        <div class="flex items-center gap-3">
+          <.avatar name={User.display_name(enrollment.user)} size="sm" />
+          <div class="min-w-0">
+            <p class="font-semibold">{User.display_name(enrollment.user)}</p>
+            <p class="truncate text-ink-muted">{enrollment.user.email}</p>
+          </div>
+        </div>
+      </:col>
+      <:col :let={enrollment} label={gettext("Role")}>
+        <.badge family="anil">{Roles.name(enrollment.role)}</.badge>
+        <.badge :if={enrollment.status == "suspended"} family="cochinilla" class="ms-1">
+          {gettext("Suspended")}
+        </.badge>
+      </:col>
+      <:col :let={enrollment} :if={@sections != []} label={term_title(@current_scope, :section)}>
+        <.form
+          :if={@can_enroll}
+          for={%{}}
+          as={:move}
+          id={"move-#{enrollment.id}"}
+          phx-change="move_enrollment"
+        >
+          <input type="hidden" name="enrollment_id" value={enrollment.id} />
+          <.input
+            name="section_id"
+            type="select"
+            value={enrollment.section_id}
+            prompt={gettext_term(@current_scope, :section, "No %{term}")}
+            options={Enum.map(@sections, &{&1.name, &1.id})}
+            aria-label={term_title(@current_scope, :section)}
+          />
+        </.form>
+        <span :if={!@can_enroll}>{enrollment.section && enrollment.section.name}</span>
+      </:col>
+      <:action :let={enrollment} :if={@can_enroll}>
+        <.icon_button
+          :if={enrollment.status == "active"}
+          icon="lock"
+          label={gettext("Suspend")}
+          size="sm"
+          phx-click="suspend_enrollment"
+          phx-value-id={enrollment.id}
+        />
+        <.icon_button
+          :if={enrollment.status == "suspended"}
+          icon="key"
+          label={gettext("Reactivate")}
+          size="sm"
+          phx-click="reactivate_enrollment"
+          phx-value-id={enrollment.id}
+        />
+        <.icon_button
+          icon="sign-out"
+          label={gettext("Unenroll")}
+          size="sm"
+          variant="danger"
+          phx-click="end_enrollment"
+          phx-value-id={enrollment.id}
+          data-confirm={
+            gettext("Unenroll %{name}? Their submissions and grades are kept.",
+              name: User.display_name(enrollment.user)
+            )
+          }
+        />
+      </:action>
+    </.table>
     """
   end
 

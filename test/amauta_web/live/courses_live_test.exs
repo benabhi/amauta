@@ -83,7 +83,13 @@ defmodule AmautaWeb.CoursesLiveTest do
     test "muestra las pestañas fijas y el equipo docente", %{conn: conn} do
       course = create_course(%{"name" => "Programación I"})
       lead = user_fixture(first_name: "Marta", last_name: "Ríos")
-      assign!(lead, "course_lead", {"course", course.id})
+
+      {:ok, _} =
+        Amauta.Enrollments.enroll(institution(), course, lead.id, %{
+          role: "course_lead",
+          origin: "manual"
+        })
+
       {conn, _admin} = log_in_as(conn, "institution_admin")
 
       {:ok, view, html} = live(conn, Paths.course(institution(), course))
@@ -97,7 +103,7 @@ defmodule AmautaWeb.CoursesLiveTest do
       |> element(~s(nav a[href="#{Paths.course(institution(), course, :people)}"]))
       |> render_click()
 
-      assert has_element?(view, "#teaching-#{lead.id}", "Marta Ríos")
+      assert has_element?(view, "#teaching", "Marta Ríos")
     end
 
     test "un estudiante no ve la pestaña de ajustes", %{conn: conn} do

@@ -107,6 +107,7 @@ defmodule AmautaWeb.Router do
       live "/pathways/new", PathwaysLive, :new
       live "/pathways/:slug", PathwayLive, :show
       live "/pathways/:slug/edit", PathwayLive, :edit
+      live "/pathways/:slug/enroll", PathwayEnrollLive
       live "/courses", CoursesLive, :index
       live "/courses/new", CoursesLive, :new
       live "/c/:slug", CourseLive, :feed
@@ -114,6 +115,8 @@ defmodule AmautaWeb.Router do
       live "/c/:slug/people", CourseLive, :people
       live "/c/:slug/grades", CourseLive, :grades
       live "/c/:slug/settings", CourseLive, :settings
+      live "/c/:slug/people/import", CourseImportLive
+      live "/join", JoinLive
     end
 
     get "/people/export", PeopleExportController, :export
