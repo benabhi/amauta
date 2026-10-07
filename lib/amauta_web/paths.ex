@@ -97,6 +97,30 @@ defmodule AmautaWeb.Paths do
   @doc "URL absoluta del enlace mágico (la usa el dominio para las invitaciones)."
   def absolute_log_in(tenant, token), do: absolute(log_in(tenant, token))
 
+  @doc "Centro de notificaciones (RF-NOT-001)."
+  def notifications(tenant), do: ~p"/#{slug(tenant)}/notifications"
+  def notifications(tenant, params), do: ~p"/#{slug(tenant)}/notifications?#{params}"
+
+  @doc "Preferencias de notificación (RF-NOT-004, RF-EML-005)."
+  def notification_settings(tenant), do: ~p"/#{slug(tenant)}/settings/notifications"
+
+  @doc "Baja de los emails de notificación con un clic (RF-EML-009)."
+  def unsubscribe(tenant, token), do: ~p"/#{slug(tenant)}/unsubscribe/#{token}"
+
+  @doc """
+  Adónde lleva una notificación: la publicación, el elemento del contenido
+  o el curso.
+  """
+  def notification_target(tenant, %{course: course, data: data}) when not is_nil(course) do
+    cond do
+      data["post_id"] -> course_post(tenant, course, %{id: data["post_id"]})
+      data["item_id"] -> course_item(tenant, course, %{id: data["item_id"]})
+      true -> course(tenant, course)
+    end
+  end
+
+  def notification_target(tenant, _notification), do: notifications(tenant)
+
   @doc "URL absoluta, para emails y enlaces que salen de la plataforma."
   def absolute(path) when is_binary(path), do: AmautaWeb.Endpoint.url() <> path
 

@@ -150,21 +150,38 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # ## Configuring the mailer
-  #
-  # In production you need to configure the mailer to use a different adapter.
-  # Here is an example configuration for Mailgun:
-  #
-  #     config :amauta, Amauta.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
-  # and Finch out-of-the-box. This configuration is typically done at
-  # compile-time in your config/prod.exs:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
-  #
-  # See https://swoosh.hexdocs.pm/Swoosh.html#module-installation for details.
+  # Correo (RF-EML-006, parcial: el SMTP por institución llega en V1). El
+  # servidor SMTP de la instancia, el remitente y el límite de tasa salen de
+  # variables de entorno; la prueba de envío está en /admin/mail.
+  if smtp_host = System.get_env("SMTP_HOST") do
+    config :amauta, Amauta.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: smtp_host,
+      port: String.to_integer(System.get_env("SMTP_PORT", "587")),
+      username: System.get_env("SMTP_USERNAME"),
+      password: System.get_env("SMTP_PASSWORD"),
+      tls: :if_available,
+      ssl: System.get_env("SMTP_SSL") == "true",
+      auth: if(System.get_env("SMTP_USERNAME"), do: :always, else: :never),
+      retries: 1
+  end
+
+  if from = System.get_env("MAIL_FROM") do
+    config :amauta, :mail_from, {System.get_env("MAIL_FROM_NAME", "Amauta"), from}
+  end
+
+  rate = fn name ->
+    case System.get_env(name) do
+      nil -> nil
+      value -> String.to_integer(value)
+    end
+  end
+
+  config :amauta, Amauta.Mail,
+    rate_limits: [
+      second: rate.("MAIL_RATE_PER_SECOND") || 5,
+      minute: rate.("MAIL_RATE_PER_MINUTE") || 120,
+      hour: rate.("MAIL_RATE_PER_HOUR") || 2000,
+      day: rate.("MAIL_RATE_PER_DAY") || 20_000
+    ]
 end

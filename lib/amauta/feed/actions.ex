@@ -123,6 +123,16 @@ defmodule Amauta.Feed.Actions.PublishPost do
   def audit(_scope, input, post),
     do: {post, %{course_id: input.course_id, section_id: input[:section_id]}}
 
+  # Avisos (RF-NOT-008): en segundo plano, a la audiencia de la publicación y
+  # a quienes menciona.
+  @impl true
+  def effects(scope, _input, post) do
+    [
+      Amauta.Notifications.DeliverWorker.job(scope, "feed.post_published", %{"post_id" => post.id}),
+      Amauta.Notifications.DeliverWorker.job(scope, "feed.mentioned", %{"post_id" => post.id})
+    ]
+  end
+
   @impl true
   def after_commit(_scope, _input, post) do
     Feed.broadcast(post.course, :published, post)
@@ -282,6 +292,20 @@ defmodule Amauta.Feed.Actions.ReplyToPost do
 
   @impl true
   def audit(_scope, _input, reply), do: {reply, %{post_id: reply.post_id}}
+
+  # Avisos: a quien publicó, a quienes participan y a quienes menciona.
+  @impl true
+  def effects(scope, _input, reply) do
+    [
+      Amauta.Notifications.DeliverWorker.job(scope, "feed.reply_created", %{
+        "reply_id" => reply.id
+      }),
+      Amauta.Notifications.DeliverWorker.job(scope, "feed.mentioned", %{
+        "post_id" => reply.post_id,
+        "reply_id" => reply.id
+      })
+    ]
+  end
 
   @impl true
   def after_commit(_scope, _input, reply) do
