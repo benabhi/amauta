@@ -77,7 +77,9 @@ defmodule AmautaWeb.CourseLive do
       can_update: open and can.("course.update"),
       can_archive: can.("course.archive"),
       can_settings: can.("course.update") or can.("course.archive"),
-      can_see_code: can.("course.people.enroll") or can.("course.update")
+      # El código es para todo el equipo docente (RF-CUR-003), también el de
+      # una comisión: quien ve el contenido oculto, en el curso o en la suya.
+      can_see_code: Enrollments.can_in_course?(scope, "course.content.view_hidden", course)
     )
   end
 
