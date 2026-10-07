@@ -67,6 +67,13 @@ defmodule AmautaWeb.UserSessionController do
 
   defp log_in(conn, user, user_params, info) do
     institution = conn.assigns.current_institution
+
+    conn =
+      case UserAuth.safe_return_to(institution, user_params["return_to"]) do
+        nil -> conn
+        path -> put_session(conn, :user_return_to, path)
+      end
+
     user_agent = conn |> get_req_header("user-agent") |> List.first()
 
     if Accounts.register_device(institution, user, user_agent) == :new do

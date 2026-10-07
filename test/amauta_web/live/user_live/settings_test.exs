@@ -34,7 +34,10 @@ defmodule AmautaWeb.UserLive.SettingsTest do
           token_authenticated_at: DateTime.add(DateTime.utc_now(:second), -11, :minute)
         )
         |> live(Paths.settings(institution()))
-        |> follow_redirect(conn, Paths.log_in(institution()))
+        |> follow_redirect(
+          conn,
+          Paths.log_in_return(institution(), Paths.settings(institution()))
+        )
 
       assert conn.resp_body =~ "You must re-authenticate to access this page."
     end

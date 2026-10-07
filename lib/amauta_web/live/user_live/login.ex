@@ -4,7 +4,7 @@ defmodule AmautaWeb.UserLive.Login do
 
   alias Amauta.Accounts
   alias Amauta.Accounts.LoginThrottle
-  alias AmautaWeb.Paths
+  alias AmautaWeb.{Paths, UserAuth}
 
   @impl true
   def render(assigns) do
@@ -55,6 +55,7 @@ defmodule AmautaWeb.UserLive.Login do
             phx-submit="submit_password"
             phx-trigger-action={@trigger_submit}
           >
+            <input :if={@return_to} type="hidden" name="user[return_to]" value={@return_to} />
             <.input
               readonly={!!@current_scope.user}
               field={f[:email]}
@@ -85,14 +86,19 @@ defmodule AmautaWeb.UserLive.Login do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
+    # Adónde volver después de entrar (por ejemplo, Ajustes, que pide volver a
+    # autenticarse). Solo rutas internas de la institución.
+    return_to =
+      UserAuth.safe_return_to(socket.assigns.current_scope.institution, params["return_to"])
+
     email =
       Phoenix.Flash.get(socket.assigns.flash, :email) ||
         get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:email)])
 
     form = to_form(%{"email" => email}, as: "user")
 
-    {:ok, assign(socket, form: form, trigger_submit: false)}
+    {:ok, assign(socket, form: form, trigger_submit: false, return_to: return_to)}
   end
 
   @impl true

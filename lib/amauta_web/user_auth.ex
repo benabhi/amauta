@@ -45,6 +45,21 @@ defmodule AmautaWeb.UserAuth do
     |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
+  @doc """
+  La ruta a la que volver después de entrar, si es segura: una ruta
+  interna de la misma institución. Cualquier otra cosa (otro sitio, otra
+  institución, `//host`) da `nil`, para no abrir una redirección.
+  """
+  @spec safe_return_to(Institution.t(), term()) :: String.t() | nil
+  def safe_return_to(%Institution{slug: slug}, "/" <> _ = path) do
+    prefix = "/#{slug}/"
+
+    if String.starts_with?(path, prefix) and not String.contains?(path, ["//", "\\", "\n", "\r"]),
+      do: path
+  end
+
+  def safe_return_to(_institution, _path), do: nil
+
   @doc "Cierra la sesión de la institución actual."
   def log_out_user(conn) do
     institution = conn.assigns.current_institution
@@ -196,7 +211,7 @@ defmodule AmautaWeb.UserAuth do
          :error,
          gettext("You must re-authenticate to access this page.")
        )
-       |> Phoenix.LiveView.redirect(to: Paths.log_in(scope))}
+       |> Phoenix.LiveView.redirect(to: Paths.log_in_return(scope, Paths.settings(scope)))}
     end
   end
 
