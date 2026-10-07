@@ -17,6 +17,9 @@ defmodule AmautaWeb.Endpoint do
     plug Phoenix.Ecto.SQL.Sandbox
   end
 
+  @doc "Opciones de la cookie de sesión (las usan las pruebas en navegador)."
+  def session_options, do: @session_options
+
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:user_agent, session: @session_options]],
     longpoll: [connect_info: [:user_agent, session: @session_options]]

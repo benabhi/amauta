@@ -50,6 +50,7 @@ config :amauta, :sql_sandbox, true
 # compose.yaml, perfil «e2e», y .github/workflows/ci.yml).
 config :phoenix_test,
   otp_app: :amauta,
+  endpoint: AmautaWeb.Endpoint,
   playwright: [
     ws_endpoint: System.get_env("PLAYWRIGHT_WS_ENDPOINT", "ws://localhost:3000"),
     browser_pool: false,
