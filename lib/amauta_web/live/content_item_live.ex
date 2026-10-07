@@ -83,7 +83,7 @@ defmodule AmautaWeb.ContentItemLive do
       files: [],
       saved_file_ids: []
     )
-    |> assign_form(%{"visibility" => "visible"})
+    |> assign_form(%{"visibility" => "visible", "announce" => true})
   end
 
   defp apply_action(socket, :edit, %{"item_id" => id}) do
@@ -105,7 +105,8 @@ defmodule AmautaWeb.ContentItemLive do
       "body" => item.body,
       "url" => item.url,
       "visibility" => item.visibility,
-      "publish_local" => to_local(item.publish_at, tz)
+      "publish_local" => to_local(item.publish_at, tz),
+      "announce" => item.announce
     })
   end
 
@@ -411,6 +412,11 @@ defmodule AmautaWeb.ContentItemLive do
             />
           </div>
           <.visibility_fields form={@form} timezone={@timezone} />
+          <.input
+            field={@form[:announce]}
+            type="checkbox"
+            label={gettext("Announce it in the feed when students can see it")}
+          />
           <div class="flex gap-2">
             <.button phx-disable-with={gettext("Saving...")}>{gettext("Save")}</.button>
             <.button

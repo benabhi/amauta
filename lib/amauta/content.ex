@@ -16,6 +16,7 @@ defmodule Amauta.Content do
   import Ecto.Changeset, only: [validate_inclusion: 3, get_field: 2, add_error: 3]
 
   alias Amauta.Content.{Completion, Item, ItemFile, Unit}
+  alias Amauta.Feed.Post
   alias Amauta.Courses.Course
   alias Amauta.Enrollments
   alias Amauta.Files
@@ -300,4 +301,96 @@ defmodule Amauta.Content do
   @doc "Cuántos elementos de la unidad están hechos, y cuántos tiene."
   def unit_progress(%Unit{items: items}, done),
     do: {Enum.count(items, &MapSet.member?(done, &1.id)), length(items)}
+
+  ## Tarjetas en el tablón (ERS 4.3)
+
+  @doc """
+  Deja al día la tarjeta del tablón de un elemento: la crea si el elemento
+  avisa (`announce`), el estudiantado ya lo ve y no se avisó todavía; la
+  retira si dejó de verse o de avisar. Es idempotente: la llaman las
+  acciones y el trabajo de publicación programada.
+
+  Devuelve `{:announced, post}`, `{:withdrawn, post}` o `:unchanged`.
+  """
+  def sync_announcement(%Scope{} = scope, %Item{id: id}), do: sync_announcement(scope, id)
+
+  def sync_announcement(scope, item_id) when is_binary(item_id) do
+    opts = Tenancy.opts(scope)
+
+    case Repo.get(Item, item_id, opts) do
+      nil -> :unchanged
+      item -> do_sync(scope, Repo.preload(item, [:unit, :course], opts))
+    end
+  end
+
+  defp do_sync(scope, item) do
+    opts = Tenancy.opts(scope)
+    visible = published?(item.unit) and published?(item)
+
+    cond do
+      item.announce and visible and is_nil(item.announced_at) ->
+        now = DateTime.utc_now()
+
+        post =
+          Repo.insert!(
+            %Post{
+              kind: "content",
+              item_id: item.id,
+              course_id: item.course_id,
+              author_id: item.created_by_id,
+              status: "published",
+              published_at: now,
+              replies_enabled: false
+            },
+            opts
+          )
+
+        item |> Ecto.Changeset.change(announced_at: now) |> Repo.update!(opts)
+        {:announced, %{post | course: item.course}}
+
+      item.announced_at && not (item.announce and visible) ->
+        post = Repo.get_by(Post, [item_id: item.id], opts)
+        if post, do: Repo.delete!(post, opts)
+        item |> Ecto.Changeset.change(announced_at: nil) |> Repo.update!(opts)
+        if post, do: {:withdrawn, %{post | course: item.course}}, else: :unchanged
+
+      true ->
+        :unchanged
+    end
+  end
+
+  @doc "Avisa en tiempo real lo que hizo `sync_announcement/2`."
+  def broadcast_announcement({:announced, post}),
+    do: Amauta.Feed.broadcast(post.course, :published, post)
+
+  def broadcast_announcement({:withdrawn, post}),
+    do: Amauta.Feed.broadcast(post.course, :deleted, post)
+
+  def broadcast_announcement(_result), do: :ok
+
+  @doc """
+  Trabajo que publica a su hora una unidad o un elemento programado (para
+  crear sus tarjetas en el tablón). Si no está programado a futuro, nada.
+  """
+  def publication_jobs(scope, %{visibility: "scheduled", publish_at: %DateTime{} = at} = subject) do
+    if DateTime.after?(at, DateTime.utc_now()) do
+      key = if match?(%Unit{}, subject), do: "unit_id", else: "item_id"
+      [Amauta.Content.PublishWorker.new_for(scope, %{key => subject.id}, scheduled_at: at)]
+    else
+      []
+    end
+  end
+
+  def publication_jobs(_scope, _subject), do: []
+
+  @doc "IDs de los elementos de una unidad."
+  def item_ids(%Scope{} = scope, %Unit{id: unit_id}) do
+    from(i in Item, where: i.unit_id == ^unit_id, select: i.id) |> Repo.all(Tenancy.opts(scope))
+  end
+
+  @doc "Tarjetas del tablón de esos elementos (con su curso, para avisar)."
+  def cards(%Scope{} = scope, item_ids) do
+    from(p in Post, where: p.item_id in ^item_ids, preload: :course)
+    |> Repo.all(Tenancy.opts(scope))
+  end
 end

@@ -138,7 +138,7 @@ defmodule Amauta.Feed do
     |> before(opts[:before])
     |> order_by([p], desc: p.published_at, desc: p.id)
     |> limit(@page)
-    |> preload([:author, :section, attachments: :file])
+    |> preload([:author, :section, :item, attachments: :file])
     |> Repo.all(Tenancy.opts(scope))
     |> with_replies(scope, opts[:windows] || %{})
   end
@@ -155,7 +155,7 @@ defmodule Amauta.Feed do
     |> visible_to(scope, course)
     |> filter_section(filters["section"])
     |> order_by([p], asc: p.pin_position, asc: p.pinned_at)
-    |> preload([:author, :section, attachments: :file])
+    |> preload([:author, :section, :item, attachments: :file])
     |> Repo.all(Tenancy.opts(scope))
     |> with_replies(scope, opts[:windows] || %{})
   end
@@ -326,7 +326,7 @@ defmodule Amauta.Feed do
            Post
            |> where([p], p.id == ^id and p.course_id == ^course.id and p.status == "published")
            |> visible_to(scope, course)
-           |> preload([:author, :section, attachments: :file])
+           |> preload([:author, :section, :item, attachments: :file])
            |> Repo.one(Tenancy.opts(scope)) do
       [post] = with_replies([post], scope, opts[:windows] || %{})
       post
