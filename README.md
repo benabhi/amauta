@@ -34,6 +34,8 @@ Comandos frecuentes (iguales en `bin/dev` y `bin\dev.ps1`):
 | `logs` | Logs de la app en vivo |
 | `iex` | Consola conectada al nodo en ejecución |
 | `test` | Tests (acepta los argumentos de `mix test`) |
+| `e2e` | Pruebas en navegador real: levanta Playwright en su contenedor (la primera vez baja la imagen, unos 3,5 GB) |
+| `ci` | Los mismos pasos que la integración continua |
 | `migrate` / `seed` / `reset` | Migraciones, datos de ejemplo, recrear la base |
 | `format` / `lint` / `precommit` | Calidad de código |
 | `mix …` / `shell` | Cualquier tarea de mix, o bash en el contenedor |

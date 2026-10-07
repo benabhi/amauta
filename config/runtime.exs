@@ -20,8 +20,12 @@ if System.get_env("PHX_SERVER") do
   config :amauta, AmautaWeb.Endpoint, server: true
 end
 
-config :amauta, AmautaWeb.Endpoint,
-  http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+# En test el puerto es fijo (4002, config/test.exs): el servidor corre
+# junto al de desarrollo para las pruebas en navegador.
+if config_env() != :test do
+  config :amauta, AmautaWeb.Endpoint,
+    http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+end
 
 if config_env() == :dev do
   # Reload browser tabs when matching files change.

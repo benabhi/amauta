@@ -59,3 +59,65 @@ jobs:
       - run: mix gettext.extract --check-up-to-date
       - run: mix amauta.gettext.check
       - run: mix test --warnings-as-errors
+
+  # Pruebas en navegador real (RNF-TST). El navegador corre en el servidor
+  # oficial de Playwright, en la red del runner, igual que en desarrollo
+  # (compose.yaml, perfil «e2e»).
+  e2e:
+    runs-on: ubuntu-24.04
+    env:
+      MIX_ENV: test
+      DATABASE_HOST: localhost
+      E2E: "1"
+      E2E_APP_HOST: localhost
+      PLAYWRIGHT_WS_ENDPOINT: ws://localhost:3000
+
+    services:
+      db:
+        image: postgres:18.6-trixie
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+          key: mix-e2e-${{ runner.os }}-${{ hashFiles('.tool-versions', 'mix.lock') }}
+          restore-keys: mix-e2e-${{ runner.os }}-
+
+      - name: Servidor de Playwright
+        run: |
+          docker run -d --name playwright --network host --init --user pwuser \
+            --workdir /home/pwuser mcr.microsoft.com/playwright:v1.63.0-noble \
+            /bin/sh -c "corepack pnpm@11.19.0 dlx playwright@1.63.0 run-server --port 3000 --host 0.0.0.0"
+
+      - run: mix deps.get
+      - run: mix compile
+
+      - name: Assets
+        run: |
+          mix esbuild.install --if-missing
+          mix tailwind.install --if-missing
+          mix esbuild amauta
+          mix tailwind amauta
+
+      - name: Esperar a Playwright
+        run: timeout 120 bash -c 'until curl -s localhost:3000 >/dev/null; do sleep 2; done'
+
+      - run: mix test --only e2e
