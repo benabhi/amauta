@@ -7,19 +7,16 @@ defmodule Amauta.Accounts.UserNotifier do
   import Swoosh.Email
 
   alias Amauta.Accounts.User
-  alias Amauta.Mailer
 
+  # Todos los emails de la cuenta son de acceso o seguridad: salen por la
+  # cola con la prioridad más alta (RF-EML-001).
   defp deliver(recipient, subject, body) do
-    email =
-      new()
-      |> to(recipient)
-      |> from(Application.fetch_env!(:amauta, :mail_from))
-      |> subject(subject)
-      |> text_body(body)
-
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
-    end
+    new()
+    |> to(recipient)
+    |> from(Application.fetch_env!(:amauta, :mail_from))
+    |> subject(subject)
+    |> text_body(body)
+    |> Amauta.Mail.deliver_later(:access)
   end
 
   @doc "Instrucciones para confirmar un cambio de email."

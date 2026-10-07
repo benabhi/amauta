@@ -32,6 +32,17 @@ defmodule AmautaWeb.Router do
     plug :fetch_current_staff
   end
 
+  # Baja de los emails con un clic (RF-EML-009, RFC 8058): el cliente de
+  # correo hace el POST sin sesión ni token CSRF; lo protege el token firmado
+  # de la URL.
+  pipeline :mail_link do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {AmautaWeb.Layouts, :root}
+    plug :put_secure_browser_headers
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -65,6 +76,7 @@ defmodule AmautaWeb.Router do
       live "/", InstitutionsLive, :index
       live "/institutions/new", InstitutionsLive, :new
       live "/institutions/:id", InstitutionLive, :show
+      live "/mail", MailLive, :index
     end
   end
 
@@ -98,8 +110,16 @@ defmodule AmautaWeb.Router do
     pipe_through [:browser, :institution, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: @sandbox ++ [{AmautaWeb.UserAuth, :require_authenticated}, AmautaWeb.Locale] do
+      on_mount:
+        @sandbox ++
+          [
+            {AmautaWeb.UserAuth, :require_authenticated},
+            AmautaWeb.Locale,
+            AmautaWeb.NotificationsHook
+          ] do
       live "/", HomeLive, :index
+      live "/notifications", NotificationsLive, :index
+      live "/settings/notifications", NotificationSettingsLive, :edit
       live "/settings", UserLive.Settings, :edit
       live "/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/people", PeopleLive, :index
@@ -132,6 +152,13 @@ defmodule AmautaWeb.Router do
     get "/people/export", PeopleExportController, :export
     get "/files/:id", FileController, :show
     post "/update-password", UserSessionController, :update_password
+  end
+
+  scope "/:institution", AmautaWeb do
+    pipe_through [:mail_link, :institution]
+
+    get "/unsubscribe/:token", UnsubscribeController, :show
+    post "/unsubscribe/:token", UnsubscribeController, :create
   end
 
   scope "/:institution", AmautaWeb do

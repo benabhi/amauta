@@ -15,6 +15,7 @@ defmodule Amauta.Application do
         {Phoenix.PubSub, name: Amauta.PubSub},
         Amauta.Authorization.Cache,
         Amauta.Accounts.LoginThrottle,
+        Amauta.Mail.RateLimit,
         {Oban, Application.fetch_env!(:amauta, Oban)}
       ] ++
         dev_code_reloader() ++

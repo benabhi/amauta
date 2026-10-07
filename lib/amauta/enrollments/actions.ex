@@ -180,6 +180,15 @@ defmodule Amauta.Enrollments.Actions.EnrollUser do
       })
     end
   end
+
+  # Aviso a la persona matriculada.
+  @impl true
+  def effects(scope, _input, enrollment),
+    do: [
+      Amauta.Notifications.DeliverWorker.job(scope, "enrollment.created", %{
+        "enrollment_id" => enrollment.id
+      })
+    ]
 end
 
 defmodule Amauta.Enrollments.Actions.UpdateEnrollment do

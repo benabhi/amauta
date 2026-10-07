@@ -26,8 +26,8 @@ msgstr "Ajustes de la cuenta"
 msgid "Actions"
 msgstr "Acciones"
 
-#: lib/amauta_web/components/layouts.ex:264
-#: lib/amauta_web/components/layouts.ex:278
+#: lib/amauta_web/components/layouts.ex:279
+#: lib/amauta_web/components/layouts.ex:293
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Intentando reconectar"
@@ -63,8 +63,12 @@ msgstr "Repetí la nueva contraseña"
 msgid "Confirming..."
 msgstr "Confirmando…"
 
+#: lib/amauta/notifications/catalog.ex:64
+#: lib/amauta_web/components/layouts.ex:127
 #: lib/amauta_web/controllers/admin/session_controller.ex:62
 #: lib/amauta_web/live/admin/institution_live.ex:170
+#: lib/amauta_web/live/admin/mail_live.ex:20
+#: lib/amauta_web/live/admin/mail_live.ex:83
 #: lib/amauta_web/live/people_import_live.ex:121
 #: lib/amauta_web/live/people_live.ex:175
 #: lib/amauta_web/live/setup_live.ex:69
@@ -139,9 +143,9 @@ msgstr "Entrar con un enlace por email"
 msgid "Log me in only this time"
 msgstr "Entrar solo esta vez"
 
-#: lib/amauta_web/components/layouts.ex:128
-#: lib/amauta_web/components/layouts.ex:129
-#: lib/amauta_web/components/layouts.ex:236
+#: lib/amauta_web/components/layouts.ex:143
+#: lib/amauta_web/components/layouts.ex:144
+#: lib/amauta_web/components/layouts.ex:251
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Salir"
@@ -215,7 +219,7 @@ msgstr "Guardando…"
 msgid "Settings"
 msgstr "Ajustes"
 
-#: lib/amauta_web/components/layouts.ex:270
+#: lib/amauta_web/components/layouts.ex:285
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "¡Algo salió mal!"
@@ -235,7 +239,7 @@ msgstr "Si preferís usar una contraseña, podés crearla en los ajustes de tu c
 msgid "User confirmed successfully."
 msgstr "Confirmaste tu cuenta."
 
-#: lib/amauta_web/components/layouts.ex:256
+#: lib/amauta_web/components/layouts.ex:271
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "No encontramos la conexión a internet"
@@ -282,17 +286,17 @@ msgstr "o"
 msgid "An open source learning platform. Enter through your institution's address."
 msgstr "Una plataforma educativa de código abierto. Entrá desde la dirección de tu institución."
 
-#: lib/amauta_web/components/layouts.ex:293
+#: lib/amauta_web/components/layouts.ex:308
 #, elixir-autogen, elixir-format
 msgid "Color theme"
 msgstr "Tema de color"
 
-#: lib/amauta_web/components/layouts.ex:305
+#: lib/amauta_web/components/layouts.ex:320
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr "Tema oscuro"
 
-#: lib/amauta_web/components/layouts.ex:304
+#: lib/amauta_web/components/layouts.ex:319
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr "Tema claro"
@@ -302,7 +306,7 @@ msgstr "Tema claro"
 msgid "Skip to content"
 msgstr "Ir al contenido"
 
-#: lib/amauta_web/components/layouts.ex:303
+#: lib/amauta_web/components/layouts.ex:318
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr "Tema del sistema"
@@ -364,8 +368,8 @@ msgstr "Activa"
 msgid "Address"
 msgstr "Dirección"
 
-#: lib/amauta_web/components/layouts.ex:102
-#: lib/amauta_web/components/layouts.ex:104
+#: lib/amauta_web/components/layouts.ex:108
+#: lib/amauta_web/components/layouts.ex:110
 #: lib/amauta_web/live/admin/institution_live.ex:138
 #, elixir-autogen, elixir-format
 msgid "Administration"
@@ -479,7 +483,7 @@ msgstr "Administración de la instancia"
 msgid "Institution created. Now assign its administration."
 msgstr "Creaste la institución. Ahora asigná quién la administra."
 
-#: lib/amauta_web/components/layouts.ex:112
+#: lib/amauta_web/components/layouts.ex:118
 #: lib/amauta_web/live/admin/institutions_live.ex:61
 #, elixir-autogen, elixir-format
 msgid "Institutions"
@@ -600,7 +604,7 @@ msgstr "Suspender la institución"
 msgid "Suspended"
 msgstr "Suspendida"
 
-#: lib/amauta_web/components/layouts.ex:118
+#: lib/amauta_web/components/layouts.ex:133
 #, elixir-autogen, elixir-format
 msgid "Telemetry"
 msgstr "Telemetría"
@@ -787,7 +791,7 @@ msgid "From a CSV file with one person per row."
 msgstr "Desde un archivo CSV con una persona por fila."
 
 #: lib/amauta_web/components/command_palette.ex:62
-#: lib/amauta_web/components/layouts.ex:171
+#: lib/amauta_web/components/layouts.ex:186
 #: lib/amauta_web/live/home_live.ex:28
 #, elixir-autogen, elixir-format
 msgid "Home"
@@ -838,7 +842,7 @@ msgstr "Invitación pendiente"
 msgid "Invitation sent again."
 msgstr "Volviste a enviar la invitación."
 
-#: lib/amauta_web/components/layouts.ex:153
+#: lib/amauta_web/components/layouts.ex:168
 #, elixir-autogen, elixir-format
 msgid "Main"
 msgstr "Principal"
@@ -849,6 +853,7 @@ msgid "New person"
 msgstr "Nueva persona"
 
 #: lib/amauta_web/live/content_item_live.ex:338
+#: lib/amauta_web/live/notifications_live.ex:252
 #: lib/amauta_web/live/people_live.ex:316
 #, elixir-autogen, elixir-format
 msgid "Next"
@@ -874,6 +879,7 @@ msgstr "Opcional: cómo quiere que la llamen."
 msgid "Page %{page} of %{pages}"
 msgstr "Página %{page} de %{pages}"
 
+#: lib/amauta_web/live/notifications_live.ex:234
 #: lib/amauta_web/live/people_live.ex:293
 #, elixir-autogen, elixir-format
 msgid "Pagination"
@@ -882,7 +888,7 @@ msgstr "Paginación"
 #: lib/amauta_web/components/command_palette.ex:51
 #: lib/amauta_web/components/command_palette.ex:65
 #: lib/amauta_web/components/core_components.ex:170
-#: lib/amauta_web/components/layouts.ex:174
+#: lib/amauta_web/components/layouts.ex:189
 #: lib/amauta_web/live/course_live.ex:645
 #: lib/amauta_web/live/people_live.ex:31
 #: lib/amauta_web/live/people_live.ex:134
@@ -912,6 +918,7 @@ msgid "Preferred name"
 msgstr "Nombre preferido"
 
 #: lib/amauta_web/live/content_item_live.ex:326
+#: lib/amauta_web/live/notifications_live.ex:243
 #: lib/amauta_web/live/people_live.ex:302
 #, elixir-autogen, elixir-format
 msgid "Previous"
@@ -1008,6 +1015,7 @@ msgstr "¿Suspendés a %{name}? No va a poder entrar."
 #: lib/amauta_web/live/course_feed.ex:600
 #: lib/amauta_web/live/course_feed.ex:640
 #: lib/amauta_web/live/course_live.ex:441
+#: lib/amauta_web/live/notification_settings_live.ex:35
 #: lib/amauta_web/live/pathway_enroll_live.ex:94
 #: lib/amauta_web/live/pathway_live.ex:224
 #: lib/amauta_web/live/people_live.ex:125
@@ -2136,6 +2144,7 @@ msgid "there is no section with that name"
 msgstr "no hay una comisión con ese nombre"
 
 #: lib/amauta_web/live/course_live.ex:587
+#: lib/amauta_web/live/notifications_live.ex:146
 #, elixir-autogen, elixir-format
 msgctxt "feminine"
 msgid "All %{terms}"
@@ -2190,6 +2199,7 @@ msgid "Those of one %{term}"
 msgstr "Los de una %{term}"
 
 #: lib/amauta_web/live/course_live.ex:587
+#: lib/amauta_web/live/notifications_live.ex:146
 #, elixir-autogen, elixir-format
 msgctxt "masculine"
 msgid "All %{terms}"
@@ -2425,7 +2435,7 @@ msgid "Your %{term} today"
 msgstr "Tu %{term} hoy"
 
 #: lib/amauta_web/components/command_palette.ex:73
-#: lib/amauta_web/components/layouts.ex:227
+#: lib/amauta_web/components/layouts.ex:242
 #, elixir-autogen, elixir-format
 msgid "Account settings"
 msgstr "Ajustes de la cuenta"
@@ -2485,7 +2495,7 @@ msgstr "Buscá o andá a…"
 msgid "Show this help"
 msgstr "Mostrar esta ayuda"
 
-#: lib/amauta_web/components/layouts.ex:212
+#: lib/amauta_web/components/layouts.ex:227
 #, elixir-autogen, elixir-format
 msgid "Account menu"
 msgstr "Menú de la cuenta"
@@ -2495,7 +2505,7 @@ msgstr "Menú de la cuenta"
 msgid "Search…"
 msgstr "Buscar…"
 
-#: lib/amauta_web/components/layouts.ex:231
+#: lib/amauta_web/components/layouts.ex:246
 #, elixir-autogen, elixir-format
 msgid "Theme"
 msgstr "Tema"
@@ -3336,3 +3346,412 @@ msgstr "Novedades de la %{term}"
 msgctxt "masculine"
 msgid "What's new in the %{term}"
 msgstr "Novedades del %{term}"
+
+#: lib/amauta/notifications/message.ex:18
+#, elixir-autogen, elixir-format
+msgid "%{actor} mentioned you in %{course}: «%{title}»"
+msgstr "%{actor} te mencionó en %{course}: «%{title}»"
+
+#: lib/amauta/notifications/message.ex:15
+#, elixir-autogen, elixir-format
+msgid "%{actor} posted in %{course}: «%{title}»"
+msgstr "%{actor} publicó en %{course}: «%{title}»"
+
+#: lib/amauta/notifications/message.ex:21
+#, elixir-autogen, elixir-format
+msgid "%{actor} replied to «%{title}»"
+msgstr "%{actor} respondió a «%{title}»"
+
+#: lib/amauta/notifications/email.ex:33
+#, elixir-autogen, elixir-format
+msgid "%{count} new notification in %{institution}"
+msgid_plural "%{count} new notifications in %{institution}"
+msgstr[0] "%{count} notificación nueva en %{institution}"
+msgstr[1] "%{count} notificaciones nuevas en %{institution}"
+
+#: lib/amauta/notifications/message.ex:25
+#, elixir-autogen, elixir-format
+msgid "%{count} new reply to «%{title}»"
+msgid_plural "%{count} new replies to «%{title}»"
+msgstr[0] "%{count} respuesta nueva a «%{title}»"
+msgstr[1] "%{count} respuestas nuevas a «%{title}»"
+
+#: lib/amauta_web/live/notifications_live.ex:81
+#, elixir-autogen, elixir-format
+msgid "%{count} unread"
+msgid_plural "%{count} unread"
+msgstr[0] "%{count} sin leer"
+msgstr[1] "%{count} sin leer"
+
+#: lib/amauta_web/live/notifications_live.ex:209
+#, elixir-autogen, elixir-format
+msgid "(unread)"
+msgstr "(sin leer)"
+
+#: lib/amauta_web/live/admin/mail_live.ex:93
+#, elixir-autogen, elixir-format
+msgid "Adapter"
+msgstr "Adaptador"
+
+#: lib/amauta_web/live/notifications_live.ex:223
+#, elixir-autogen, elixir-format
+msgid "Adjust"
+msgstr "Ajustar"
+
+#: lib/amauta_web/live/notifications_live.ex:114
+#, elixir-autogen, elixir-format
+msgid "All"
+msgstr "Todas"
+
+#: lib/amauta_web/live/notifications_live.ex:156
+#, elixir-autogen, elixir-format
+msgid "All types"
+msgstr "Todos los tipos"
+
+#: lib/amauta_web/live/admin/mail_live.ex:65
+#, elixir-autogen, elixir-format
+msgid "Amauta test email"
+msgstr "Email de prueba de Amauta"
+
+#: lib/amauta/notifications/message.ex:55
+#, elixir-autogen, elixir-format
+msgid "Because it is your post."
+msgstr "Porque es tu publicación."
+
+#: lib/amauta/notifications/message.ex:54
+#, elixir-autogen, elixir-format
+msgid "Because someone mentioned you."
+msgstr "Porque te mencionaron."
+
+#: lib/amauta/notifications/message.ex:45
+#, elixir-autogen, elixir-format
+msgid "Because you are a student in %{course}."
+msgstr "Porque sos estudiante de %{course}."
+
+#: lib/amauta/notifications/message.ex:49
+#, elixir-autogen, elixir-format
+msgid "Because you are part of the teaching team of %{course}."
+msgstr "Porque sos parte del equipo docente de %{course}."
+
+#: lib/amauta/notifications/message.ex:52
+#, elixir-autogen, elixir-format
+msgid "Because you take part in %{course}."
+msgstr "Porque participás de %{course}."
+
+#: lib/amauta/notifications/message.ex:58
+#, elixir-autogen, elixir-format
+msgid "Because you took part in this conversation."
+msgstr "Porque participaste en esta conversación."
+
+#: lib/amauta/notifications/message.ex:60
+#, elixir-autogen, elixir-format
+msgid "Because you were enrolled."
+msgstr "Porque te matricularon."
+
+#: lib/amauta/notifications/email.ex:93
+#, elixir-autogen, elixir-format
+msgid "Choose what reaches you by email"
+msgstr "Elegí qué te llega por email"
+
+#: lib/amauta/notifications/email.ex:65
+#, elixir-autogen, elixir-format
+msgid "Choose what reaches you by email: %{url}"
+msgstr "Elegí qué te llega por email: %{url}"
+
+#: lib/amauta_web/live/notification_settings_live.ex:46
+#, elixir-autogen, elixir-format
+msgid "Choose what reaches you in Amauta and what also arrives by email."
+msgstr "Elegí qué te avisa Amauta y qué te llega también por email."
+
+#: lib/amauta_web/live/admin/mail_live.ex:91
+#, elixir-autogen, elixir-format
+msgid "Configuration"
+msgstr "Configuración"
+
+#: lib/amauta_web/controllers/unsubscribe_controller.ex:84
+#, elixir-autogen, elixir-format
+msgid "Done: you will not receive notification emails."
+msgstr "Listo: no vas a recibir más emails de notificaciones."
+
+#: lib/amauta_web/live/notification_settings_live.ex:92
+#, elixir-autogen, elixir-format
+msgid "Emails are grouped: if several things happen within a few minutes, they arrive together in one email."
+msgstr "Los emails se agrupan: si pasan varias cosas en pocos minutos, llegan juntas en un solo email."
+
+#: lib/amauta_web/live/notification_settings_live.ex:59
+#, elixir-autogen, elixir-format
+msgid "Event"
+msgstr "Evento"
+
+#: lib/amauta/notifications/email.ex:58
+#: lib/amauta/notifications/email.ex:88
+#, elixir-autogen, elixir-format
+msgid "Hi %{name},"
+msgstr "Hola, %{name}:"
+
+#: lib/amauta_web/live/admin/mail_live.ex:66
+#, elixir-autogen, elixir-format
+msgid "If you are reading this, Amauta can send emails."
+msgstr "Si estás leyendo esto, Amauta puede enviar emails."
+
+#: lib/amauta/notifications/catalog.ex:63
+#, elixir-autogen, elixir-format
+msgid "In Amauta"
+msgstr "En Amauta"
+
+#: lib/amauta_web/live/notifications_live.ex:92
+#, elixir-autogen, elixir-format
+msgid "Mark all as read"
+msgstr "Marcar todo como leído"
+
+#: lib/amauta/notifications/catalog.ex:43
+#, elixir-autogen, elixir-format
+msgid "Mentions with «@»"
+msgstr "Menciones con «@»"
+
+#: lib/amauta/notifications/message.ex:33
+#, elixir-autogen, elixir-format
+msgid "New material in %{course}: «%{title}»"
+msgstr "Material nuevo en %{course}: «%{title}»"
+
+#: lib/amauta/notifications/message.ex:36
+#, elixir-autogen, elixir-format
+msgid "New page in %{course}: «%{title}»"
+msgstr "Página nueva en %{course}: «%{title}»"
+
+#: lib/amauta/notifications/catalog.ex:45
+#, elixir-autogen, elixir-format
+msgid "New pages and materials"
+msgstr "Páginas y materiales nuevos"
+
+#: lib/amauta/notifications/catalog.ex:42
+#, elixir-autogen, elixir-format
+msgid "New posts in the feed"
+msgstr "Publicaciones nuevas en el tablón"
+
+#: lib/amauta_web/controllers/unsubscribe_controller.ex:94
+#: lib/amauta_web/live/notification_settings_live.ex:18
+#: lib/amauta_web/live/notification_settings_live.ex:44
+#, elixir-autogen, elixir-format
+msgid "Notification preferences"
+msgstr "Preferencias de notificación"
+
+#: lib/amauta_web/components/notification_bell.ex:33
+#: lib/amauta_web/live/notification_settings_live.ex:50
+#: lib/amauta_web/live/notifications_live.ex:22
+#: lib/amauta_web/live/notifications_live.ex:78
+#, elixir-autogen, elixir-format
+msgid "Notifications"
+msgstr "Notificaciones"
+
+#: lib/amauta_web/components/notification_bell.ex:32
+#, elixir-autogen, elixir-format
+msgid "Notifications, %{count} unread"
+msgid_plural "Notifications, %{count} unread"
+msgstr[0] "Notificaciones, %{count} sin leer"
+msgstr[1] "Notificaciones, %{count} sin leer"
+
+#: lib/amauta_web/live/notifications_live.ex:100
+#, elixir-autogen, elixir-format
+msgid "Preferences"
+msgstr "Preferencias"
+
+#: lib/amauta_web/live/notification_settings_live.ex:32
+#, elixir-autogen, elixir-format
+msgid "Preferences saved."
+msgstr "Guardamos tus preferencias."
+
+#: lib/amauta_web/live/admin/mail_live.ex:109
+#, elixir-autogen, elixir-format
+msgid "Queue"
+msgstr "Cola"
+
+#: lib/amauta_web/live/admin/mail_live.ex:99
+#, elixir-autogen, elixir-format
+msgid "Rate limit"
+msgstr "Límite de envío"
+
+#: lib/amauta/notifications/catalog.ex:44
+#, elixir-autogen, elixir-format
+msgid "Replies to your posts and conversations"
+msgstr "Respuestas a tus publicaciones y conversaciones"
+
+#: lib/amauta_web/live/admin/mail_live.ex:113
+#, elixir-autogen, elixir-format
+msgid "Retrying"
+msgstr "Reintentando"
+
+#: lib/amauta_web/live/admin/mail_live.ex:133
+#, elixir-autogen, elixir-format
+msgid "Send"
+msgstr "Enviar"
+
+#: lib/amauta_web/live/admin/mail_live.ex:122
+#, elixir-autogen, elixir-format
+msgid "Send a test email"
+msgstr "Enviar un email de prueba"
+
+#: lib/amauta_web/live/admin/mail_live.ex:97
+#, elixir-autogen, elixir-format
+msgid "Sender"
+msgstr "Remitente"
+
+#: lib/amauta_web/live/admin/mail_live.ex:95
+#, elixir-autogen, elixir-format
+msgid "Server"
+msgstr "Servidor"
+
+#: lib/amauta_web/live/notifications_live.ex:110
+#, elixir-autogen, elixir-format
+msgid "Show"
+msgstr "Mostrar"
+
+#: lib/amauta/notifications/message.ex:72
+#, elixir-autogen, elixir-format
+msgid "Someone"
+msgstr "Alguien"
+
+#: lib/amauta_web/controllers/unsubscribe_controller.ex:77
+#, elixir-autogen, elixir-format
+msgid "Stop receiving notification emails? You will keep seeing them in Amauta."
+msgstr "¿Dejás de recibir los emails de notificaciones? Las vas a seguir viendo en Amauta."
+
+#: lib/amauta/notifications/email.ex:94
+#: lib/amauta_web/controllers/unsubscribe_controller.ex:80
+#, elixir-autogen, elixir-format
+msgid "Stop these emails"
+msgstr "Dejar de recibir estos emails"
+
+#: lib/amauta/notifications/email.ex:66
+#, elixir-autogen, elixir-format
+msgid "Stop these emails: %{url}"
+msgstr "Dejar de recibir estos emails: %{url}"
+
+#: lib/amauta_web/live/admin/mail_live.ex:115
+#, elixir-autogen, elixir-format
+msgid "Suppressed addresses"
+msgstr "Direcciones suprimidas"
+
+#: lib/amauta_web/live/admin/mail_live.ex:71
+#, elixir-autogen, elixir-format
+msgid "Test email queued for %{to}."
+msgstr "El email de prueba para %{to} está en la cola."
+
+#: lib/amauta_web/live/admin/mail_live.ex:85
+#, elixir-autogen, elixir-format
+msgid "The server, sender and rate limit come from environment variables."
+msgstr "El servidor, el remitente y el límite de envío salen de variables de entorno."
+
+#: lib/amauta/notifications/email.ex:60
+#: lib/amauta/notifications/email.ex:89
+#, elixir-autogen, elixir-format
+msgid "This is new in %{institution}:"
+msgstr "Esto es nuevo en %{institution}:"
+
+#: lib/amauta_web/controllers/unsubscribe_controller.ex:89
+#, elixir-autogen, elixir-format
+msgid "This link is not valid or has expired."
+msgstr "Este enlace no es válido o venció."
+
+#: lib/amauta_web/live/admin/mail_live.ex:130
+#, elixir-autogen, elixir-format
+msgid "To"
+msgstr "Para"
+
+#: lib/amauta_web/live/notifications_live.ex:158
+#, elixir-autogen, elixir-format
+msgid "Type"
+msgstr "Tipo"
+
+#: lib/amauta_web/live/notifications_live.ex:114
+#, elixir-autogen, elixir-format
+msgid "Unread"
+msgstr "Sin leer"
+
+#: lib/amauta_web/live/admin/mail_live.ex:111
+#, elixir-autogen, elixir-format
+msgid "Waiting"
+msgstr "En espera"
+
+#: lib/amauta/notifications/catalog.ex:59
+#, elixir-autogen, elixir-format
+msgid "When new content becomes available for you."
+msgstr "Cuando hay contenido nuevo para vos."
+
+#: lib/amauta/notifications/catalog.ex:61
+#, elixir-autogen, elixir-format
+msgid "When someone enrolls you."
+msgstr "Cuando te matriculan."
+
+#: lib/amauta/notifications/catalog.ex:53
+#, elixir-autogen, elixir-format
+msgid "When someone mentions you in a post or a reply."
+msgstr "Cuando alguien te menciona en una publicación o en una respuesta."
+
+#: lib/amauta/notifications/catalog.ex:56
+#, elixir-autogen, elixir-format
+msgid "When someone replies to your post or to a conversation you took part in."
+msgstr "Cuando alguien responde a tu publicación o a una conversación en la que participaste."
+
+#: lib/amauta/notifications/catalog.ex:50
+#, elixir-autogen, elixir-format
+msgid "When the teaching team or a classmate posts in a feed you follow."
+msgstr "Cuando el equipo docente, un compañero o una compañera publica en un tablón que seguís."
+
+#: lib/amauta_web/live/admin/mail_live.ex:74
+#, elixir-autogen, elixir-format
+msgid "Write a valid email address."
+msgstr "Escribí una dirección de email válida."
+
+#: lib/amauta_web/live/notifications_live.ex:82
+#: lib/amauta_web/live/notifications_live.ex:167
+#, elixir-autogen, elixir-format
+msgid "You are up to date"
+msgstr "Estás al día"
+
+#: lib/amauta_web/controllers/unsubscribe_controller.ex:86
+#, elixir-autogen, elixir-format
+msgid "You can turn them back on whenever you want from your preferences."
+msgstr "Podés volver a activarlos cuando quieras desde tus preferencias."
+
+#: lib/amauta/notifications/message.ex:39
+#, elixir-autogen, elixir-format
+msgid "You were enrolled in %{course}"
+msgstr "Te matricularon en %{course}"
+
+#: lib/amauta/notifications/catalog.ex:46
+#, elixir-autogen, elixir-format
+msgid "Your enrollments"
+msgstr "Tus matriculaciones"
+
+#: lib/amauta_web/live/admin/mail_live.ex:144
+#, elixir-autogen, elixir-format
+msgid "day"
+msgstr "día"
+
+#: lib/amauta_web/live/admin/mail_live.ex:143
+#, elixir-autogen, elixir-format
+msgid "hour"
+msgstr "hora"
+
+#: lib/amauta_web/live/admin/mail_live.ex:142
+#, elixir-autogen, elixir-format
+msgid "minute"
+msgstr "minuto"
+
+#: lib/amauta_web/live/admin/mail_live.ex:141
+#, elixir-autogen, elixir-format
+msgid "second"
+msgstr "segundo"
+
+#: lib/amauta_web/live/notifications_live.ex:169
+#, elixir-autogen, elixir-format
+msgctxt "feminine"
+msgid "When something happens in your %{terms}, it will appear here."
+msgstr "Cuando pase algo en tus %{terms}, va a aparecer acá."
+
+#: lib/amauta_web/live/notifications_live.ex:169
+#, elixir-autogen, elixir-format
+msgctxt "masculine"
+msgid "When something happens in your %{terms}, it will appear here."
+msgstr "Cuando pase algo en tus %{terms}, va a aparecer acá."

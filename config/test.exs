@@ -60,6 +60,11 @@ config :phoenix_test,
 # In test we don't send emails
 config :amauta, Amauta.Mailer, adapter: Swoosh.Adapters.Test
 
+# Los emails pasan por el mismo camino que en producción, pero salen en el
+# momento (sin la cola), así los tests los reciben enseguida.
+config :amauta, Amauta.Mail, inline: true, rate_limits: []
+config :amauta, Amauta.Notifications, email_window: 0
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

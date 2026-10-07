@@ -346,6 +346,14 @@ defmodule Amauta.Content do
           )
 
         item |> Ecto.Changeset.change(announced_at: now) |> Repo.update!(opts)
+
+        # Y la notificación (RF-NOT-003), en segundo plano.
+        Oban.insert!(
+          Amauta.Notifications.DeliverWorker.job(scope, "content.item_published", %{
+            "item_id" => item.id
+          })
+        )
+
         {:announced, %{post | course: item.course}}
 
       item.announced_at && not (item.announce and visible) ->

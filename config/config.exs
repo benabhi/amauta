@@ -50,6 +50,7 @@ config :tzdata, :autoupdate, :disabled
 
 # URL del enlace mágico para los emails que arma el dominio (invitaciones).
 config :amauta, :login_url, {AmautaWeb.Paths, :absolute_log_in}
+config :amauta, :notification_links, AmautaWeb.NotificationLinks
 
 # Si el WebSocket no conecta en este tiempo, LiveView pasa a long-poll y lo
 # recuerda por la sesión del navegador. `nil` lo desactiva (desarrollo).
@@ -112,6 +113,11 @@ config :ex_aws, http_client: ExAws.Request.Req, json_codec: Jason
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :amauta, Amauta.Mailer, adapter: Swoosh.Adapters.Local
+
+# Correo (C13): límite de tasa de la instancia (RF-EML-002; `nil` no aplica)
+# y ventana de agrupación de las notificaciones por email (RF-EML-004).
+config :amauta, Amauta.Mail, rate_limits: [second: 5, minute: 120, hour: 2000, day: 20_000]
+config :amauta, Amauta.Notifications, email_window: 600
 
 # Configure esbuild (the version is required)
 config :esbuild,

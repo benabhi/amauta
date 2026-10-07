@@ -59,6 +59,12 @@ defmodule AmautaWeb.Layouts do
             <span class="hidden flex-1 text-start lg:inline">{gettext("Search…")}</span>
             <span class="hidden lg:inline"><.kbd>Ctrl K</.kbd></span>
           </button>
+          <.live_component
+            :if={@palette && @current_scope && @current_scope.user}
+            module={AmautaWeb.Components.NotificationBell}
+            id="notification-bell"
+            current_scope={@current_scope}
+          />
           <.theme_toggle :if={!(@current_scope && @current_scope.user)} />
           <.user_menu :if={@current_scope && @current_scope.user} current_scope={@current_scope} />
         </div>
@@ -88,7 +94,7 @@ defmodule AmautaWeb.Layouts do
   """
   attr :flash, :map, required: true
   attr :current_staff, :map, required: true
-  attr :active, :atom, default: :institutions, values: [:institutions, :dashboard]
+  attr :active, :atom, default: :institutions, values: [:institutions, :mail, :dashboard]
   slot :inner_block, required: true
 
   def admin(assigns) do
@@ -110,6 +116,15 @@ defmodule AmautaWeb.Layouts do
             ]}
           >
             {gettext("Institutions")}
+          </.link>
+          <.link
+            navigate={~p"/admin/mail"}
+            class={[
+              "rounded-control px-3 py-1.5 text-sm hover:bg-surface-sunken",
+              @active == :mail && "bg-surface-sunken font-semibold"
+            ]}
+          >
+            {gettext("Email")}
           </.link>
           <.link
             href={~p"/admin/dashboard"}
