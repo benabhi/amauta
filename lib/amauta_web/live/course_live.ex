@@ -452,6 +452,7 @@ defmodule AmautaWeb.CourseLive do
             <.avatar
               :for={enrollment <- Enum.take(@teaching, 4)}
               name={User.display_name(enrollment.user)}
+              src={Paths.avatar(@current_scope, enrollment.user)}
               size="sm"
               class="ring-2 ring-paper"
             />
@@ -642,7 +643,11 @@ defmodule AmautaWeb.CourseLive do
 
         <ul :if={@people_results != []} id="enroll_results" class="divide-y divide-line">
           <li :for={user <- @people_results} class="flex items-center gap-3 py-2">
-            <.avatar name={User.display_name(user)} size="sm" />
+            <.avatar
+              name={User.display_name(user)}
+              src={Paths.avatar(@current_scope, user)}
+              size="sm"
+            />
             <span class="min-w-0 flex-1">
               <span class="block truncate">{User.display_name(user)}</span>
               <span class="block truncate text-sm text-ink-muted">{user.email}</span>
@@ -809,7 +814,11 @@ defmodule AmautaWeb.CourseLive do
     <.table id={@id} rows={@enrollments} row_id={&"enrollment-#{&1.id}"}>
       <:col :let={enrollment} label={gettext("Name")}>
         <div class="flex items-center gap-3">
-          <.avatar name={User.display_name(enrollment.user)} size="sm" />
+          <.avatar
+            name={User.display_name(enrollment.user)}
+            src={Paths.avatar(@current_scope, enrollment.user)}
+            size="sm"
+          />
           <div class="min-w-0">
             <p class="font-semibold">{User.display_name(enrollment.user)}</p>
             <p class="truncate text-ink-muted">{enrollment.user.email}</p>

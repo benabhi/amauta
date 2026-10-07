@@ -74,4 +74,42 @@ defmodule Amauta.StorageS3IntegrationTest do
 
     assert %{status: 403} = Req.put!(tampered, body: "x", headers: headers, retry: false)
   end
+
+  test "sube por partes con URLs prefirmadas, lista, completa y lee el comienzo", %{
+    institution: institution
+  } do
+    key = Storage.key(institution, "files", "grande.bin")
+    # S3 exige partes de al menos 5 MiB, salvo la última.
+    first = :binary.copy("a", 5 * 1024 * 1024)
+    last = "fin"
+
+    {:ok, upload_id} = Storage.start_multipart(key, content_type: "application/octet-stream")
+
+    for {number, body} <- [{1, first}, {2, last}] do
+      {:ok, url} = Storage.presign_part(key, upload_id, number)
+      assert %{status: 200} = Req.put!(url, body: body, retry: false)
+    end
+
+    assert {:ok, [%{part_number: 1, size: 5_242_880}, %{part_number: 2, size: 3}] = parts} =
+             Storage.list_parts(key, upload_id)
+
+    assert :ok =
+             Storage.complete_multipart(
+               key,
+               upload_id,
+               Enum.map(parts, &{&1.part_number, &1.etag})
+             )
+
+    assert {:ok, %{size: 5_242_883}} = Storage.head(key)
+    assert {:ok, "aaaa"} = Storage.get_head_bytes(key, 4)
+
+    Storage.delete(key)
+  end
+
+  test "una subida por partes se puede abortar", %{institution: institution} do
+    key = Storage.key(institution, "files", "abortada.bin")
+    {:ok, upload_id} = Storage.start_multipart(key)
+    assert :ok = Storage.abort_multipart(key, upload_id)
+    assert {:error, :not_found} = Storage.head(key)
+  end
 end

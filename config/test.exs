@@ -9,6 +9,9 @@ config :amauta, Amauta.Storage,
   root: Path.expand("../tmp/storage", __DIR__),
   bucket: "amauta-test"
 
+# Partes chicas para probar la subida por partes sin archivos de megas.
+config :amauta, Amauta.Files, single_max: 1024, part_size: 512
+
 # El límite de intentos se prueba aparte (Amauta.Accounts.LoginThrottleTest).
 config :amauta, Amauta.Accounts.LoginThrottle, enabled: false
 

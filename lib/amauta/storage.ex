@@ -24,6 +24,18 @@ defmodule Amauta.Storage do
   @callback get(key()) :: {:ok, binary()} | {:error, :not_found}
   @callback delete(key()) :: :ok | {:error, term()}
 
+  # Subida por partes (RF-ARC-001): archivos grandes y reanudables.
+  @callback start_multipart(key(), keyword()) :: {:ok, String.t()} | {:error, term()}
+  @callback presign_part(key(), String.t(), pos_integer(), keyword()) :: {:ok, String.t()}
+  @callback list_parts(key(), String.t()) ::
+              {:ok, [%{part_number: pos_integer(), etag: String.t(), size: non_neg_integer()}]}
+              | {:error, term()}
+  @callback complete_multipart(key(), String.t(), [{pos_integer(), String.t()}]) ::
+              :ok | {:error, term()}
+  @callback abort_multipart(key(), String.t()) :: :ok | {:error, term()}
+  # Primeros bytes del objeto, para reconocer su tipo real (RF-ARC-004).
+  @callback get_head_bytes(key(), pos_integer()) :: {:ok, binary()} | {:error, :not_found}
+
   @upload_ttl 15 * 60
   @download_ttl 5 * 60
 
@@ -62,6 +74,27 @@ defmodule Amauta.Storage do
   def put(key, content, opts \\ []), do: adapter().put(key, content, opts)
   def get(key), do: adapter().get(key)
   def delete(key), do: adapter().delete(key)
+
+  @doc "Inicia una subida por partes y devuelve su identificador."
+  def start_multipart(key, opts \\ []), do: adapter().start_multipart(key, opts)
+
+  @doc "URL prefirmada para subir una parte con `PUT`."
+  def presign_part(key, upload_id, part_number, opts \\ []),
+    do:
+      adapter().presign_part(
+        key,
+        upload_id,
+        part_number,
+        Keyword.put_new(opts, :expires_in, @upload_ttl)
+      )
+
+  def list_parts(key, upload_id), do: adapter().list_parts(key, upload_id)
+
+  def complete_multipart(key, upload_id, parts),
+    do: adapter().complete_multipart(key, upload_id, parts)
+
+  def abort_multipart(key, upload_id), do: adapter().abort_multipart(key, upload_id)
+  def get_head_bytes(key, length), do: adapter().get_head_bytes(key, length)
 
   @doc false
   def config, do: Application.fetch_env!(:amauta, __MODULE__)

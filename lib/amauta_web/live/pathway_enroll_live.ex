@@ -162,7 +162,11 @@ defmodule AmautaWeb.PathwayEnrollLive do
 
           <ul :if={@results != []} id="results" class="mb-4 divide-y divide-line">
             <li :for={user <- @results} class="flex items-center gap-3 py-2">
-              <.avatar name={User.display_name(user)} size="sm" />
+              <.avatar
+                name={User.display_name(user)}
+                src={Paths.avatar(@current_scope, user)}
+                size="sm"
+              />
               <span class="min-w-0 flex-1">
                 <span class="block truncate">{User.display_name(user)}</span>
                 <span class="block truncate text-sm text-ink-muted">{user.email}</span>

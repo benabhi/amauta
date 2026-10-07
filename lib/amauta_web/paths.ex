@@ -56,6 +56,13 @@ defmodule AmautaWeb.Paths do
 
   def import_enrollments(tenant, course), do: ~p"/#{slug(tenant)}/c/#{course.slug}/people/import"
   def join(tenant), do: ~p"/#{slug(tenant)}/join"
+
+  @doc "Archivo (redirige a una URL prefirmada después de verificar el permiso)."
+  def file(tenant, file_id), do: ~p"/#{slug(tenant)}/files/#{file_id}"
+
+  @doc "Foto de perfil de la persona, o `nil` si no tiene."
+  def avatar(_tenant, %{avatar_file_id: nil}), do: nil
+  def avatar(tenant, %{avatar_file_id: id}), do: file(tenant, id)
   def enroll_pathway(tenant, pathway), do: ~p"/#{slug(tenant)}/pathways/#{pathway.slug}/enroll"
 
   @doc """

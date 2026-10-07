@@ -1,10 +1,13 @@
 defmodule AmautaWeb.UserLive.Settings do
-  @moduledoc "Ajustes de la cuenta: email y contraseña. Exige modo sudo."
+  @moduledoc "Ajustes de la cuenta: foto de perfil (RF-USR-001), email y contraseña. Exige modo sudo."
   use AmautaWeb, :live_view
 
   on_mount {AmautaWeb.UserAuth, :require_sudo_mode}
 
-  alias Amauta.Accounts
+  alias Amauta.{Accounts, Actions}
+  alias Amauta.Accounts.User
+  alias Amauta.Files.Actions.RemoveAvatar
+  alias AmautaWeb.Components.DirectUpload
   alias AmautaWeb.Paths
 
   @impl true
@@ -17,6 +20,40 @@ defmodule AmautaWeb.UserLive.Settings do
       </.header>
 
       <div class="flex flex-col gap-6">
+        <.card>
+          <:header>{gettext("Profile photo")}</:header>
+          <div class="flex flex-wrap items-center gap-4">
+            <div id="current-avatar">
+              <.avatar
+                name={User.display_name(@current_scope.user)}
+                src={Paths.avatar(@current_scope, @current_scope.user)}
+                size="lg"
+              />
+            </div>
+            <div class="min-w-60 flex-1">
+              <.live_component
+                module={DirectUpload}
+                id="avatar-upload"
+                current_scope={@current_scope}
+                purpose="avatar"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                label={gettext("Upload a photo")}
+                hint={gettext("PNG, JPG, GIF or WebP, up to 5 MB.")}
+              />
+            </div>
+          </div>
+          <.button
+            :if={@current_scope.user.avatar_file_id}
+            variant="ghost"
+            size="sm"
+            icon="trash"
+            phx-click="remove_avatar"
+            class="mt-3"
+          >
+            {gettext("Remove photo")}
+          </.button>
+        </.card>
+
         <.card>
           <:header>{gettext("Email")}</:header>
           <.form
@@ -161,5 +198,36 @@ defmodule AmautaWeb.UserLive.Settings do
       changeset ->
         {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
     end
+  end
+
+  def handle_event("remove_avatar", _params, socket) do
+    scope = socket.assigns.current_scope
+
+    case Actions.run(RemoveAvatar, scope, %{"user_id" => scope.user.id}) do
+      {:ok, user} -> {:noreply, refresh_user(socket, user)}
+      {:error, _} -> {:noreply, put_flash(socket, :error, gettext("That could not be done."))}
+    end
+  end
+
+  @impl true
+  def handle_info({DirectUpload, "avatar-upload", {:uploaded, _file}}, socket) do
+    scope = socket.assigns.current_scope
+
+    {:noreply,
+     socket
+     |> refresh_user(Accounts.get_user!(scope, scope.user.id))
+     |> put_flash(:info, gettext("Profile photo updated."))}
+  end
+
+  # Cualquier otro mensaje (por ejemplo, el aviso de un email enviado) se
+  # ignora: sin esta cláusula, la vista se caería.
+  def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp refresh_user(socket, user) do
+    %{current_scope: scope} = socket.assigns
+
+    assign(socket,
+      current_scope: %{scope | user: %{scope.user | avatar_file_id: user.avatar_file_id}}
+    )
   end
 end

@@ -81,6 +81,23 @@ config :amauta, Oban,
 # Almacenamiento compatible con S3 (ERS 8.10). En desarrollo, Garage; las
 # credenciales y el endpoint se leen del entorno en config/runtime.exs.
 config :amauta, Amauta.Storage, adapter: Amauta.Storage.S3
+
+# Límites de archivos de la instancia (RF-ARC-003): tamaño máximo y tipos
+# permitidos. Cada propósito puede ser más estricto
+# (Amauta.Files.Purpose); las cuotas por institución y curso llegan en V1.
+config :amauta, Amauta.Files,
+  max_size: 500 * 1024 * 1024,
+  allowed_types: ~w(
+    application/pdf image/png image/jpeg image/gif image/webp video/mp4 audio/mp4 audio/mpeg
+    application/zip text/plain text/csv text/markdown
+    application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    application/vnd.openxmlformats-officedocument.presentationml.presentation
+    application/vnd.oasis.opendocument.text application/vnd.oasis.opendocument.spreadsheet
+    application/vnd.oasis.opendocument.presentation
+    application/msword application/vnd.ms-excel application/vnd.ms-powerpoint
+  )
+
 config :ex_aws, http_client: ExAws.Request.Req, json_codec: Jason
 
 # Configure the mailer

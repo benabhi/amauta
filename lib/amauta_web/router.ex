@@ -120,6 +120,7 @@ defmodule AmautaWeb.Router do
     end
 
     get "/people/export", PeopleExportController, :export
+    get "/files/:id", FileController, :show
     post "/update-password", UserSessionController, :update_password
   end
 
