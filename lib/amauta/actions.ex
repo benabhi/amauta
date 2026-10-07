@@ -50,7 +50,11 @@ defmodule Amauta.Actions do
     Amauta.Enrollments.Actions.JoinWithCode,
     Amauta.Files.Actions.StartUpload,
     Amauta.Files.Actions.CompleteUpload,
-    Amauta.Files.Actions.RemoveAvatar
+    Amauta.Files.Actions.RemoveAvatar,
+    Amauta.Feed.Actions.SaveDraft,
+    Amauta.Feed.Actions.PublishPost,
+    Amauta.Feed.Actions.UpdatePost,
+    Amauta.Feed.Actions.DeletePost
   ]
 
   @doc "Todas las acciones."

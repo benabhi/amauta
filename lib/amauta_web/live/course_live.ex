@@ -57,7 +57,8 @@ defmodule AmautaWeb.CourseLive do
      |> assign(periods: [], pathways: [], stages: [], standalone: true)
      |> assign(section_filter: nil, section_form: nil, editing_section: nil)
      |> assign(people_query: "", people_results: [], enroll_form: enroll_form())
-     |> assign_course(course)}
+     |> assign_course(course)
+     |> subscribe_feed(course)}
   end
 
   defp assign_course(socket, course) do
@@ -416,6 +417,25 @@ defmodule AmautaWeb.CourseLive do
   defp blank_to_nil(""), do: nil
   defp blank_to_nil(value), do: value
 
+  ## Tablón en tiempo real (RF-TAB-008)
+
+  defp subscribe_feed(socket, course) do
+    if connected?(socket), do: Phoenix.PubSub.subscribe(Amauta.PubSub, Amauta.Feed.topic(course))
+    socket
+  end
+
+  @impl true
+  def handle_info({:feed, event, post}, socket) do
+    if socket.assigns.live_action == :feed do
+      send_update(AmautaWeb.CourseFeed, id: "course-feed", feed_event: {event, post})
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:put_flash, kind, message}, socket),
+    do: {:noreply, put_flash(socket, kind, message)}
+
   ## Vista
 
   @impl true
@@ -506,7 +526,15 @@ defmodule AmautaWeb.CourseLive do
         </:tab>
       </.tabs>
 
-      <.feed :if={@live_action == :feed} current_scope={@current_scope} />
+      <.live_component
+        :if={@live_action == :feed}
+        module={AmautaWeb.CourseFeed}
+        id="course-feed"
+        current_scope={@current_scope}
+        course={@course}
+        sections={@sections}
+        section_filter={@section_filter}
+      />
       <.content :if={@live_action == :content} current_scope={@current_scope} />
       <.people :if={@live_action == :people} {people_assigns(assigns)} />
       <.grades :if={@live_action == :grades} />
@@ -534,20 +562,6 @@ defmodule AmautaWeb.CourseLive do
       {:people, "users", gettext("People")},
       {:grades, "clipboard-text", gettext("Grades")}
     ] ++ if(can_settings, do: [{:settings, "gear", gettext("Settings")}], else: [])
-  end
-
-  attr :current_scope, :map, required: true
-
-  defp feed(assigns) do
-    ~H"""
-    <.empty_state icon="chats-circle" title={gettext("Nothing posted yet")}>
-      {gettext_term(
-        @current_scope,
-        :course,
-        "Announcements and conversations of the %{term} will appear here."
-      )}
-    </.empty_state>
-    """
   end
 
   attr :current_scope, :map, required: true
